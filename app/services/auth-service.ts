@@ -97,15 +97,15 @@ export class AuthService {
 
   async logout() {
     if (typeof window === 'undefined') return
-        const accessToken = localStorage.getItem(this.ACCESS_TOKEN_KEY)
+    const accessToken = localStorage.getItem(this.ACCESS_TOKEN_KEY)
+    const refreshToken = localStorage.getItem(this.REFRESH_TOKEN_KEY)
 
     try {
-      if (this.token.value) {
-        this.token.value = accessToken  
-        await apiService.client.post('/auth/logout',{
-          headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
+      if (accessToken || refreshToken) {
+        // The server revokes every token of this user (all devices). The refresh token goes
+        // along so logout still works when the access token has already expired.
+        await apiService.client.post('/auth/logout', { refreshToken }, {
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {}
         })
       }
     } catch (error) {
