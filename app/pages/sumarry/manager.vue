@@ -1,49 +1,37 @@
 <template>
     <div class="space-y-4">
-        <ClientOnly>
-            <Teleport v-if="isMounted" to="#toolbar-left">
-                <div class="flex items-center gap-1">
-                    <UButton icon="i-lucide-arrow-left" size="lg" color="neutral" variant="ghost" to="/" />
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/sales" icon="i-heroicons-users" :variant="$route.path === '/sumarry/sales' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/sales' ? 'primary' : 'neutral'" size="sm">Account Manager</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/manager" icon="i-heroicons-presentation-chart-line" :variant="$route.path === '/sumarry/manager' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/manager' ? 'primary' : 'neutral'" size="sm">Sales Manager</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/invoice" icon="i-heroicons-document-text" :variant="$route.path === '/sumarry/invoice' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/invoice' ? 'primary' : 'neutral'" size="sm">Invoice</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/churn" icon="i-heroicons-archive-box-x-mark" :variant="$route.path === '/sumarry/churn' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/churn' ? 'primary' : 'neutral'" size="sm">Churn</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/target" icon="i-heroicons-flag" :variant="$route.path === '/sumarry/target' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/target' ? 'primary' : 'neutral'" size="sm">Target</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/consistency-bonus" icon="i-heroicons-gift" :variant="$route.path === '/sumarry/consistency-bonus' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/consistency-bonus' ? 'primary' : 'neutral'" size="sm">Bonus Konsistensi</UButton>
-                </div>
-            </Teleport>
-            <Teleport v-if="isMounted" to="#toolbar-right">
-                <div class="flex items-center gap-2">
-                    <USelectMenu v-model="selectedMonth" :items="monthSelect" value-key="id" class="w-40" />
-                    <USelectMenu v-model="year" :items="yearItems" class="w-24" />
-                </div>
-            </Teleport>
-        </ClientOnly>
+        <SummaryToolbar v-model:month="selectedMonth" v-model:year="year" />
 
         <UContainer>
             <HeroBackground />
-            <div class="py-4">
+            <div class="py-4 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+                    <div>
+                        <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Ringkasan Sales Manager</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            Capaian tim dan komisi overriding tiap Sales Manager untuk {{ selectedMonthLabel }} {{ year }}. Klik nama untuk melihat rinciannya.
+                        </p>
+                    </div>
+                    <USwitch v-model="hideValues" label="Sembunyikan nominal" />
+                </div>
+
+                <SummaryStats :stats="stats" />
+
                 <UCard>
                     <template #header>
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">Sales Manager Summary</h3>
-                                <p class="text-xs text-gray-500">{{ selectedMonthLabel }} {{ year }}</p>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Hide Values</span>
-                                <USwitch v-model="hideValues" color="primary" />
-                            </div>
-                        </div>
+                        <UInput v-model="search" icon="i-lucide-search" placeholder="Cari nama atau ID manager..." class="w-full sm:w-72" />
                     </template>
-                    <UTable sticky :columns="columns" :data="summaryData" class="flex-1 max-h-[800px]" />
+                    <UTable
+                        v-model:column-pinning="columnPinning"
+                        sticky
+                        :columns="columns"
+                        :data="filteredData"
+                        empty="Tidak ada data Sales Manager untuk periode ini."
+                        class="flex-1 max-h-[800px]"
+                    />
                 </UCard>
+
+                <GlossaryPanel :terms="glossaryTerms" />
             </div>
         </UContainer>
     </div>
@@ -54,6 +42,7 @@ import { h, resolveComponent } from 'vue'
 import { SummaryService } from '~/services/summary-service'
 import type { ManagerSummaryItem } from '~/types/summary'
 import type { TableColumn } from '@nuxt/ui'
+import type { GlossaryKey } from '~/composables/useGlossary'
 
 definePageMeta({
     headerProps: { toolbar: true }
@@ -65,21 +54,51 @@ const UBadge = resolveComponent('UBadge')
 
 const { setLoading } = useLoading()
 const { formatCurrency } = useFormat()
+const { hintHeader } = useInvoiceColumns()
 const summaryService = new SummaryService()
 
-const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-const monthSelect = monthNames.map((label, i) => ({ id: i + 1, label }))
-const yearItems = [2026, 2027, 2028, 2029, 2030]
+const { monthLabel } = usePeriodOptions()
+const glossaryTerms: GlossaryKey[] = ['teamSize', 'finalTarget', 'teamAchievement', 'overrideNew', 'overrideRecurring', 'subscription', 'mrc']
 
 const summaryData = ref<ManagerSummaryItem[]>([])
 const year = ref(new Date().getFullYear())
 const selectedMonth = ref(new Date().getMonth() + 1)
 const hideValues = ref(true)
-const isMounted = ref(false)
+const search = ref('')
+const columnPinning = ref({ left: ['name'], right: [] })
 
-const selectedMonthLabel = computed(() => monthSelect.find(m => m.id === selectedMonth.value)?.label ?? '')
+const selectedMonthLabel = computed(() => monthLabel(selectedMonth.value))
 
-const maskedCurrency = (value: number) => hideValues.value ? '***' : formatCurrency(value)
+const maskedCurrency = (value: number) => hideValues.value ? '•••' : formatCurrency(value)
+
+const filteredData = computed(() => {
+    const q = search.value.trim().toLowerCase()
+    if (!q) return summaryData.value
+    return summaryData.value.filter(r => r.name.toLowerCase().includes(q) || r.employeeId.toLowerCase().includes(q))
+})
+
+const sum = (key: keyof ManagerSummaryItem) => filteredData.value.reduce((acc, r) => acc + Number(r[key] ?? 0), 0)
+
+const stats = computed(() => {
+    const rows = summaryData.value
+    const onTarget = rows.filter(r => r.isTargetAchieved).length
+    return [
+        { label: 'Jumlah Sales Manager', value: rows.length },
+        { label: 'Tim Capai Target', value: `${onTarget} / ${rows.length}`, class: 'text-green-600 dark:text-green-400' },
+        { label: 'Total Layanan Baru Tim', value: rows.reduce((a, r) => a + r.activityCount, 0) },
+        { label: 'Total Komisi Manager', value: maskedCurrency(rows.reduce((a, r) => a + r.managerTotalCommission, 0)), class: 'text-primary-600 dark:text-primary-400' }
+    ]
+})
+
+type MoneyKey = 'newMrc' | 'newSubscription' | 'newCommission' | 'recurringSubscription' | 'recurringCommission'
+    | 'managerNewCommission' | 'managerRecurringCommission' | 'managerTotalCommission'
+
+const moneyColumn = (key: MoneyKey, label: string, opts: { hint?: GlossaryKey; cellClass?: string } = {}): TableColumn<ManagerSummaryItem> => ({
+    accessorKey: key,
+    header: () => h('div', { class: 'text-right whitespace-nowrap' }, opts.hint ? [hintHeader(label, opts.hint)()] : label),
+    cell: ({ row }) => h('div', { class: ['text-right tabular-nums', opts.cellClass ?? 'font-medium'] }, maskedCurrency(row.original[key])),
+    footer: () => h('div', { class: 'text-right font-bold tabular-nums' }, maskedCurrency(sum(key)))
+})
 
 const columns: TableColumn<ManagerSummaryItem>[] = [
     {
@@ -89,70 +108,41 @@ const columns: TableColumn<ManagerSummaryItem>[] = [
             h(UAvatar, { src: row.original.photoProfile, alt: row.original.name, size: 'sm' }),
             h('div', { class: 'flex flex-col text-left' }, [
                 h('span', { class: 'font-semibold text-sm text-gray-900 dark:text-white group-hover:text-primary-500 transition-colors' }, row.original.name),
-                h('span', { class: 'text-[10px] text-gray-500' }, row.original.employeeId)
+                h('span', { class: 'text-xs text-gray-500' }, row.original.employeeId)
             ])
-        ])
+        ]),
+        footer: () => h('div', { class: 'font-bold' }, `Total (${filteredData.value.length} manager)`)
     },
     {
         accessorKey: 'isTargetAchieved',
-        header: 'Status',
+        header: 'Status Tim',
         cell: ({ row }) => h(UBadge, { color: row.original.isTargetAchieved ? 'success' : 'error', variant: 'subtle' }, () => row.original.isTargetAchieved ? 'Capai Target' : 'Tidak Capai Target')
     },
     {
+        accessorKey: 'totalCount',
+        header: () => h('div', { class: 'text-center' }, [hintHeader('Jumlah AM', 'teamSize')()]),
+        cell: ({ row }) => h('div', { class: 'text-center font-medium' }, row.original.totalCount),
+        footer: () => h('div', { class: 'text-center font-bold' }, sum('totalCount'))
+    },
+    {
         accessorKey: 'activityCount',
-        header: () => h('div', { class: 'text-center' }, 'New Service'),
-        cell: ({ row }) => h('div', { class: 'text-center font-bold' }, row.original.activityCount)
+        header: () => h('div', { class: 'text-center' }, 'Layanan Baru Tim'),
+        cell: ({ row }) => h('div', { class: 'text-center font-bold' }, row.original.activityCount),
+        footer: () => h('div', { class: 'text-center font-bold' }, sum('activityCount'))
     },
     {
         accessorKey: 'achievementPercentage',
-        header: () => h('div', { class: 'text-center' }, 'Achv'),
+        header: () => h('div', { class: 'text-center' }, [hintHeader('Capaian', 'teamAchievement')()]),
         cell: ({ row }) => h('div', { class: 'text-center font-bold text-sm' }, `${Math.round(row.original.achievementPercentage)}%`)
     },
-    {
-        accessorKey: 'totalCount',
-        header: () => h('div', { class: 'text-center' }, 'Team'),
-        cell: ({ row }) => h('div', { class: 'text-center font-bold text-sm' }, row.original.totalCount)
-    },
-    {
-        accessorKey: 'newMrc',
-        header: () => h('div', { class: 'text-right' }, 'New MRC'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium text-xs' }, maskedCurrency(row.original.newMrc))
-    },
-    {
-        accessorKey: 'newSubscription',
-        header: () => h('div', { class: 'text-right' }, 'New Subscription'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium text-xs' }, maskedCurrency(row.original.newSubscription))
-    },
-    {
-        accessorKey: 'newCommission',
-        header: () => h('div', { class: 'text-right' }, 'New Commission'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium text-xs' }, maskedCurrency(row.original.newCommission))
-    },
-    {
-        accessorKey: 'recurringSubscription',
-        header: () => h('div', { class: 'text-right' }, 'Recurring Subscription'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium text-xs' }, maskedCurrency(row.original.recurringSubscription))
-    },
-    {
-        accessorKey: 'recurringCommission',
-        header: () => h('div', { class: 'text-right' }, 'Recurring Commission'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium text-xs' }, maskedCurrency(row.original.recurringCommission))
-    },
-    {
-        accessorKey: 'managerNewCommission',
-        header: () => h('div', { class: 'text-right text-primary-500' }, 'Mgr New Comm'),
-        cell: ({ row }) => h('div', { class: 'text-right font-bold text-primary-600 dark:text-primary-400 text-xs' }, maskedCurrency(row.original.managerNewCommission))
-    },
-    {
-        accessorKey: 'managerRecurringCommission',
-        header: () => h('div', { class: 'text-right text-primary-500' }, 'Mgr Recur Comm'),
-        cell: ({ row }) => h('div', { class: 'text-right font-bold text-primary-600 dark:text-primary-400 text-xs' }, maskedCurrency(row.original.managerRecurringCommission))
-    },
-    {
-        accessorKey: 'managerTotalCommission',
-        header: () => h('div', { class: 'text-right text-primary-600 font-bold' }, 'Mgr Total'),
-        cell: ({ row }) => h('div', { class: 'text-right font-bold text-primary-700 dark:text-primary-300' }, maskedCurrency(row.original.managerTotalCommission))
-    }
+    moneyColumn('managerTotalCommission', 'Total Komisi Manager', { cellClass: 'font-bold text-primary-700 dark:text-primary-300' }),
+    moneyColumn('managerNewCommission', 'Overriding New', { hint: 'overrideNew', cellClass: 'font-semibold text-primary-600 dark:text-primary-400' }),
+    moneyColumn('managerRecurringCommission', 'Overriding Recurring', { hint: 'overrideRecurring', cellClass: 'font-semibold text-primary-600 dark:text-primary-400' }),
+    moneyColumn('newCommission', 'Komisi New Tim'),
+    moneyColumn('newSubscription', 'Subscription New Tim', { hint: 'subscription' }),
+    moneyColumn('newMrc', 'MRC New Tim', { hint: 'mrc' }),
+    moneyColumn('recurringCommission', 'Komisi Recurring Tim'),
+    moneyColumn('recurringSubscription', 'Subscription Recurring Tim')
 ]
 
 const fetchSummary = async () => {
@@ -167,9 +157,6 @@ const fetchSummary = async () => {
 
 onMounted(() => {
     fetchSummary()
-    nextTick(() => {
-        isMounted.value = true
-    })
 })
 
 watch([year, selectedMonth], () => {

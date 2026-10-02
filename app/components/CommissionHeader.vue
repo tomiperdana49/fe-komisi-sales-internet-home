@@ -13,7 +13,7 @@
                     />
                     <div>
                         <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">
-                                {{ employee?.name }}'s Commission
+                                Komisi {{ employee?.name }}
                         </h2>
                         <p class="text-sm text-gray-500 dark:text-gray-400">
                             {{ subtitle }}                  
@@ -21,7 +21,10 @@
                     </div>
                 </div>
             </div>
-            <USelectMenu v-model="selectedYear" :items="yearItems" />
+            <div class="flex items-center gap-2">
+                <slot name="controls" />
+                <USelectMenu v-model="selectedYear" :items="yearItems" class="w-28" />
+            </div>
         </div>
     </div>
 </template>

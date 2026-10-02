@@ -9,10 +9,10 @@
                 <UFormField label="Nominal Bonus" name="amount" required description="Jumlah bonus yang diberikan, bebas ditentukan admin.">
                     <UInput v-model.number="state.amount" type="number" min="0" step="1000" icon="i-heroicons-banknotes" class="w-full" placeholder="Contoh: 1000000" />
                 </UFormField>
-                <UFormField label="Note" name="note" required description="Alasan pemberian bonus ini, wajib diisi untuk audit log.">
+                <UFormField label="Catatan" name="note" required description="Alasan pemberian bonus ini, wajib diisi untuk audit log.">
                     <UTextarea v-model="state.note" class="w-full" :rows="3" placeholder="Contoh: Konsisten capai target 3 bulan berturut-turut" />
                 </UFormField>
-                <UFormField label="Berapa Service" name="serviceCount" required description="Jumlah service yang dicapai sales, diisi manual.">
+                <UFormField label="Jumlah Service" name="serviceCount" required description="Jumlah service yang dicapai sales, diisi manual.">
                     <UInput v-model.number="state.serviceCount" type="number" min="0" class="w-full" placeholder="Contoh: 15" />
                 </UFormField>
                 <UFormField label="Bulan" name="months" description="Bulan-bulan pencapaian yang dijadikan catatan (opsional, tidak mempengaruhi periode bonus).">
@@ -26,8 +26,8 @@
 
         <template #footer="{ close }">
             <div class="flex justify-end gap-3 w-full">
-                <UButton type="button" color="neutral" variant="ghost" :disabled="saving" @click="close">Cancel</UButton>
-                <UButton type="button" color="primary" :loading="saving" @click="onSubmit">Grant {{ state.amount ? formatCurrency(state.amount) : '' }}</UButton>
+                <UButton type="button" color="neutral" variant="ghost" :disabled="saving" @click="close">Batal</UButton>
+                <UButton type="button" color="primary" :loading="saving" @click="onSubmit">Berikan {{ state.amount ? formatCurrency(state.amount) : '' }}</UButton>
             </div>
         </template>
     </UModal>
@@ -57,8 +57,7 @@ const { formatCurrency } = useFormat()
 const toast = useToast()
 const saving = ref(false)
 
-const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-const monthOptions = monthNames.map((label, i) => ({ id: i + 1, label }))
+const { monthSelect: monthOptions } = usePeriodOptions()
 
 const state = reactive<{ amount: number | undefined; note: string; serviceCount: number | undefined; months: number[]; testimonialLink: string }>({
     amount: undefined,
@@ -85,15 +84,15 @@ watch(
 async function onSubmit() {
     if (!props.employeeId) return
     if (state.amount === undefined || state.amount === null || state.amount <= 0) {
-        toast.add({ title: 'Nominal Bonus is required', description: 'Isi nominal bonus yang diberikan.', color: 'error' })
+        toast.add({ title: 'Nominal bonus wajib diisi', description: 'Isi nominal bonus yang diberikan.', color: 'error' })
         return
     }
     if (!state.note.trim()) {
-        toast.add({ title: 'Note is required', description: 'Explain why this bonus is being granted.', color: 'error' })
+        toast.add({ title: 'Catatan wajib diisi', description: 'Tulis alasan pemberian bonus ini.', color: 'error' })
         return
     }
     if (state.serviceCount === undefined || state.serviceCount === null || state.serviceCount < 0) {
-        toast.add({ title: 'Berapa Service is required', description: 'Isi jumlah service yang dicapai.', color: 'error' })
+        toast.add({ title: 'Jumlah service wajib diisi', description: 'Isi jumlah service yang dicapai.', color: 'error' })
         return
     }
 
@@ -111,7 +110,7 @@ async function onSubmit() {
             }
         )
         if (response && response.success) {
-            toast.add({ title: 'Granted', description: `Bonus Konsistensi ${formatCurrency(state.amount)} berhasil diberikan`, color: 'success' })
+            toast.add({ title: 'Bonus diberikan', description: `Bonus Konsistensi ${formatCurrency(state.amount)} berhasil diberikan`, color: 'success' })
             emit('success')
             isOpen.value = false
         }

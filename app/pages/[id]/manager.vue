@@ -5,142 +5,163 @@
             :employee="employee"
             v-model:year="year"
             :year-items="yearItems"
-            subtitle="Monthly manager commission heatmap 🔥"
-        />
+            subtitle="Komisi manager dari penjualan pribadi dan capaian tim"
+        >
+            <template #controls>
+                <USelectMenu v-model="selectedMonth" value-key="id" :items="monthSelect" class="w-36" />
+            </template>
+        </CommissionHeader>
 
         <div class="py-2 grid grid-cols-1 gap-4">
             <UPageCard v-if="periodData">
                 <template #default>
-                    <!-- Header Section -->
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6 border-b border-gray-100 dark:border-gray-800 pb-4 md:pb-6">
-                        <div class="space-y-2 w-full md:w-auto">
-                            <div class="mb-2">
-                                <USelectMenu v-model="selectedMonth" value-key="id" :items="monthSelect" class="w-full sm:w-56 md:w-64" />
+                    <!-- Total & cara menghitungnya -->
+                    <div class="border-b border-gray-100 dark:border-gray-800 pb-4 md:pb-6 space-y-4">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                            <div>
+                                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Periode Perhitungan</p>
+                                <p class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+                                    {{ formatDate(periodData.startDate) }} – {{ formatDate(periodData.endDate) }}
+                                </p>
                             </div>
-                            <span class="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Period:</span>
-                            <div class="flex items-center gap-2 text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
-                                <span class="text-sm sm:text-base md:text-md">
-                                    {{ formatDate(periodData.startDate) }} - {{ formatDate(periodData.endDate) }}
-                                </span>
+                            <div class="md:text-right">
+                                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Total Komisi Manager</p>
+                                <p class="text-3xl md:text-4xl font-bold text-primary-500 dark:text-primary-400 tabular-nums">
+                                    {{ formatCurrency(periodData.totalCommission) }}
+                                </p>
                             </div>
                         </div>
-                        <div class="text-left md:text-right flex flex-col w-full md:w-auto">
-                            <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 md:mb-2 text-left md:text-right">
-                                Grand Total Commission
-                            </p>
-                            <span class="text-2xl sm:text-3xl md:text-4xl font-bold text-primary-500 dark:text-primary-400">
-                                {{ formatCurrency(periodData.totalCommission) }}
+
+                        <div class="flex flex-wrap items-center gap-2 text-sm">
+                            <template v-for="(part, idx) in totalParts" :key="part.label">
+                                <span v-if="idx > 0" class="text-gray-400 font-semibold">+</span>
+                                <span class="inline-flex flex-col px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                                    <span class="text-[11px] text-gray-500 dark:text-gray-400">
+                                        <TermHint :term="part.hint">{{ part.label }}</TermHint>
+                                    </span>
+                                    <span class="font-semibold tabular-nums text-gray-900 dark:text-white">{{ formatCurrency(part.value) }}</span>
+                                </span>
+                            </template>
+                            <span class="text-gray-400 font-semibold">=</span>
+                            <span class="inline-flex flex-col px-3 py-1.5 rounded-lg border border-primary-200 dark:border-primary-800 bg-primary-50 dark:bg-primary-950/20">
+                                <span class="text-[11px] text-primary-700 dark:text-primary-300">Total</span>
+                                <span class="font-bold tabular-nums text-primary-600 dark:text-primary-400">{{ formatCurrency(periodData.totalCommission) }}</span>
                             </span>
                         </div>
                     </div>
 
-                    <!-- Team Performance Summary -->
+                    <!-- Capaian, target, dan rincian overriding -->
                     <div class="mt-4 md:mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div class="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-transparent">
-                            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Team Composition</h4>
-                            <div class="space-y-3">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm text-gray-600 dark:text-gray-400">Total AM</span>
-                                    <span class="text-sm font-bold text-gray-900 dark:text-white">{{ periodData.team.totalCount }}</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm text-gray-600 dark:text-gray-400">Permanent</span>
-                                    <span class="text-sm font-bold text-gray-900 dark:text-white">{{ periodData.team.permanentCount }}</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm text-gray-600 dark:text-gray-400">Probation</span>
-                                    <span class="text-sm font-bold text-gray-900 dark:text-white">{{ periodData.team.nonPermanentCount }}</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm text-gray-600 dark:text-gray-400">Target</span>
-                                    <span class="text-sm font-bold text-gray-900 dark:text-white">{{ periodData.team.finalTarget }}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-transparent">
-                            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Commission Achievement</h4>
-                            <div class="space-y-3">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm text-gray-600 dark:text-gray-400">New Commission ({{ periodData.override.newCommissionRate }}%)</span>
-                                    <span class="text-sm font-bold text-gray-900 dark:text-white">{{ formatCurrency(periodData.override.newCommission) }}</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm text-gray-600 dark:text-gray-400">Recurring ({{ periodData.override.recurringCommissionRate }}%)</span>
-                                    <span class="text-sm font-bold text-gray-900 dark:text-white">{{ formatCurrency(periodData.override.recurringCommission) }}</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm text-gray-600 dark:text-gray-400">Personal Sales</span>
-                                    <span class="text-sm font-bold text-gray-900 dark:text-white">{{ formatCurrency(periodData.personal.total.commission + periodData.personal.bonusBulanan + periodData.personal.bonusKelebihanService + periodData.personal.consistencyBonus) }}</span>
-                                </div>
-                                <div class="pt-2 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center">
-                                    <span class="text-sm font-bold text-gray-900 dark:text-white">Total</span>
-                                    <span class="text-base font-bold text-primary-500 dark:text-primary-400">{{ formatCurrency(periodData.totalCommission) }}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-transparent">
+                        <div class="p-4 rounded-xl border border-gray-200 dark:border-gray-800">
                             <div class="flex justify-between items-center mb-4">
-                                <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Team Achievement</h4>
+                                <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Capaian Tim</h4>
                                 <UBadge :color="periodData.team.isTargetAchieved ? 'success' : 'error'" variant="subtle">
                                     {{ periodData.team.isTargetAchieved ? 'Capai Target' : 'Tidak Capai Target' }}
                                 </UBadge>
                             </div>
-                            <div class="flex flex-col gap-3">
-                                <span class="text-3xl font-bold text-gray-900 dark:text-white">{{ Math.round(periodData.team.achievementPercentage) }}%</span>
-                                <div class="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                                    <div
-                                        class="h-full"
-                                        :class="periodData.team.isTargetAchieved ? 'bg-green-500' : 'bg-red-500'"
-                                        :style="{ width: Math.min(100, periodData.team.achievementPercentage) + '%' }"
-                                    ></div>
-                                </div>
+                            <p class="text-3xl font-bold text-gray-900 dark:text-white tabular-nums">
+                                {{ periodData.team.activityCount }}
+                                <span class="text-base font-medium text-gray-500 dark:text-gray-400">/ {{ periodData.team.finalTarget }} layanan baru</span>
+                            </p>
+                            <div class="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden mt-3">
+                                <div
+                                    class="h-full"
+                                    :class="periodData.team.isTargetAchieved ? 'bg-green-500' : 'bg-red-500'"
+                                    :style="{ width: targetProgress + '%' }"
+                                />
                             </div>
-                            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 mt-6">New Service</h4>
-                            <div class="flex flex-col gap-2">
-                                <span class="text-3xl font-bold text-gray-900 dark:text-white">{{ periodData.team.activityCount }}</span>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                {{ targetGapText }}
+                            </p>
+                            <div class="flex justify-between items-center text-sm mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
+                                <span class="text-gray-600 dark:text-gray-400">
+                                    <TermHint term="teamAchievement">Capaian vs Target Dasar</TermHint>
+                                </span>
+                                <span class="font-bold text-gray-900 dark:text-white">{{ Math.round(periodData.team.achievementPercentage) }}%</span>
                             </div>
+                        </div>
+
+                        <div class="p-4 rounded-xl border border-gray-200 dark:border-gray-800">
+                            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Komposisi Tim & Target</h4>
+                            <ul class="space-y-2.5 text-sm">
+                                <li class="flex justify-between">
+                                    <span class="text-gray-600 dark:text-gray-400"><TermHint term="teamSize">Jumlah AM</TermHint></span>
+                                    <span class="font-semibold text-gray-900 dark:text-white">
+                                        {{ periodData.team.totalCount }}
+                                        <span class="font-normal text-gray-500">({{ periodData.team.permanentCount }} Permanent, {{ periodData.team.nonPermanentCount }} Probation)</span>
+                                    </span>
+                                </li>
+                                <li class="flex justify-between">
+                                    <span class="text-gray-600 dark:text-gray-400"><TermHint term="baseTarget">Target Dasar</TermHint></span>
+                                    <span class="font-semibold text-gray-900 dark:text-white">{{ periodData.team.baseTarget }}</span>
+                                </li>
+                                <li class="flex justify-between">
+                                    <span class="text-gray-600 dark:text-gray-400">Threshold</span>
+                                    <span class="font-semibold text-gray-900 dark:text-white">× {{ periodData.team.thresholdPercentage }}%</span>
+                                </li>
+                                <li class="flex justify-between pt-2.5 border-t border-gray-100 dark:border-gray-800">
+                                    <span class="font-bold text-gray-900 dark:text-white"><TermHint term="finalTarget">Target Akhir</TermHint></span>
+                                    <span class="font-bold text-primary-600 dark:text-primary-400">{{ periodData.team.finalTarget }}</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="p-4 rounded-xl border border-primary-200 dark:border-primary-800 bg-primary-50/40 dark:bg-primary-950/10 md:col-span-2 lg:col-span-1">
+                            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Rincian Komisi Manager</h4>
+                            <ul class="space-y-3 text-sm">
+                                <li>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-400"><TermHint term="overrideNew">Overriding New</TermHint></span>
+                                        <span class="font-semibold text-gray-900 dark:text-white tabular-nums">{{ formatCurrency(periodData.override.newCommission) }}</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                                        {{ periodData.override.newCommissionRate }}% × komisi New tim {{ formatCurrency(periodData.teamTotals.newCommission) }}
+                                    </p>
+                                </li>
+                                <li>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-400"><TermHint term="overrideRecurring">Overriding Recurring</TermHint></span>
+                                        <span class="font-semibold text-gray-900 dark:text-white tabular-nums">{{ formatCurrency(periodData.override.recurringCommission) }}</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                                        {{ periodData.override.recurringCommissionRate }}% × subscription recurring tim {{ formatCurrency(periodData.override.teamRecurringSubscriptionNet) }}
+                                    </p>
+                                </li>
+                                <li class="flex justify-between">
+                                    <span class="text-gray-600 dark:text-gray-400"><TermHint term="personalSales">Penjualan Pribadi</TermHint></span>
+                                    <span class="font-semibold text-gray-900 dark:text-white tabular-nums">{{ formatCurrency(personalTotal) }}</span>
+                                </li>
+                                <li class="flex justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
+                                    <span class="font-bold text-gray-900 dark:text-white">Total Diterima</span>
+                                    <span class="font-bold text-primary-600 dark:text-primary-400 tabular-nums">{{ formatCurrency(periodData.totalCommission) }}</span>
+                                </li>
+                            </ul>
                         </div>
                     </div>
 
-                    <!-- Summary Cards -->
-                    <div class="mt-4 md:mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div class="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-                            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">New Commission</h4>
-                            <span class="text-xl font-bold text-gray-900 dark:text-white">{{ formatCurrency(periodData.teamTotals.newCommission) }}</span>
-                        </div>
-                        <div class="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-                            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Recurring Commission</h4>
-                            <span class="text-xl font-bold text-gray-900 dark:text-white">{{ formatCurrency(periodData.teamTotals.recurringCommission) }}</span>
-                        </div>
-                        <div class="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-                            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">New Subscription</h4>
-                            <span class="text-xl font-bold text-gray-900 dark:text-white">{{ formatCurrency(periodData.teamTotals.newSubscription) }}</span>
-                        </div>
-                        <div class="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-                            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">New MRC</h4>
-                            <span class="text-xl font-bold text-gray-900 dark:text-white">{{ formatCurrency(periodData.teamTotals.newMrc) }}</span>
-                        </div>
-                    </div>
-
-                    <!-- Team Production by Service -->
-                    <div class="mt-4 md:mt-6">
-                        <h4 class="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-3 md:mb-4">
+                    <!-- Produksi tim per produk -->
+                    <div class="mt-6 md:mt-8">
+                        <h4 class="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-1">
                             <UIcon name="i-heroicons-squares-2x2" class="w-4 h-4 sm:w-5 sm:h-5 text-primary-500" />
-                            Team Production by Service
+                            Produksi Tim per Produk
                         </h4>
-                        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-5 gap-4 md:gap-6 p-4 md:p-5 rounded-xl md:rounded-2xl border border-gray-200 dark:border-gray-800">
-                            <div v-for="box in teamServiceBoxes" :key="box.title">
-                                <h5 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 md:mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">{{ box.title }}</h5>
-                                <ul class="space-y-2 md:space-y-3">
-                                    <li v-for="row in box.rows" :key="row.label" class="flex justify-between items-center text-xs sm:text-sm">
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3 md:mb-4">Gabungan seluruh anggota tim, sudah dikurangi churn.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                            <div v-for="box in teamServiceBoxes" :key="box.title" class="p-4 rounded-xl border border-gray-200 dark:border-gray-800">
+                                <h5 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 pb-2 border-b border-gray-200 dark:border-gray-700">
+                                    <TermHint v-if="box.hint" :term="box.hint">{{ box.title }}</TermHint>
+                                    <template v-else>{{ box.title }}</template>
+                                </h5>
+                                <ul class="space-y-2">
+                                    <li v-for="row in box.rows" :key="row.label" class="flex justify-between items-center gap-3 text-sm">
                                         <span class="text-gray-600 dark:text-gray-400">{{ row.label }}</span>
-                                        <span class="font-semibold text-gray-900 dark:text-white">{{ box.isCount ? row.value : formatCurrency(row.value) }}</span>
+                                        <span :class="['font-semibold tabular-nums', row.value === 0 ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white']">
+                                            {{ box.isCount ? row.value : formatCurrency(row.value) }}
+                                        </span>
                                     </li>
-                                    <li class="flex justify-between items-center text-xs sm:text-sm pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-700 mt-2">
+                                    <li class="flex justify-between items-center text-sm pt-3 mt-1 border-t border-gray-200 dark:border-gray-700">
                                         <span class="font-bold text-gray-900 dark:text-white">Total</span>
-                                        <span class="font-bold text-primary-600 dark:text-primary-400">{{ box.isCount ? box.total : formatCurrency(box.total) }}</span>
+                                        <span class="font-bold text-primary-600 dark:text-primary-400 tabular-nums">{{ box.isCount ? box.total : formatCurrency(box.total) }}</span>
                                     </li>
                                 </ul>
                             </div>
@@ -152,48 +173,37 @@
 
         <div class="py-2">
             <UCard>
-                <template #header>
-                    <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">Personal Sales Invoice</h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Invoices sold directly under this manager's own employee ID, plus Customer Relation Officer recurring rows credited to them</p>
-                </template>
-                <UTabs :items="invoiceTabItems" class="w-full">
-                    <template #content="{ item }">
-                        <UTable
-                            sticky
-                            :data="getInvoiceTabData(item.key)"
-                            :columns="getInvoiceColumns(item.key)"
-                            class="flex-1 max-h-[800px] [&_tr:has(.commission-zero)]:bg-yellow-50 dark:[&_tr:has(.commission-zero)]:bg-yellow-950/20"
-                        />
-                    </template>
-                </UTabs>
-            </UCard>
-        </div>
-
-        <div class="py-2">
-            <UCard>
+                <div class="mb-3">
+                    <h3 class="text-base font-semibold text-gray-900 dark:text-white">Anggota Tim</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        Kinerja tiap anggota bulan ini. Klik nama untuk melihat detail komisinya, atau tanda panah untuk rincian layanan baru.
+                    </p>
+                </div>
                 <UTable
                     sticky
                     v-model:expanded="expanded"
+                    v-model:column-pinning="columnPinning"
                     :data="members"
                     :columns="columns"
+                    empty="Belum ada anggota tim yang terdata pada periode ini."
                     class="flex-1 max-h-[800px]"
                 >
                     <template #expanded="{ row }">
                         <div class="p-4 bg-gray-50 dark:bg-gray-800/50">
-                            <h4 class="text-sm font-bold text-gray-700 dark:text-gray-200 mb-3">New Service</h4>
+                            <h4 class="text-sm font-bold text-gray-700 dark:text-gray-200 mb-3">Layanan Baru per Produk</h4>
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <div v-for="service in row.original.newService" :key="service.name" class="p-3 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
                                     <div class="flex justify-between items-start mb-2">
                                         <span class="font-semibold text-gray-900 dark:text-white">{{ service.name }}</span>
-                                        <span class="font-medium">{{ service.count }}</span>
+                                        <span class="font-medium">{{ service.count }} layanan</span>
                                     </div>
                                     <div class="space-y-1 text-xs text-gray-600 dark:text-gray-400">
                                         <div class="flex justify-between">
-                                            <span>MRC:</span>
+                                            <span>MRC</span>
                                             <span class="font-medium">{{ formatCurrency(service.mrc) }}</span>
                                         </div>
                                         <div class="flex justify-between">
-                                            <span>Subscription:</span>
+                                            <span>Subscription</span>
                                             <span class="font-medium">{{ formatCurrency(service.subscription) }}</span>
                                         </div>
                                     </div>
@@ -205,6 +215,35 @@
             </UCard>
         </div>
 
+        <div class="py-2">
+            <UCard>
+                <div class="mb-3">
+                    <h3 class="text-base font-semibold text-gray-900 dark:text-white">Transaksi Penjualan Pribadi</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        Invoice atas nama manager sendiri. Tab Recurring juga memuat invoice <TermHint term="cro">Customer Relation Officer</TermHint> yang dikreditkan ke manager.
+                    </p>
+                </div>
+                <UTabs :items="invoiceTabItems" class="w-full">
+                    <template #content="{ item }">
+                        <p class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 my-2">
+                            <span class="inline-block size-3 rounded-sm bg-yellow-100 dark:bg-yellow-900/40 border border-yellow-300 dark:border-yellow-700" />
+                            Baris kuning = invoice ini menghasilkan komisi Rp 0.
+                        </p>
+                        <UTable
+                            sticky
+                            :data="getInvoiceTabData(item.key)"
+                            :columns="getInvoiceColumns(item.key)"
+                            :empty="`Tidak ada transaksi ${item.name} pada periode ini.`"
+                            class="flex-1 max-h-[800px] [&_tr:has(.commission-zero)]:bg-yellow-50 dark:[&_tr:has(.commission-zero)]:bg-yellow-950/20"
+                        />
+                    </template>
+                </UTabs>
+            </UCard>
+        </div>
+
+        <div class="py-2">
+            <GlossaryPanel :terms="glossaryTerms" />
+        </div>
     </UContainer>
 </template>
 
@@ -213,9 +252,9 @@ import { h, resolveComponent } from 'vue'
 import { CommissionService } from '~/services/commission-service'
 import { EmployeeService } from '~/services/employee-service'
 import type { Employee } from '~/types/employee'
-import type { SelectMenuItem, TableColumn } from '@nuxt/ui'
+import type { TableColumn } from '@nuxt/ui'
+import type { GlossaryKey } from '~/composables/useGlossary'
 import type { ManagerCommissionData, ManagerTeamMember } from '~/types/manager'
-import type { CommissionLineItem } from '~/types/sales'
 
 const { setLoading } = useLoading()
 const route = useRoute()
@@ -223,25 +262,56 @@ const commissionService = new CommissionService()
 const employeeService = new EmployeeService()
 const UAvatar = resolveComponent('UAvatar')
 const UButton = resolveComponent('UButton')
-const UBadge = resolveComponent('UBadge')
 
-const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-const monthSelect: SelectMenuItem[] = monthNames.map((label, i) => ({ label, id: i + 1 }))
+const { monthSelect, yearItems } = usePeriodOptions()
+const { hintHeader, invoiceColumns } = useInvoiceColumns()
+const glossaryTerms: GlossaryKey[] = ['teamSize', 'baseTarget', 'finalTarget', 'teamAchievement', 'overrideNew', 'overrideRecurring', 'personalSales', 'cro', 'new', 'recurring', 'prorate', 'upgrade', 'alat', 'setup', 'subscription', 'mrc', 'contractMonths', 'lateMonth', 'commission', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
 
 const employee = ref<Employee>()
-const yearItems = [2026, 2027, 2028, 2029, 2030]
 const year = ref(new Date().getFullYear())
 const selectedMonth = ref(new Date().getMonth() + 1)
 
 const periodData = ref<ManagerCommissionData | null>(null)
 const expanded = ref({})
+const columnPinning = ref({ left: ['expand', 'employee'], right: [] })
 
 const { formatCurrency, formatDate } = useFormat()
 const { getAchievementTextClass } = useAchievementColor()
-const { getServiceLabel } = useServiceLabel()
+
+const personalTotal = computed(() => {
+    const p = periodData.value?.personal
+    if (!p) return 0
+    return p.total.commission + p.bonusBulanan + p.bonusKelebihanService + p.consistencyBonus
+})
+
+const totalParts = computed<{ label: string; hint: GlossaryKey; value: number }[]>(() => {
+    const d = periodData.value
+    if (!d) return []
+    return [
+        { label: 'Penjualan Pribadi', hint: 'personalSales', value: personalTotal.value },
+        { label: `Overriding New (${d.override.newCommissionRate}%)`, hint: 'overrideNew', value: d.override.newCommission },
+        { label: `Overriding Recurring (${d.override.recurringCommissionRate}%)`, hint: 'overrideRecurring', value: d.override.recurringCommission }
+    ]
+})
+
+const targetProgress = computed(() => {
+    const t = periodData.value?.team
+    if (!t || t.finalTarget <= 0) return t?.activityCount ? 100 : 0
+    return Math.min(100, (t.activityCount / t.finalTarget) * 100)
+})
+
+const targetGapText = computed(() => {
+    const t = periodData.value?.team
+    if (!t) return ''
+    const gap = t.finalTarget - t.activityCount
+    if (gap > 0) return `Kurang ${gap} layanan baru lagi untuk capai target.`
+    if (gap < 0) return `Melebihi target sebanyak ${-gap} layanan baru.`
+    return 'Tepat mencapai target.'
+})
 
 interface TeamServiceBox {
     title: string
+    hint?: GlossaryKey
     rows: { label: string; value: number }[]
     total: number
     isCount?: boolean
@@ -256,28 +326,32 @@ const teamServiceBoxes = computed<TeamServiceBox[]>(() => {
     const g = periodData.value.teamTotals.byServiceGroup
     return [
         {
-            title: 'New Service',
+            title: 'Jumlah Layanan Baru',
+            hint: 'new',
             rows: serviceGroupOrder.map(name => ({ label: name, value: g[name].newCount })),
             total: serviceGroupOrder.reduce((sum, name) => sum + g[name].newCount, 0),
             isCount: true
         },
         {
-            title: 'New Subscription',
+            title: 'Subscription Baru',
+            hint: 'subscription',
             rows: serviceGroupOrder.map(name => ({ label: name, value: g[name].newSubscription })),
             total: serviceGroupOrder.reduce((sum, name) => sum + g[name].newSubscription, 0)
         },
         {
-            title: 'New MRC',
+            title: 'MRC Baru',
+            hint: 'mrc',
             rows: serviceGroupOrder.map(name => ({ label: name, value: g[name].newMrc })),
             total: serviceGroupOrder.reduce((sum, name) => sum + g[name].newMrc, 0)
         },
         {
-            title: 'Recurring Subscription',
+            title: 'Subscription Recurring',
+            hint: 'recurring',
             rows: recurringServiceGroupOrder.map(name => ({ label: name, value: g[name].recurringSubscription })),
             total: recurringServiceGroupOrder.reduce((sum, name) => sum + g[name].recurringSubscription, 0)
         },
         {
-            title: 'Recurring Commission',
+            title: 'Komisi Recurring Tim',
             rows: recurringServiceGroupOrder.map(name => ({ label: name, value: g[name].recurringCommission })),
             total: recurringServiceGroupOrder.reduce((sum, name) => sum + g[name].recurringCommission, 0)
         }
@@ -292,14 +366,15 @@ const croItems = computed(() => periodData.value?.croRecurring ?? [])
 const recurringItems = computed(() => [...personalItems.value.filter(i => i.type === 'recurring'), ...croItems.value])
 
 const invoiceTabItems = computed(() => {
-    const byType = (key: string) => personalItems.value.filter(i => i.type === key)
+    const byType = (key: string) => personalItems.value.filter(i => i.type === key).length
+    const tab = (name: string, key: string, count: number) => ({ label: `${name} (${count})`, name, key })
     return [
-        { label: `New (${byType('new').length})`, key: 'new' },
-        { label: `Recurring (${recurringItems.value.length})`, key: 'recurring' },
-        { label: `Prorate (${byType('prorate').length})`, key: 'prorate' },
-        { label: `Upgrade (${byType('upgrade').length})`, key: 'upgrade' },
-        { label: `Alat (${byType('alat').length})`, key: 'alat' },
-        { label: `Setup (${byType('setup').length})`, key: 'setup' }
+        tab('New', 'new', byType('new')),
+        tab('Recurring', 'recurring', recurringItems.value.length),
+        tab('Prorate', 'prorate', byType('prorate')),
+        tab('Upgrade', 'upgrade', byType('upgrade')),
+        tab('Alat', 'alat', byType('alat')),
+        tab('Setup', 'setup', byType('setup'))
     ]
 })
 
@@ -308,77 +383,29 @@ const getInvoiceTabData = (key: string) => {
     return personalItems.value.filter(i => i.type === key)
 }
 
-const invoiceBoxTotal = (key: string, field: 'subscription' | 'mrc' | 'commission') => {
-    const rows = getInvoiceTabData(key)
-    return rows.reduce((sum, r) => sum + r[field], 0)
-}
-
-const getInvoiceColumns = (key: string): TableColumn<CommissionLineItem>[] => [
-    {
-        accessorKey: 'paidDate',
-        header: 'Paid Date',
-        cell: ({ row }) => row.original.paidDate ? new Date(row.original.paidDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'
-    },
-    {
-        id: 'label',
-        header: 'Label',
-        cell: ({ row }) => {
-            const { label, color } = getServiceLabel(row.original.category, row.original.serviceId)
-            return h(UBadge, { label, color, variant: 'subtle' })
-        }
-    },
-    {
-        header: 'Service',
-        cell: ({ row }) => h('div', { class: 'flex flex-col min-w-[120px]' }, [
-            h('a', { href: `https://isx.nusa.net.id/v2/customer/service/${row.original.customerServiceId}/detail`, target: '_blank', class: 'text-blue-500 hover:underline font-semibold text-sm break-all' }, row.original.customerServiceAccount ?? ''),
-            h('span', { class: 'text-xs text-gray-500 dark:text-gray-400 whitespace-normal break-words line-clamp-2' }, row.original.serviceName ?? '')
-        ])
-    },
-    {
-        header: 'Customer',
-        cell: ({ row }) => h('div', { class: 'flex flex-col min-w-[120px]' }, [
-            h('a', { href: `https://isx.nusa.net.id/customer.php?custId=${row.original.customerId}&pid=profile`, target: '_blank', class: 'text-blue-500 hover:underline font-semibold text-sm' }, row.original.customerId),
-            h('span', { class: 'text-xs text-gray-500 dark:text-gray-400 whitespace-normal break-words line-clamp-2' }, row.original.customerName ?? '')
-        ])
-    },
-    {
-        accessorKey: 'subscription',
-        header: 'Subscription',
-        cell: ({ row }) => h('span', { class: 'font-medium' }, formatCurrency(row.original.subscription)),
-        footer: () => h('div', { class: 'hidden lg:block text-right font-bold' }, formatCurrency(invoiceBoxTotal(key, 'subscription')))
-    },
-    {
-        accessorKey: 'mrc',
-        header: 'MRC',
-        cell: ({ row }) => h('span', { class: 'font-medium' }, formatCurrency(row.original.mrc)),
-        footer: () => h('div', { class: 'hidden lg:block text-right font-bold' }, formatCurrency(invoiceBoxTotal(key, 'mrc')))
-    },
-    { header: 'Month Period', cell: ({ row }) => h('span', { class: 'font-medium text-center' }, row.original.month) },
-    { header: 'Month Late', cell: ({ row }) => h('span', { class: 'font-medium text-center' }, row.original.lateMonth) },
-    {
-        header: 'Commission',
-        cell: ({ row }) => {
-            const isZero = row.original.commission === 0
-            return h('div', { class: ['flex flex-col items-end', isZero ? 'commission-zero' : ''] }, [
-                h('span', { class: 'text-xs text-gray-600 dark:text-white' }, formatCurrency(row.original.baseCommission)),
-                h('span', { class: 'text-xs font-medium bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-gray-600 dark:text-gray-300 mb-1' }, `${row.original.commissionPercentage}%`),
-                h('span', { class: 'text-sm font-bold text-gray-900 dark:text-white' }, formatCurrency(row.original.commission))
-            ])
-        },
-        footer: () => h('div', { class: 'text-right font-bold text-gray-900 dark:text-white' }, formatCurrency(invoiceBoxTotal(key, 'commission')))
-    }
-]
+const getInvoiceColumns = (key: string) => invoiceColumns(field => getInvoiceTabData(key).reduce((sum, r) => sum + r[field], 0))
 
 const members = computed(() => periodData.value?.members ?? [])
+
+type MoneyField = 'newSubscription' | 'newMrc' | 'newCommission' | 'recurringSubscription' | 'recurringCommission' | 'otherSubscription'
+    | 'otherCommission' | 'bonusBulanan' | 'bonusKelebihanService' | 'consistencyBonus' | 'totalCommission' | 'managerNewCommission' | 'managerRecurringCommission'
+
+const moneyColumn = (key: MoneyField, label: string, opts: { hint?: GlossaryKey; strong?: boolean } = {}): TableColumn<ManagerTeamMember> => ({
+    accessorKey: key,
+    header: () => h('div', { class: 'text-right whitespace-nowrap' }, opts.hint ? [hintHeader(label, opts.hint)()] : label),
+    cell: ({ row }) => h('div', { class: ['text-right tabular-nums', opts.strong ? 'font-bold text-gray-900 dark:text-white' : 'font-medium'] }, formatCurrency(row.original[key])),
+    footer: () => h('div', { class: 'text-right font-bold py-3 tabular-nums' }, formatCurrency(members.value.reduce((sum, m) => sum + m[key], 0)))
+})
 
 const columns = computed<TableColumn<ManagerTeamMember>[]>(() => [
     {
         id: 'expand',
         header: '',
         cell: ({ row }) => h(UButton, {
-            color: 'gray',
+            color: 'neutral',
             variant: 'ghost',
             icon: 'i-heroicons-chevron-down-20-solid',
+            'aria-label': 'Lihat rincian layanan baru',
             class: 'transition-transform duration-200',
             style: { transform: row.getIsExpanded() ? 'rotate(180deg)' : 'rotate(0deg)' },
             onClick: () => row.toggleExpanded()
@@ -386,7 +413,7 @@ const columns = computed<TableColumn<ManagerTeamMember>[]>(() => [
     },
     {
         accessorKey: 'employee',
-        header: 'Employee',
+        header: 'Karyawan',
         cell: ({ row }) => h(resolveComponent('NuxtLink'), {
             class: 'flex items-center gap-3 group',
             to: `/${row.original.employeeId}/sales`
@@ -394,100 +421,35 @@ const columns = computed<TableColumn<ManagerTeamMember>[]>(() => [
             h(UAvatar, { src: row.original.photoProfile, alt: row.original.name, size: 'md' }),
             h('div', { class: 'flex flex-col' }, [
                 h('span', { class: 'text-sm font-medium text-gray-900 dark:text-white group-hover:text-primary-500 transition-colors' }, row.original.name),
-                h('span', { class: 'text-xs text-gray-500' }, row.original.employeeId)
+                h('span', { class: 'text-xs text-gray-500' }, `${row.original.employeeId} · ${row.original.status ?? '-'}`)
             ])
         ]),
-        footer: () => h('div', { class: 'font-bold py-3' }, 'Total')
+        footer: () => h('div', { class: 'font-bold py-3' }, 'Total Tim')
     },
     {
         id: 'achievement',
-        header: 'Achievement',
-        cell: ({ row }) => h('div', { class: getAchievementTextClass(row.original.achievementStatus) }, row.original.achievementStatus)
+        header: 'Status Pencapaian',
+        cell: ({ row }) => h('div', { class: ['text-xs uppercase font-semibold', getAchievementTextClass(row.original.achievementStatus)] }, row.original.achievementStatus)
     },
     {
         accessorKey: 'activityCount',
-        header: 'New Service',
+        header: () => h('div', { class: 'text-center' }, [hintHeader('Layanan Baru', 'activity')()]),
         cell: ({ row }) => h('div', { class: 'text-center font-medium' }, row.original.activityCount),
         footer: () => h('div', { class: 'text-center font-bold py-3' }, members.value.reduce((sum, m) => sum + m.activityCount, 0))
     },
-    {
-        accessorKey: 'newSubscription',
-        header: () => h('div', { class: 'text-right' }, 'New Subscription'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium' }, formatCurrency(row.original.newSubscription)),
-        footer: () => h('div', { class: 'text-right font-bold py-3' }, formatCurrency(members.value.reduce((sum, m) => sum + m.newSubscription, 0)))
-    },
-    {
-        accessorKey: 'newCommission',
-        header: () => h('div', { class: 'text-right' }, 'New Commission'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium' }, formatCurrency(row.original.newCommission)),
-        footer: () => h('div', { class: 'text-right font-bold py-3' }, formatCurrency(members.value.reduce((sum, m) => sum + m.newCommission, 0)))
-    },
-    {
-        accessorKey: 'recurringSubscription',
-        header: () => h('div', { class: 'text-right' }, 'Recurring Subscription'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium' }, formatCurrency(row.original.recurringSubscription)),
-        footer: () => h('div', { class: 'text-right font-bold py-3' }, formatCurrency(members.value.reduce((sum, m) => sum + m.recurringSubscription, 0)))
-    },
-    {
-        accessorKey: 'recurringCommission',
-        header: () => h('div', { class: 'text-right' }, 'Recurring Commission'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium' }, formatCurrency(row.original.recurringCommission)),
-        footer: () => h('div', { class: 'text-right font-bold py-3' }, formatCurrency(members.value.reduce((sum, m) => sum + m.recurringCommission, 0)))
-    },
-    {
-        accessorKey: 'otherSubscription',
-        header: () => h('div', { class: 'text-right' }, 'Other Subscription'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium' }, formatCurrency(row.original.otherSubscription)),
-        footer: () => h('div', { class: 'text-right font-bold py-3' }, formatCurrency(members.value.reduce((sum, m) => sum + m.otherSubscription, 0)))
-    },
-    {
-        accessorKey: 'otherCommission',
-        header: () => h('div', { class: 'text-right' }, 'Other Commission'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium' }, formatCurrency(row.original.otherCommission)),
-        footer: () => h('div', { class: 'text-right font-bold py-3' }, formatCurrency(members.value.reduce((sum, m) => sum + m.otherCommission, 0)))
-    },
-    {
-        accessorKey: 'bonusBulanan',
-        header: () => h('div', { class: 'text-right' }, 'Bonus Bulanan'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium' }, formatCurrency(row.original.bonusBulanan)),
-        footer: () => h('div', { class: 'text-right font-bold py-3' }, formatCurrency(members.value.reduce((sum, m) => sum + m.bonusBulanan, 0)))
-    },
-    {
-        accessorKey: 'bonusKelebihanService',
-        header: () => h('div', { class: 'text-right' }, 'Bonus Kelebihan Service'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium' }, formatCurrency(row.original.bonusKelebihanService)),
-        footer: () => h('div', { class: 'text-right font-bold py-3' }, formatCurrency(members.value.reduce((sum, m) => sum + m.bonusKelebihanService, 0)))
-    },
-    {
-        accessorKey: 'consistencyBonus',
-        header: () => h('div', { class: 'text-right' }, 'Bonus Konsistensi'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium' }, formatCurrency(row.original.consistencyBonus)),
-        footer: () => h('div', { class: 'text-right font-bold py-3' }, formatCurrency(members.value.reduce((sum, m) => sum + m.consistencyBonus, 0)))
-    },
-    {
-        accessorKey: 'totalCommission',
-        header: () => h('div', { class: 'text-right' }, 'Total Commission'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium' }, formatCurrency(row.original.totalCommission)),
-        footer: () => h('div', { class: 'text-right font-bold py-3' }, formatCurrency(members.value.reduce((sum, m) => sum + m.totalCommission, 0)))
-    },
-    {
-        accessorKey: 'newMrc',
-        header: () => h('div', { class: 'text-right' }, 'New MRC'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium' }, formatCurrency(row.original.newMrc)),
-        footer: () => h('div', { class: 'text-right font-bold py-3' }, formatCurrency(members.value.reduce((sum, m) => sum + m.newMrc, 0)))
-    },
-    {
-        accessorKey: 'managerNewCommission',
-        header: () => h('div', { class: 'text-right' }, 'Manager New Commission'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium' }, formatCurrency(row.original.managerNewCommission)),
-        footer: () => h('div', { class: 'text-right font-bold text-gray-900 dark:text-white py-3' }, formatCurrency(members.value.reduce((sum, m) => sum + m.managerNewCommission, 0)))
-    },
-    {
-        accessorKey: 'managerRecurringCommission',
-        header: () => h('div', { class: 'text-right' }, 'Manager Recurring Commission'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium' }, formatCurrency(row.original.managerRecurringCommission)),
-        footer: () => h('div', { class: 'text-right font-bold text-gray-900 dark:text-white py-3' }, formatCurrency(members.value.reduce((sum, m) => sum + m.managerRecurringCommission, 0)))
-    }
+    moneyColumn('totalCommission', 'Total Komisi Sales', { strong: true }),
+    moneyColumn('managerNewCommission', 'Overriding New', { hint: 'overrideNew', strong: true }),
+    moneyColumn('managerRecurringCommission', 'Overriding Recurring', { hint: 'overrideRecurring', strong: true }),
+    moneyColumn('newCommission', 'Komisi New'),
+    moneyColumn('newSubscription', 'Subscription New'),
+    moneyColumn('newMrc', 'MRC New', { hint: 'mrc' }),
+    moneyColumn('recurringCommission', 'Komisi Recurring'),
+    moneyColumn('recurringSubscription', 'Subscription Recurring'),
+    moneyColumn('otherCommission', 'Komisi Alat & Setup'),
+    moneyColumn('otherSubscription', 'Subscription Alat & Setup'),
+    moneyColumn('bonusBulanan', 'Bonus Bulanan', { hint: 'bonusBulanan' }),
+    moneyColumn('bonusKelebihanService', 'Bonus Kelebihan Service', { hint: 'bonusKelebihanService' }),
+    moneyColumn('consistencyBonus', 'Bonus Konsistensi', { hint: 'consistencyBonus' })
 ])
 
 // --- Data fetching ---

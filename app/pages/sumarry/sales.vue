@@ -1,49 +1,37 @@
 <template>
     <div class="space-y-4">
-        <ClientOnly>
-            <Teleport v-if="isMounted" to="#toolbar-left">
-                <div class="flex items-center gap-1">
-                    <UButton icon="i-lucide-arrow-left" size="lg" color="neutral" variant="ghost" to="/" />
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/sales" icon="i-heroicons-users" :variant="$route.path === '/sumarry/sales' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/sales' ? 'primary' : 'neutral'" size="sm">Account Manager</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/manager" icon="i-heroicons-presentation-chart-line" :variant="$route.path === '/sumarry/manager' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/manager' ? 'primary' : 'neutral'" size="sm">Sales Manager</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/invoice" icon="i-heroicons-document-text" :variant="$route.path === '/sumarry/invoice' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/invoice' ? 'primary' : 'neutral'" size="sm">Invoice</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/churn" icon="i-heroicons-archive-box-x-mark" :variant="$route.path === '/sumarry/churn' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/churn' ? 'primary' : 'neutral'" size="sm">Churn</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/target" icon="i-heroicons-flag" :variant="$route.path === '/sumarry/target' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/target' ? 'primary' : 'neutral'" size="sm">Target</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/consistency-bonus" icon="i-heroicons-gift" :variant="$route.path === '/sumarry/consistency-bonus' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/consistency-bonus' ? 'primary' : 'neutral'" size="sm">Bonus Konsistensi</UButton>
-                </div>
-            </Teleport>
-            <Teleport v-if="isMounted" to="#toolbar-right">
-                <div class="flex items-center gap-2">
-                    <USelectMenu v-model="selectedMonth" :items="monthSelect" value-key="id" class="w-40" />
-                    <USelectMenu v-model="year" :items="yearItems" class="w-24" />
-                </div>
-            </Teleport>
-        </ClientOnly>
+        <SummaryToolbar v-model:month="selectedMonth" v-model:year="year" />
 
         <UContainer>
             <HeroBackground />
-            <div class="py-4">
+            <div class="py-4 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+                    <div>
+                        <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Ringkasan Account Manager</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            Komisi seluruh Account Manager untuk {{ selectedMonthLabel }} {{ year }}. Klik nama untuk melihat rinciannya.
+                        </p>
+                    </div>
+                    <USwitch v-model="hideValues" label="Sembunyikan nominal" />
+                </div>
+
+                <SummaryStats :stats="stats" />
+
                 <UCard>
                     <template #header>
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">Account Manager Summary</h3>
-                                <p class="text-xs text-gray-500">{{ selectedMonthLabel }} {{ year }}</p>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Hide Values</span>
-                                <USwitch v-model="hideValues" color="primary" />
-                            </div>
-                        </div>
+                        <UInput v-model="search" icon="i-lucide-search" placeholder="Cari nama atau ID karyawan..." class="w-full sm:w-72" />
                     </template>
-                    <UTable sticky :columns="columns" :data="summaryData" class="flex-1 max-h-[800px]" />
+                    <UTable
+                        v-model:column-pinning="columnPinning"
+                        sticky
+                        :columns="columns"
+                        :data="filteredData"
+                        empty="Tidak ada data Account Manager untuk periode ini."
+                        class="flex-1 max-h-[800px]"
+                    />
                 </UCard>
+
+                <GlossaryPanel :terms="glossaryTerms" />
             </div>
         </UContainer>
     </div>
@@ -54,6 +42,7 @@ import { h, resolveComponent } from 'vue'
 import { SummaryService } from '~/services/summary-service'
 import type { SalesSummaryItem } from '~/types/summary'
 import type { TableColumn } from '@nuxt/ui'
+import type { GlossaryKey } from '~/composables/useGlossary'
 
 definePageMeta({
     headerProps: { toolbar: true }
@@ -65,21 +54,57 @@ const UAvatar = resolveComponent('UAvatar')
 const { setLoading } = useLoading()
 const { formatCurrency } = useFormat()
 const { getAchievementTextClass } = useAchievementColor()
+const { hintHeader } = useInvoiceColumns()
 const summaryService = new SummaryService()
 
-const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-const monthSelect = monthNames.map((label, i) => ({ id: i + 1, label }))
-const yearItems = [2026, 2027, 2028, 2029, 2030]
+const { monthLabel } = usePeriodOptions()
+const glossaryTerms: GlossaryKey[] = ['activity', 'new', 'recurring', 'alat', 'setup', 'subscription', 'mrc', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
 
 const summaryData = ref<SalesSummaryItem[]>([])
 const year = ref(new Date().getFullYear())
 const selectedMonth = ref(new Date().getMonth() + 1)
 const hideValues = ref(true)
-const isMounted = ref(false)
+const search = ref('')
+const columnPinning = ref({ left: ['name'], right: [] })
 
-const selectedMonthLabel = computed(() => monthSelect.find(m => m.id === selectedMonth.value)?.label ?? '')
+const selectedMonthLabel = computed(() => monthLabel(selectedMonth.value))
 
-const maskedCurrency = (value: number) => hideValues.value ? '***' : formatCurrency(value)
+const maskedCurrency = (value: number) => hideValues.value ? '•••' : formatCurrency(value)
+
+const filteredData = computed(() => {
+    const q = search.value.trim().toLowerCase()
+    if (!q) return summaryData.value
+    return summaryData.value.filter(r => r.name.toLowerCase().includes(q) || r.employeeId.toLowerCase().includes(q))
+})
+
+const sum = (key: keyof SalesSummaryItem) => filteredData.value.reduce((acc, r) => acc + Number(r[key] ?? 0), 0)
+
+// "Capai target" also matches "Tidak Capai target", so exclude that one explicitly.
+const isOnTarget = (status: string) => {
+    const s = status.toLowerCase()
+    return s.includes('capai target') && !s.includes('tidak')
+}
+
+const stats = computed(() => {
+    const rows = summaryData.value
+    const onTarget = rows.filter(r => isOnTarget(r.achievementStatus)).length
+    return [
+        { label: 'Jumlah Account Manager', value: rows.length },
+        { label: 'Capai Target', value: `${onTarget} / ${rows.length}`, class: 'text-green-600 dark:text-green-400' },
+        { label: 'Total Layanan Baru', value: rows.reduce((a, r) => a + r.activityCount, 0) },
+        { label: 'Total Komisi Dibayar', value: maskedCurrency(rows.reduce((a, r) => a + r.totalCommission, 0)), class: 'text-primary-600 dark:text-primary-400' }
+    ]
+})
+
+type MoneyKey = 'newMrc' | 'newSubscription' | 'newCommission' | 'recurringSubscription' | 'recurringCommission' | 'otherSubscription'
+    | 'otherCommission' | 'bonusBulanan' | 'bonusKelebihanService' | 'consistencyBonus' | 'totalCommission'
+
+const moneyColumn = (key: MoneyKey, label: string, opts: { hint?: GlossaryKey; cellClass?: string } = {}): TableColumn<SalesSummaryItem> => ({
+    accessorKey: key,
+    header: () => h('div', { class: 'text-right whitespace-nowrap' }, opts.hint ? [hintHeader(label, opts.hint)()] : label),
+    cell: ({ row }) => h('div', { class: ['text-right tabular-nums', opts.cellClass ?? 'font-medium'] }, maskedCurrency(row.original[key])),
+    footer: () => h('div', { class: 'text-right font-bold tabular-nums' }, maskedCurrency(sum(key)))
+})
 
 const columns: TableColumn<SalesSummaryItem>[] = [
     {
@@ -89,75 +114,33 @@ const columns: TableColumn<SalesSummaryItem>[] = [
             h(UAvatar, { src: row.original.photoProfile, alt: row.original.name, size: 'sm' }),
             h('div', { class: 'flex flex-col' }, [
                 h('span', { class: 'font-semibold text-gray-900 dark:text-white group-hover:text-primary-500 transition-colors' }, row.original.name),
-                h('span', { class: 'text-xs text-gray-500' }, row.original.employeeId)
+                h('span', { class: 'text-xs text-gray-500' }, `${row.original.employeeId} · ${row.original.status ?? '-'}`)
             ])
-        ])
+        ]),
+        footer: () => h('div', { class: 'font-bold' }, `Total (${filteredData.value.length} orang)`)
     },
     {
         accessorKey: 'achievementStatus',
-        header: 'Achievement',
+        header: 'Status Pencapaian',
         cell: ({ row }) => h('div', { class: getAchievementTextClass(row.original.achievementStatus) + ' text-xs uppercase' }, row.original.achievementStatus)
     },
     {
         accessorKey: 'activityCount',
-        header: () => h('div', { class: 'text-center' }, 'New Service'),
-        cell: ({ row }) => h('div', { class: 'text-center font-bold' }, row.original.activityCount)
+        header: () => h('div', { class: 'text-center' }, [hintHeader('Layanan Baru', 'activity')()]),
+        cell: ({ row }) => h('div', { class: 'text-center font-bold' }, row.original.activityCount),
+        footer: () => h('div', { class: 'text-center font-bold' }, sum('activityCount'))
     },
-    {
-        accessorKey: 'newMrc',
-        header: () => h('div', { class: 'text-right' }, 'New MRC'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium' }, maskedCurrency(row.original.newMrc))
-    },
-    {
-        accessorKey: 'newSubscription',
-        header: () => h('div', { class: 'text-right' }, 'New Subscription'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium' }, maskedCurrency(row.original.newSubscription))
-    },
-    {
-        accessorKey: 'newCommission',
-        header: () => h('div', { class: 'text-right' }, 'New Commission'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium' }, maskedCurrency(row.original.newCommission))
-    },
-    {
-        accessorKey: 'recurringSubscription',
-        header: () => h('div', { class: 'text-right' }, 'Recurring Subscription'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium' }, maskedCurrency(row.original.recurringSubscription))
-    },
-    {
-        accessorKey: 'recurringCommission',
-        header: () => h('div', { class: 'text-right' }, 'Recurring Commission'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium' }, maskedCurrency(row.original.recurringCommission))
-    },
-    {
-        accessorKey: 'otherSubscription',
-        header: () => h('div', { class: 'text-right' }, 'Other Subscription'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium' }, maskedCurrency(row.original.otherSubscription))
-    },
-    {
-        accessorKey: 'otherCommission',
-        header: () => h('div', { class: 'text-right' }, 'Other Commission'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium' }, maskedCurrency(row.original.otherCommission))
-    },
-    {
-        accessorKey: 'bonusBulanan',
-        header: () => h('div', { class: 'text-right' }, 'Bonus Bulanan'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium text-violet-600 dark:text-violet-400' }, maskedCurrency(row.original.bonusBulanan))
-    },
-    {
-        accessorKey: 'bonusKelebihanService',
-        header: () => h('div', { class: 'text-right' }, 'Bonus Kelebihan Service'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium text-violet-600 dark:text-violet-400' }, maskedCurrency(row.original.bonusKelebihanService))
-    },
-    {
-        accessorKey: 'consistencyBonus',
-        header: () => h('div', { class: 'text-right' }, 'Bonus Konsistensi'),
-        cell: ({ row }) => h('div', { class: 'text-right font-medium text-violet-600 dark:text-violet-400' }, maskedCurrency(row.original.consistencyBonus))
-    },
-    {
-        accessorKey: 'totalCommission',
-        header: () => h('div', { class: 'text-right' }, 'Total Commission'),
-        cell: ({ row }) => h('div', { class: 'text-right font-bold text-primary-600 dark:text-primary-400' }, maskedCurrency(row.original.totalCommission))
-    }
+    moneyColumn('totalCommission', 'Total Komisi', { cellClass: 'font-bold text-primary-600 dark:text-primary-400' }),
+    moneyColumn('newCommission', 'Komisi New', { hint: 'new' }),
+    moneyColumn('newSubscription', 'Subscription New', { hint: 'subscription' }),
+    moneyColumn('newMrc', 'MRC New', { hint: 'mrc' }),
+    moneyColumn('recurringCommission', 'Komisi Recurring', { hint: 'recurring' }),
+    moneyColumn('recurringSubscription', 'Subscription Recurring'),
+    moneyColumn('otherCommission', 'Komisi Alat & Setup'),
+    moneyColumn('otherSubscription', 'Subscription Alat & Setup'),
+    moneyColumn('bonusBulanan', 'Bonus Bulanan', { hint: 'bonusBulanan', cellClass: 'font-medium text-violet-600 dark:text-violet-400' }),
+    moneyColumn('bonusKelebihanService', 'Bonus Kelebihan Service', { hint: 'bonusKelebihanService', cellClass: 'font-medium text-violet-600 dark:text-violet-400' }),
+    moneyColumn('consistencyBonus', 'Bonus Konsistensi', { hint: 'consistencyBonus', cellClass: 'font-medium text-violet-600 dark:text-violet-400' })
 ]
 
 const fetchSummary = async () => {
@@ -172,9 +155,6 @@ const fetchSummary = async () => {
 
 onMounted(() => {
     fetchSummary()
-    nextTick(() => {
-        isMounted.value = true
-    })
 })
 
 watch([year, selectedMonth], () => {

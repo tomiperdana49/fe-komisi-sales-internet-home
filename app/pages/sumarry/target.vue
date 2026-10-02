@@ -1,45 +1,30 @@
 <template>
     <div class="space-y-4">
-        <ClientOnly>
-            <Teleport v-if="isMounted" to="#toolbar-left">
-                <div class="flex items-center gap-1">
-                    <UButton icon="i-lucide-arrow-left" size="lg" color="neutral" variant="ghost" to="/" />
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/sales" icon="i-heroicons-users" :variant="$route.path === '/sumarry/sales' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/sales' ? 'primary' : 'neutral'" size="sm">Account Manager</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/manager" icon="i-heroicons-presentation-chart-line" :variant="$route.path === '/sumarry/manager' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/manager' ? 'primary' : 'neutral'" size="sm">Sales Manager</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/invoice" icon="i-heroicons-document-text" :variant="$route.path === '/sumarry/invoice' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/invoice' ? 'primary' : 'neutral'" size="sm">Invoice</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/churn" icon="i-heroicons-archive-box-x-mark" :variant="$route.path === '/sumarry/churn' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/churn' ? 'primary' : 'neutral'" size="sm">Churn</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/target" icon="i-heroicons-flag" :variant="$route.path === '/sumarry/target' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/target' ? 'primary' : 'neutral'" size="sm">Target</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/consistency-bonus" icon="i-heroicons-gift" :variant="$route.path === '/sumarry/consistency-bonus' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/consistency-bonus' ? 'primary' : 'neutral'" size="sm">Bonus Konsistensi</UButton>
-                </div>
-            </Teleport>
-            <Teleport v-if="isMounted" to="#toolbar-right">
-                <div class="flex items-center gap-2">
-                    <USelectMenu v-model="selectedMonth" :items="monthSelect" value-key="id" class="w-40" />
-                    <USelectMenu v-model="year" :items="yearItems" class="w-24" />
-                </div>
-            </Teleport>
-        </ClientOnly>
+        <SummaryToolbar v-model:month="selectedMonth" v-model:year="year" />
 
         <UContainer>
             <HeroBackground />
-            <div class="py-4">
+            <div class="py-4 space-y-4">
+                <div>
+                    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Target Account Manager</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        Target jumlah layanan baru (New) per bulan untuk {{ selectedMonthLabel }} {{ year }}.
+                        Default {{ defaultTarget }} untuk Permanent dan 0 untuk Probation. Target ini menentukan rate recurring, potongan 70%, dan Target Dasar tim manager.
+                    </p>
+                </div>
+
+                <UAlert
+                    color="neutral"
+                    variant="subtle"
+                    icon="i-lucide-info"
+                    description="Account Manager yang belum terdata untuk periode ini tidak muncul di daftar. Badge status pencapaian (15 / 12 / 3) tidak ikut berubah meski target diubah."
+                />
+
                 <UCard>
                     <template #header>
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">Sales Target</h3>
-                                <p class="text-xs text-gray-500">{{ selectedMonthLabel }} {{ year }} &middot; Default target is {{ defaultTarget }} New Achievement/month for Permanent Account Managers</p>
-                            </div>
-                            <UInput v-model="globalFilter" icon="i-heroicons-magnifying-glass" placeholder="Search account manager..." />
-                        </div>
+                        <UInput v-model="globalFilter" icon="i-heroicons-magnifying-glass" placeholder="Cari nama atau ID karyawan..." class="w-full sm:w-72" />
                     </template>
-                    <UTable sticky :columns="columns" :data="filteredData" class="flex-1 max-h-[800px]" />
+                    <UTable sticky :columns="columns" :data="filteredData" empty="Belum ada Account Manager yang terdata untuk periode ini." class="flex-1 max-h-[800px]" />
                 </UCard>
             </div>
         </UContainer>
@@ -68,19 +53,16 @@ const summaryService = new SummaryService()
 
 const defaultTarget = 12
 
-const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-const monthSelect = monthNames.map((label, i) => ({ id: i + 1, label }))
-const yearItems = [2026, 2027, 2028, 2029, 2030]
+const { monthLabel } = usePeriodOptions()
 
 const summaryData = ref<SalesTargetItem[]>([])
 const year = ref(new Date().getFullYear())
 const selectedMonth = ref(new Date().getMonth() + 1)
 const globalFilter = ref('')
-const isMounted = ref(false)
 const savingIds = ref(new Set<string>())
 const drafts = ref<Record<string, number>>({})
 
-const selectedMonthLabel = computed(() => monthSelect.find(m => m.id === selectedMonth.value)?.label ?? '')
+const selectedMonthLabel = computed(() => monthLabel(selectedMonth.value))
 
 const filteredData = computed(() => {
     const query = globalFilter.value.trim().toLowerCase()
@@ -92,7 +74,7 @@ const filteredData = computed(() => {
 
 const saveTarget = async (row: SalesTargetItem, value: number) => {
     if (!Number.isFinite(value) || value < 0) {
-        toast.add({ title: 'Invalid target', description: 'Target must be a non-negative number', color: 'error' })
+        toast.add({ title: 'Target tidak valid', description: 'Target harus berupa angka 0 atau lebih.', color: 'error' })
         return
     }
     if (value === row.target) return
@@ -107,10 +89,10 @@ const saveTarget = async (row: SalesTargetItem, value: number) => {
         if (response && response.success) {
             row.target = value
             drafts.value[row.employeeId] = value
-            toast.add({ title: 'Target updated', description: `${row.name}'s target is now ${value}`, color: 'success' })
+            toast.add({ title: 'Target tersimpan', description: `Target ${row.name} sekarang ${value}.`, color: 'success' })
         }
     } catch (error) {
-        toast.add({ title: 'Error', description: 'Failed to update target', color: 'error' })
+        toast.add({ title: 'Gagal', description: 'Target gagal disimpan. Coba lagi.', color: 'error' })
     } finally {
         savingIds.value.delete(row.employeeId)
     }
@@ -133,11 +115,11 @@ const columns: TableColumn<SalesTargetItem>[] = [
         header: 'Status',
         cell: ({ row }) => row.original.status
             ? h(UBadge, { color: row.original.status === 'Permanent' ? 'primary' : 'neutral', variant: 'subtle' }, () => row.original.status)
-            : h('span', { class: 'text-xs text-gray-400 italic' }, 'N/A')
+            : h('span', { class: 'text-xs text-gray-400 italic' }, '-')
     },
     {
         accessorKey: 'target',
-        header: () => h('div', { class: 'text-right' }, 'New Achievement Target'),
+        header: () => h('div', { class: 'text-right' }, 'Target Layanan Baru / Bulan'),
         cell: ({ row }) => {
             const employeeId = row.original.employeeId
             const draft = drafts.value[employeeId] ?? row.original.target
@@ -167,7 +149,7 @@ const columns: TableColumn<SalesTargetItem>[] = [
                     disabled: !isDirty,
                     loading: isSaving,
                     onClick: () => saveTarget(row.original, drafts.value[employeeId] ?? draft)
-                }, () => 'Save')
+                }, () => 'Simpan')
             ])
         }
     }
@@ -186,9 +168,6 @@ const fetchSummary = async () => {
 
 onMounted(() => {
     fetchSummary()
-    nextTick(() => {
-        isMounted.value = true
-    })
 })
 
 watch([year, selectedMonth], () => {

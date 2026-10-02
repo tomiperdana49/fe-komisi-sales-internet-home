@@ -1,45 +1,23 @@
 <template>
     <div class="space-y-4">
-        <ClientOnly>
-            <Teleport v-if="isMounted" to="#toolbar-left">
-                <div class="flex items-center gap-1">
-                    <UButton icon="i-lucide-arrow-left" size="lg" color="neutral" variant="ghost" to="/" />
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/sales" icon="i-heroicons-users" :variant="$route.path === '/sumarry/sales' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/sales' ? 'primary' : 'neutral'" size="sm">Account Manager</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/manager" icon="i-heroicons-presentation-chart-line" :variant="$route.path === '/sumarry/manager' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/manager' ? 'primary' : 'neutral'" size="sm">Sales Manager</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/invoice" icon="i-heroicons-document-text" :variant="$route.path === '/sumarry/invoice' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/invoice' ? 'primary' : 'neutral'" size="sm">Invoice</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/churn" icon="i-heroicons-archive-box-x-mark" :variant="$route.path === '/sumarry/churn' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/churn' ? 'primary' : 'neutral'" size="sm">Churn</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/target" icon="i-heroicons-flag" :variant="$route.path === '/sumarry/target' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/target' ? 'primary' : 'neutral'" size="sm">Target</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/consistency-bonus" icon="i-heroicons-gift" :variant="$route.path === '/sumarry/consistency-bonus' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/consistency-bonus' ? 'primary' : 'neutral'" size="sm">Bonus Konsistensi</UButton>
-                </div>
-            </Teleport>
-            <Teleport v-if="isMounted" to="#toolbar-right">
-                <div class="flex items-center gap-2">
-                    <USelectMenu v-model="selectedMonth" :items="monthSelect" value-key="id" class="w-40" />
-                    <USelectMenu v-model="year" :items="yearItems" class="w-24" />
-                </div>
-            </Teleport>
-        </ClientOnly>
+        <SummaryToolbar v-model:month="selectedMonth" v-model:year="year" />
 
         <UContainer>
             <HeroBackground />
-            <div class="py-4">
+            <div class="py-4 space-y-4">
+                <div>
+                    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Daftar Churn</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        Pelanggan yang berhenti kurang dari 1 tahun sejak registrasi, periode {{ selectedMonthLabel }} {{ year }}.
+                        Churn yang <strong>belum di-approve</strong> memotong komisi & pencapaian New sales. Approve untuk membebaskannya dari potongan.
+                    </p>
+                </div>
+
+                <SummaryStats :stats="stats" />
+
                 <UCard>
                     <template #header>
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">Churn Summary</h3>
-                                <p class="text-xs text-gray-500">{{ selectedMonthLabel }} {{ year }}</p>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <UInput v-model="globalFilter" icon="i-heroicons-magnifying-glass" placeholder="Search churns..." />
-                            </div>
-                        </div>
+                        <UInput v-model="globalFilter" icon="i-heroicons-magnifying-glass" placeholder="Cari pelanggan, layanan, sales..." class="w-full sm:w-72" />
                     </template>
 
                     <UTable
@@ -53,27 +31,12 @@
                         :pagination-options="{
                             getPaginationRowModel: getPaginationRowModel()
                         }"
+                        empty="Tidak ada churn untuk periode ini."
                         class="flex-1 max-h-[800px]"
                     />
 
                     <template #footer>
-                        <div class="flex items-center justify-between pt-4 px-4">
-                            <div class="text-sm text-gray-500 dark:text-gray-400">
-                                Showing
-                                <span class="font-medium text-gray-700 dark:text-gray-200">{{ table?.tableApi?.getFilteredRowModel().rows.length === 0 ? 0 : (table?.tableApi?.getState().pagination.pageIndex || 0) * (table?.tableApi?.getState().pagination.pageSize || 0) + 1 }}</span>
-                                to
-                                <span class="font-medium text-gray-700 dark:text-gray-200">{{ Math.min(((table?.tableApi?.getState().pagination.pageIndex || 0) + 1) * (table?.tableApi?.getState().pagination.pageSize || 0), table?.tableApi?.getFilteredRowModel().rows.length || 0) }}</span>
-                                of
-                                <span class="font-medium text-gray-700 dark:text-gray-200">{{ table?.tableApi?.getFilteredRowModel().rows.length || 0 }}</span>
-                                results
-                            </div>
-                            <UPagination
-                                :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
-                                :items-per-page="table?.tableApi?.getState().pagination.pageSize"
-                                :total="table?.tableApi?.getFilteredRowModel().rows.length"
-                                @update:page="(p) => table?.tableApi?.setPageIndex(p - 1)"
-                            />
-                        </div>
+                        <TablePaginationFooter :table-api="table?.tableApi" />
                     </template>
                 </UCard>
             </div>
@@ -82,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { h, resolveComponent, ref, onMounted, watch, computed, nextTick, useTemplateRef } from 'vue'
+import { h, resolveComponent, ref, onMounted, watch, computed, useTemplateRef } from 'vue'
 import { getPaginationRowModel } from '@tanstack/vue-table'
 import { SummaryService } from '~/services/summary-service'
 import type { ChurnSummaryItem } from '~/types/summary'
@@ -94,7 +57,7 @@ definePageMeta({
 
 const UAvatar = resolveComponent('UAvatar')
 const NuxtLink = resolveComponent('NuxtLink')
-const UButton = resolveComponent('UButton')
+const { sortableHeader } = useSortableHeader()
 const USwitch = resolveComponent('USwitch')
 const UIcon = resolveComponent('UIcon')
 const UTooltip = resolveComponent('UTooltip')
@@ -108,8 +71,6 @@ const table = useTemplateRef('table')
 const summaryData = ref<ChurnSummaryItem[]>([])
 const year = ref(new Date().getFullYear())
 const selectedMonth = ref(new Date().getMonth() + 1)
-const yearItems = [2026, 2027, 2028, 2029, 2030]
-const isMounted = ref(false)
 
 const pagination = ref({
     pageIndex: 0,
@@ -118,10 +79,20 @@ const pagination = ref({
 const sorting = ref([{ id: 'no', desc: false }])
 const globalFilter = ref('')
 
-const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-const monthSelect = monthNames.map((label, i) => ({ id: i + 1, label }))
+const { monthLabel } = usePeriodOptions()
 
-const selectedMonthLabel = computed(() => monthSelect.find(m => m.id === selectedMonth.value)?.label ?? '')
+const selectedMonthLabel = computed(() => monthLabel(selectedMonth.value))
+
+const stats = computed(() => {
+    const rows = summaryData.value
+    const pending = rows.filter(r => !r.is_approved)
+    return [
+        { label: 'Jumlah Churn', value: rows.length },
+        { label: 'Memotong Komisi', value: pending.length, note: 'Belum di-approve', class: pending.length ? 'text-red-600 dark:text-red-400' : undefined },
+        { label: 'Dibebaskan', value: rows.length - pending.length, note: 'Sudah di-approve', class: 'text-green-600 dark:text-green-400' },
+        { label: 'Subscription Hilang', value: formatCurrency(pending.reduce((a, r) => a + (r.price ?? 0), 0)), note: 'Dari churn yang memotong komisi' }
+    ]
+})
 
 const columns: TableColumn<ChurnSummaryItem>[] = [
     {
@@ -132,16 +103,7 @@ const columns: TableColumn<ChurnSummaryItem>[] = [
     {
         id: 'employee',
         accessorFn: (row) => `${row.employee_name || 'Customer Relation Officer'} ${row.employee_eid || ''}`,
-        header: ({ column }) => {
-            const isSorted = column.getIsSorted()
-            return h(UButton, {
-                color: 'neutral',
-                variant: 'ghost',
-                label: 'Account Manager',
-                icon: isSorted ? (isSorted === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow') : 'i-lucide-arrow-up-down',
-                onClick: () => column.toggleSorting(column.getIsSorted() === 'asc')
-            })
-        },
+        header: sortableHeader('Account Manager'),
         sortingFn: (rowA, rowB) => {
             const nameA = rowA.original.employee_name || 'Customer Relation Officer'
             const nameB = rowB.original.employee_name || 'Customer Relation Officer'
@@ -165,16 +127,7 @@ const columns: TableColumn<ChurnSummaryItem>[] = [
     },
     {
         accessorKey: 'customer_name',
-        header: ({ column }) => {
-            const isSorted = column.getIsSorted()
-            return h(UButton, {
-                color: 'neutral',
-                variant: 'ghost',
-                label: 'Customer',
-                icon: isSorted ? (isSorted === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow') : 'i-lucide-arrow-up-down',
-                onClick: () => column.toggleSorting(column.getIsSorted() === 'asc')
-            })
-        },
+        header: sortableHeader('Pelanggan'),
         cell: ({ row }) => h('div', { class: 'flex flex-col' }, [
             h('span', { class: 'font-medium' }, row.original.customer_name ?? '-'),
             h('a', {
@@ -186,16 +139,7 @@ const columns: TableColumn<ChurnSummaryItem>[] = [
     },
     {
         accessorKey: 'customer_service_account',
-        header: ({ column }) => {
-            const isSorted = column.getIsSorted()
-            return h(UButton, {
-                color: 'neutral',
-                variant: 'ghost',
-                label: 'Service',
-                icon: isSorted ? (isSorted === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow') : 'i-lucide-arrow-up-down',
-                onClick: () => column.toggleSorting(column.getIsSorted() === 'asc')
-            })
-        },
+        header: sortableHeader('Layanan'),
         cell: ({ row }) => h('div', { class: 'flex flex-col' }, [
             h('a', {
                 href: `https://isx.nusa.net.id/v2/customer/service/${row.original.customer_service_id}/detail`,
@@ -207,63 +151,35 @@ const columns: TableColumn<ChurnSummaryItem>[] = [
     },
     {
         accessorKey: 'registration_date',
-        header: ({ column }) => {
-            const isSorted = column.getIsSorted()
-            return h(UButton, {
-                color: 'neutral',
-                variant: 'ghost',
-                label: 'Reg Date',
-                icon: isSorted ? (isSorted === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow') : 'i-lucide-arrow-up-down',
-                onClick: () => column.toggleSorting(column.getIsSorted() === 'asc')
-            })
-        },
+        header: sortableHeader('Tgl. Registrasi'),
         cell: ({ row }) => h('div', { class: 'text-xs' }, row.original.registration_date ? formatDate(row.original.registration_date) : '-')
     },
     {
         accessorKey: 'unregistration_date',
-        header: ({ column }) => {
-            const isSorted = column.getIsSorted()
-            return h(UButton, {
-                color: 'neutral',
-                variant: 'ghost',
-                label: 'Unreg Date',
-                icon: isSorted ? (isSorted === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow') : 'i-lucide-arrow-up-down',
-                onClick: () => column.toggleSorting(column.getIsSorted() === 'asc')
-            })
-        },
+        header: sortableHeader('Tgl. Berhenti'),
         cell: ({ row }) => h('div', { class: 'text-xs' }, row.original.unregistration_date ? formatDate(row.original.unregistration_date) : '-')
     },
     {
         accessorKey: 'period',
-        header: 'Sub Period',
-        cell: ({ row }) => h('div', { class: 'text-xs' }, row.original.period)
+        header: 'Lama Kontrak',
+        cell: ({ row }) => h('div', { class: 'text-xs' }, `${row.original.period} bln`)
     },
     {
         accessorKey: 'price',
-        header: ({ column }) => {
-            const isSorted = column.getIsSorted()
-            return h(UButton, {
-                color: 'neutral',
-                variant: 'ghost',
-                label: 'Price',
-                icon: isSorted ? (isSorted === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow') : 'i-lucide-arrow-up-down',
-                onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-                class: 'ml-auto'
-            })
-        },
+        header: sortableHeader('Subscription', 'right'),
         cell: ({ row }) => h('div', { class: 'text-right font-medium' }, formatCurrency(row.original.price ?? 0))
     },
     {
         accessorKey: 'reason',
-        header: 'Reason',
+        header: 'Alasan Berhenti',
         cell: ({ row }) => h('div', { class: 'text-xs italic text-gray-500 whitespace-normal min-w-[200px] max-w-[400px]', title: row.original.reason ?? '' }, row.original.reason ?? '-')
     },
     {
         accessorKey: 'is_approved',
         header: () => h('div', { class: 'flex items-center justify-center gap-1' }, [
-            h('span', 'Approve'),
+            h('span', 'Bebaskan'),
             h(UTooltip, {
-                text: 'Approve to deduct commission',
+                text: 'Aktifkan (approve) agar churn ini TIDAK memotong komisi dan pencapaian New sales.',
                 delayDuration: 0
             }, () => h(UIcon, {
                 name: 'i-lucide-info',
@@ -281,8 +197,8 @@ const columns: TableColumn<ChurnSummaryItem>[] = [
                         }
                     } catch (error) {
                         toast.add({
-                            title: 'Error',
-                            description: 'Failed to update status',
+                            title: 'Gagal',
+                            description: 'Status approve gagal diperbarui. Coba lagi.',
                             color: 'error'
                         })
                     }
@@ -304,9 +220,6 @@ const fetchSummary = async () => {
 
 onMounted(() => {
     fetchSummary()
-    nextTick(() => {
-        isMounted.value = true
-    })
 })
 
 watch([year, selectedMonth], () => {

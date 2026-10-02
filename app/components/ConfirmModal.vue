@@ -18,7 +18,7 @@
             </div>
             <div class="flex justify-end gap-2 mt-4">
             <UButton
-                label="Cancel"
+                :label="cancelLabel"
                 color="neutral"
                 variant="subtle"
                 @click="handleCancel"
@@ -41,11 +41,13 @@ const props = withDefaults(defineProps<{
     title?: string
     description?: string
     confirmLabel?: string
+    cancelLabel?: string
     onConfirm?: () => Promise<void> | void
 }>(), {
     title: 'Confirm',
     description: 'Are you sure?',
-    confirmLabel: 'Confirm'
+    confirmLabel: 'Confirm',
+    cancelLabel: 'Cancel'
 })
 
 const emit = defineEmits(['update:open'])

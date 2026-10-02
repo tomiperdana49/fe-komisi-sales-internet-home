@@ -1,18 +1,49 @@
 <template>
     <div class="space-y-6 md:space-y-8">
-        <!-- Top Grid: Service Activity & Achievement -->
+        <!-- Ringkasan: pencapaian, layanan baru, jumlah transaksi -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-            <!-- Col 1: Service Breakdown -->
+            <!-- Pencapaian -->
+            <div class="space-y-3 md:space-y-4">
+                <h4 class="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                    <UIcon name="i-heroicons-trophy" class="w-4 h-4 sm:w-5 sm:h-5 text-primary-500" />
+                    Pencapaian Bulan Ini
+                </h4>
+                <div class="p-4 md:p-5 rounded-xl md:rounded-2xl border border-gray-200 dark:border-gray-800 space-y-4">
+                    <div class="flex items-end justify-between gap-4">
+                        <div>
+                            <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                                <TermHint term="activity">Pencapaian New</TermHint>
+                            </p>
+                            <p class="text-3xl font-bold text-gray-900 dark:text-white leading-none">
+                                {{ data.activityCount }}
+                                <span class="text-sm font-medium text-gray-500 dark:text-gray-400">layanan</span>
+                            </p>
+                        </div>
+                        <span :class="['text-xs font-bold uppercase px-2.5 py-1 rounded-md border bg-gray-50 dark:bg-gray-800 text-right', getAchievementBadgeClass(data.achievementStatus)]">
+                            {{ data.achievementStatus }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500 dark:text-gray-400">Status Karyawan</span>
+                        <span class="font-semibold text-gray-900 dark:text-white">{{ data.status ?? '-' }}</span>
+                    </div>
+                    <p class="pt-3 border-t border-gray-100 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-300 italic">
+                        "{{ data.motivation }}"
+                    </p>
+                </div>
+            </div>
+
+            <!-- Layanan baru per produk -->
             <div class="space-y-3 md:space-y-4">
                 <h4 class="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                     <UIcon name="i-heroicons-chart-bar" class="w-4 h-4 sm:w-5 sm:h-5 text-primary-500" />
-                    New Service Activity
+                    Layanan Baru per Produk
                 </h4>
                 <div class="grid grid-cols-1 gap-2 md:gap-3">
                     <div
                         v-for="group in serviceGroupOrder"
                         :key="group"
-                        :class="['p-3 md:p-4 rounded-lg md:rounded-xl border flex justify-between items-center transition-all', groupColor[group]!.bg]"
+                        :class="['p-3 md:p-4 rounded-lg md:rounded-xl border flex justify-between items-center', groupColor[group]!.bg]"
                     >
                         <span :class="['text-sm font-semibold', groupColor[group]!.text]">{{ group }}</span>
                         <span :class="['text-lg sm:text-xl font-bold', groupColor[group]!.textStrong]">
@@ -22,77 +53,58 @@
                 </div>
             </div>
 
-            <!-- Col 2: Categories Counts -->
+            <!-- Jumlah transaksi per kategori -->
             <div class="space-y-3 md:space-y-4">
                 <h4 class="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                     <UIcon name="i-heroicons-rectangle-stack" class="w-4 h-4 sm:w-5 sm:h-5 text-primary-500" />
-                    Category Summary
+                    Jumlah Transaksi per Kategori
                 </h4>
-                <div class="grid grid-cols-2 gap-2 md:gap-3 h-full content-start">
+                <div class="grid grid-cols-2 gap-2 md:gap-3">
                     <div
                         v-for="cat in categoryCards"
                         :key="cat.label"
-                        :class="['flex justify-between items-center p-2 md:p-3 rounded-lg md:rounded-xl border transition-colors', cat.color.bg]"
+                        :class="['flex justify-between items-center p-2 md:p-3 rounded-lg md:rounded-xl border', cat.color.bg]"
                     >
-                        <span :class="['text-xs font-medium uppercase', cat.color.text]">{{ cat.label }}</span>
+                        <span :class="['text-xs font-medium uppercase', cat.color.text]">
+                            <TermHint :term="cat.hint">{{ cat.label }}</TermHint>
+                        </span>
                         <span :class="['text-sm font-bold px-2 py-0.5 rounded bg-white/50 dark:bg-black/20', cat.color.textStrong]">{{ cat.count }}</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Col 3: Achievement -->
-            <div class="space-y-3 md:space-y-4 flex flex-col">
-                <h4 class="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                    <UIcon name="i-heroicons-trophy" class="w-4 h-4 sm:w-5 sm:h-5 text-primary-500" />
-                    Achievement
-                </h4>
-                <div class="p-4 md:p-5 rounded-xl md:rounded-2xl border border-gray-200 dark:border-gray-800">
-                    <div class="flex justify-between items-start mb-4 md:mb-6">
-                        <div class="flex flex-col gap-2 md:gap-3">
-                            <div>
-                                <p class="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400 mb-1 md:mb-1.5 tracking-wide">Status</p>
-                                <span :class="['text-xs sm:text-sm font-bold uppercase px-2 md:px-2.5 py-0.5 md:py-1 rounded-md border bg-gray-50 dark:bg-gray-800', getAchievementBadgeClass(data.achievementStatus)]">
-                                    {{ data.achievementStatus }}
-                                </span>
-                            </div>
-                            <div>
-                                <p class="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400 mb-1 tracking-wide">Employment Status</p>
-                                <span class="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">{{ data.status ?? '-' }}</span>
-                            </div>
-                            <div>
-                                <p class="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400 mb-1 tracking-wide">Activity</p>
-                                <span class="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">{{ data.activityCount }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="pt-3 md:pt-4 border-t border-gray-100 dark:border-gray-800">
-                        <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 italic font-medium leading-relaxed">
-                            "{{ data.motivation }}"
-                        </p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Section 2: Financial Breakdown (Grid) -->
+        <!-- Rincian keuangan -->
         <div>
             <h4 class="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-3 md:mb-4">
                 <UIcon name="i-heroicons-banknotes" class="w-4 h-4 sm:w-5 sm:h-5 text-primary-500" />
-                Financial Breakdown
+                Rincian Keuangan
             </h4>
-            <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-6 gap-4 md:gap-6 p-4 md:p-5 rounded-xl md:rounded-2xl border border-gray-200 dark:border-gray-800">
-                <div v-for="box in financialBoxes" :key="box.title">
-                    <h5 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 md:mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">{{ box.title }}</h5>
-                    <ul class="space-y-2 md:space-y-3">
-                        <li v-for="row in box.rows" :key="row.label" class="flex justify-between items-center text-xs sm:text-sm">
-                            <span class="text-gray-600 dark:text-gray-400">{{ row.label }}</span>
-                            <span :class="['font-semibold', box.negative ? 'text-red-500 dark:text-red-400' : 'text-gray-900 dark:text-white']">
-                                {{ box.negative ? '-' : '' }}{{ box.isCount ? row.value : formatCurrency(row.value) }}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div
+                    v-for="box in financialBoxes"
+                    :key="box.title"
+                    :class="['p-4 md:p-5 rounded-xl border', box.class]"
+                >
+                    <h5 :class="['text-xs font-bold uppercase tracking-wider mb-3 pb-2 border-b', box.negative ? 'text-red-600 dark:text-red-400 border-red-100 dark:border-red-900/40' : 'text-gray-500 border-gray-200 dark:border-gray-700']">
+                        {{ box.title }}
+                    </h5>
+                    <p v-if="box.rows.length === 0" class="text-sm text-gray-400 dark:text-gray-500">{{ box.empty ?? 'Tidak ada data' }}</p>
+                    <ul v-else class="space-y-2">
+                        <li v-for="row in box.rows" :key="row.label" class="flex justify-between items-center gap-3 text-sm">
+                            <span class="text-gray-600 dark:text-gray-400">
+                                <TermHint v-if="row.hint" :term="row.hint">{{ row.label }}</TermHint>
+                                <template v-else>{{ row.label }}</template>
+                            </span>
+                            <span :class="['font-semibold tabular-nums', box.negative ? 'text-red-500 dark:text-red-400' : row.value === 0 ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white']">
+                                {{ box.negative && row.value ? '−' : '' }}{{ box.isCount ? `${row.value} layanan` : formatCurrency(row.value) }}
                             </span>
                         </li>
-                        <li v-if="box.total !== undefined" class="flex justify-between items-center text-xs sm:text-sm pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-700 mt-2">
-                            <span class="font-bold text-gray-900 dark:text-white">Total</span>
-                            <span class="font-bold text-primary-600 dark:text-primary-400">{{ formatCurrency(box.total) }}</span>
+                        <li v-if="box.total !== undefined" class="flex justify-between items-center text-sm pt-3 mt-1 border-t border-gray-200 dark:border-gray-700">
+                            <span class="font-bold text-gray-900 dark:text-white">{{ box.totalLabel ?? 'Total' }}</span>
+                            <span :class="['font-bold tabular-nums', box.negative ? 'text-red-600 dark:text-red-400' : 'text-primary-600 dark:text-primary-400']">
+                                {{ box.negative && box.total ? '−' : '' }}{{ formatCurrency(box.total) }}
+                            </span>
                         </li>
                     </ul>
                 </div>
@@ -103,6 +115,7 @@
 
 <script setup lang="ts">
 import type { ChurnRow, SalesCommissionData } from '~/types/sales'
+import type { GlossaryKey } from '~/composables/useGlossary'
 
 const props = defineProps<{
     data: SalesCommissionData
@@ -133,13 +146,13 @@ const categoryColor: Record<string, { bg: string; text: string; textStrong: stri
 const categoryCards = computed(() => {
     const b = props.data.breakdown
     return [
-        { label: 'New', count: b.new.count, color: categoryColor.primary! },
-        { label: 'Recurring', count: b.recurring.count, color: categoryColor.orange! },
-        { label: 'Prorate', count: b.prorate.count, color: categoryColor.purple! },
-        { label: 'Upgrade', count: b.upgrade.count, color: categoryColor.indigo! },
-        { label: 'Alat', count: b.alat.count, color: categoryColor.pink! },
-        { label: 'Setup', count: b.setup.count, color: categoryColor.teal! }
-    ]
+        { label: 'New', hint: 'new', count: b.new.count, color: categoryColor.primary! },
+        { label: 'Recurring', hint: 'recurring', count: b.recurring.count, color: categoryColor.orange! },
+        { label: 'Prorate', hint: 'prorate', count: b.prorate.count, color: categoryColor.purple! },
+        { label: 'Upgrade', hint: 'upgrade', count: b.upgrade.count, color: categoryColor.indigo! },
+        { label: 'Alat', hint: 'alat', count: b.alat.count, color: categoryColor.pink! },
+        { label: 'Setup', hint: 'setup', count: b.setup.count, color: categoryColor.teal! }
+    ] satisfies { label: string; hint: GlossaryKey; count: number; color: unknown }[]
 })
 
 const churnByService = computed(() => {
@@ -154,11 +167,17 @@ const churnByService = computed(() => {
 
 interface FinancialBox {
     title: string
-    rows: { label: string; value: number }[]
+    rows: { label: string; value: number; hint?: GlossaryKey }[]
     total?: number
+    totalLabel?: string
     negative?: boolean
     isCount?: boolean
+    empty?: string
+    class: string
 }
+
+const plainBox = 'border-gray-200 dark:border-gray-800'
+const negativeBox = 'border-red-100 dark:border-red-900/40 bg-red-50/40 dark:bg-red-950/10'
 
 const financialBoxes = computed<FinancialBox[]>(() => {
     const data = props.data
@@ -166,22 +185,25 @@ const financialBoxes = computed<FinancialBox[]>(() => {
     const g = data.byServiceGroup
     return [
         {
-            title: 'Commission',
+            title: 'Komisi & Bonus',
+            class: 'border-primary-200 dark:border-primary-800 bg-primary-50/40 dark:bg-primary-950/10 lg:row-span-3',
             rows: [
-                { label: 'New', value: b.new.commission },
-                { label: 'Prorate', value: b.prorate.commission },
-                { label: 'Recurring', value: b.recurring.commission },
-                { label: 'Upgrade', value: b.upgrade.commission },
-                { label: 'Alat', value: b.alat.commission },
-                { label: 'Setup', value: b.setup.commission },
-                { label: 'Bonus Bulanan', value: data.bonusBulanan },
-                { label: 'Bonus Kelebihan Service', value: data.bonusKelebihanService },
-                { label: 'Bonus Konsistensi', value: data.consistencyBonus }
+                { label: 'New', hint: 'new', value: b.new.commission },
+                { label: 'Prorate', hint: 'prorate', value: b.prorate.commission },
+                { label: 'Recurring', hint: 'recurring', value: b.recurring.commission },
+                { label: 'Upgrade', hint: 'upgrade', value: b.upgrade.commission },
+                { label: 'Alat', hint: 'alat', value: b.alat.commission },
+                { label: 'Setup', hint: 'setup', value: b.setup.commission },
+                { label: 'Bonus Bulanan', hint: 'bonusBulanan', value: data.bonusBulanan },
+                { label: 'Bonus Kelebihan Service', hint: 'bonusKelebihanService', value: data.bonusKelebihanService },
+                { label: 'Bonus Konsistensi', hint: 'consistencyBonus', value: data.consistencyBonus }
             ],
-            total: data.total.commission + data.bonusBulanan + data.bonusKelebihanService + data.consistencyBonus
+            total: data.total.commission + data.bonusBulanan + data.bonusKelebihanService + data.consistencyBonus,
+            totalLabel: 'Total Diterima'
         },
         {
-            title: 'MRC (New)',
+            title: 'MRC Layanan Baru',
+            class: plainBox,
             rows: [
                 ...serviceGroupOrder.map(name => ({ label: name, value: g[name]?.new.mrc ?? 0 })),
                 { label: 'Upgrade', value: b.upgrade.mrc }
@@ -189,7 +211,8 @@ const financialBoxes = computed<FinancialBox[]>(() => {
             total: b.new.mrc + b.upgrade.mrc
         },
         {
-            title: 'Subscription (New)',
+            title: 'Subscription Layanan Baru',
+            class: plainBox,
             rows: [
                 ...serviceGroupOrder.map(name => ({ label: name, value: g[name]?.new.subscription ?? 0 })),
                 { label: 'Prorate', value: b.prorate.subscription },
@@ -198,24 +221,38 @@ const financialBoxes = computed<FinancialBox[]>(() => {
             total: b.new.subscription + b.prorate.subscription + b.upgrade.subscription
         },
         {
-            title: 'Subscription (Recurring)',
+            title: 'Subscription Recurring',
+            class: plainBox,
             rows: recurringServiceGroupOrder.map(name => ({ label: name, value: g[name]?.recurring.subscription ?? 0 })),
             total: b.recurring.subscription
         },
         {
-            title: 'Subscription (Other)',
+            title: 'Subscription Alat & Setup',
+            class: plainBox,
             rows: [
                 { label: 'Alat', value: b.alat.subscription },
                 { label: 'Setup', value: b.setup.subscription }
             ],
             total: b.alat.subscription + b.setup.subscription
         },
-        { title: 'Deduction (churn)', rows: [
-            { label: 'MRC', value: data.deduction.mrc },
-            { label: 'Commission', value: data.deduction.commission },
-            { label: 'Subscription', value: data.deduction.subscription }
-        ], negative: true },
-        { title: 'Service (churn)', rows: churnByService.value, negative: true, isCount: true }
+        {
+            title: 'Potongan Churn',
+            class: negativeBox,
+            rows: [
+                { label: 'Komisi', value: data.deduction.commission },
+                { label: 'MRC', value: data.deduction.mrc },
+                { label: 'Subscription', value: data.deduction.subscription }
+            ],
+            negative: true
+        },
+        {
+            title: 'Layanan Churn',
+            class: negativeBox,
+            rows: churnByService.value,
+            negative: true,
+            isCount: true,
+            empty: 'Tidak ada churn bulan ini 🎉'
+        }
     ]
 })
 </script>

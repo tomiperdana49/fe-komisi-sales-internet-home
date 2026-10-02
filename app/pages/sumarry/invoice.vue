@@ -1,44 +1,27 @@
 <template>
     <div class="space-y-4">
-        <ClientOnly>
-            <Teleport v-if="isMounted" to="#toolbar-left">
-                <div class="flex items-center gap-1">
-                    <UButton icon="i-lucide-arrow-left" size="lg" color="neutral" variant="ghost" to="/" />
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/sales" icon="i-heroicons-users" :variant="$route.path === '/sumarry/sales' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/sales' ? 'primary' : 'neutral'" size="sm">Account Manager</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/manager" icon="i-heroicons-presentation-chart-line" :variant="$route.path === '/sumarry/manager' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/manager' ? 'primary' : 'neutral'" size="sm">Sales Manager</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/invoice" icon="i-heroicons-document-text" :variant="$route.path === '/sumarry/invoice' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/invoice' ? 'primary' : 'neutral'" size="sm">Invoice</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/churn" icon="i-heroicons-archive-box-x-mark" :variant="$route.path === '/sumarry/churn' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/churn' ? 'primary' : 'neutral'" size="sm">Churn</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/target" icon="i-heroicons-flag" :variant="$route.path === '/sumarry/target' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/target' ? 'primary' : 'neutral'" size="sm">Target</UButton>
-                    <USeparator orientation="vertical" class="h-7 w-2" />
-                    <UButton to="/sumarry/consistency-bonus" icon="i-heroicons-gift" :variant="$route.path === '/sumarry/consistency-bonus' ? 'soft' : 'ghost'" :color="$route.path === '/sumarry/consistency-bonus' ? 'primary' : 'neutral'" size="sm">Bonus Konsistensi</UButton>
-                </div>
-            </Teleport>
-            <Teleport v-if="isMounted" to="#toolbar-right">
-                <div class="flex items-center gap-2">
-                    <USelectMenu v-model="selectedMonth" :items="monthSelect" value-key="id" class="w-40" />
-                    <USelectMenu v-model="year" :items="yearItems" class="w-24" />
-                </div>
-            </Teleport>
-        </ClientOnly>
+        <SummaryToolbar v-model:month="selectedMonth" v-model:year="year" />
 
         <UContainer>
             <HeroBackground />
-            <div class="py-4">
+            <div class="py-4 space-y-4">
+                <div>
+                    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Daftar Invoice</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        Semua invoice yang dihitung komisinya untuk {{ selectedMonthLabel }} {{ year }}. Approve invoice yang telat bayar untuk menghapus potongan keterlambatan.
+                    </p>
+                </div>
+
+                <SummaryStats :stats="stats" />
+
                 <UCard>
                     <template #header>
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">Invoice Summary</h3>
-                                <p class="text-xs text-gray-500">{{ selectedMonthLabel }} {{ year }}</p>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <UInput v-model="globalFilter" icon="i-heroicons-magnifying-glass" placeholder="Search invoices..." />
-                            </div>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <p class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                                <span class="inline-block size-3 rounded-sm bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700" />
+                                Baris oranye = invoice sudah diubah manual oleh admin.
+                            </p>
+                            <UInput v-model="globalFilter" icon="i-heroicons-magnifying-glass" placeholder="Cari invoice, pelanggan, sales..." class="w-full sm:w-72" />
                         </div>
                     </template>
 
@@ -53,27 +36,12 @@
                         :pagination-options="{
                             getPaginationRowModel: getPaginationRowModel()
                         }"
+                        empty="Tidak ada invoice untuk periode ini."
                         class="flex-1 max-h-[800px] [&_tr:has(.row-adjusted)]:bg-amber-50 dark:[&_tr:has(.row-adjusted)]:bg-amber-950/20"
                     />
 
                     <template #footer>
-                        <div class="flex items-center justify-between pt-4 px-4">
-                            <div class="text-sm text-gray-500 dark:text-gray-400">
-                                Showing
-                                <span class="font-medium text-gray-700 dark:text-gray-200">{{ table?.tableApi?.getFilteredRowModel().rows.length === 0 ? 0 : (table?.tableApi?.getState().pagination.pageIndex || 0) * (table?.tableApi?.getState().pagination.pageSize || 0) + 1 }}</span>
-                                to
-                                <span class="font-medium text-gray-700 dark:text-gray-200">{{ Math.min(((table?.tableApi?.getState().pagination.pageIndex || 0) + 1) * (table?.tableApi?.getState().pagination.pageSize || 0), table?.tableApi?.getFilteredRowModel().rows.length || 0) }}</span>
-                                of
-                                <span class="font-medium text-gray-700 dark:text-gray-200">{{ table?.tableApi?.getFilteredRowModel().rows.length || 0 }}</span>
-                                results
-                            </div>
-                            <UPagination
-                                :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
-                                :items-per-page="table?.tableApi?.getState().pagination.pageSize"
-                                :total="table?.tableApi?.getFilteredRowModel().rows.length"
-                                @update:page="(p) => table?.tableApi?.setPageIndex(p - 1)"
-                            />
-                        </div>
+                        <TablePaginationFooter :table-api="table?.tableApi" />
                     </template>
                 </UCard>
             </div>
@@ -87,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import { h, resolveComponent, ref, onMounted, watch, computed, nextTick, useTemplateRef } from 'vue'
+import { h, resolveComponent, ref, onMounted, watch, computed, useTemplateRef } from 'vue'
 import { getPaginationRowModel } from '@tanstack/vue-table'
 import { SummaryService } from '~/services/summary-service'
 import type { InvoiceSummaryItem } from '~/types/summary'
@@ -97,6 +65,7 @@ definePageMeta({
     headerProps: { toolbar: true }
 })
 
+const { sortableHeader } = useSortableHeader()
 const UAvatar = resolveComponent('UAvatar')
 const NuxtLink = resolveComponent('NuxtLink')
 const UButton = resolveComponent('UButton')
@@ -121,7 +90,7 @@ const openAdjustModal = (row: InvoiceSummaryItem) => {
 const getRowItems = (row: any) => [
     [
         {
-            label: 'Adjust Invoice',
+            label: 'Ubah Data Invoice',
             icon: 'i-heroicons-wrench-screwdriver',
             onSelect: () => openAdjustModal(row.original)
         }
@@ -132,8 +101,6 @@ const table = useTemplateRef('table')
 const summaryData = ref<InvoiceSummaryItem[]>([])
 const year = ref(new Date().getFullYear())
 const selectedMonth = ref(new Date().getMonth() + 1)
-const yearItems = [2026, 2027, 2028, 2029, 2030]
-const isMounted = ref(false)
 
 const pagination = ref({
     pageIndex: 0,
@@ -142,10 +109,20 @@ const pagination = ref({
 const sorting = ref([{ id: 'no', desc: false }])
 const globalFilter = ref('')
 
-const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-const monthSelect = monthNames.map((label, i) => ({ id: i + 1, label }))
+const { monthLabel } = usePeriodOptions()
 
-const selectedMonthLabel = computed(() => monthSelect.find(m => m.id === selectedMonth.value)?.label ?? '')
+const selectedMonthLabel = computed(() => monthLabel(selectedMonth.value))
+
+const stats = computed(() => {
+    const rows = summaryData.value
+    const lateUnapproved = rows.filter(r => r.lateMonth > 0 && !r.isApproved).length
+    return [
+        { label: 'Jumlah Invoice', value: rows.length },
+        { label: 'Total Komisi', value: formatCurrency(rows.reduce((a, r) => a + r.commission, 0)), class: 'text-primary-600 dark:text-primary-400' },
+        { label: 'Telat Bayar, Belum Di-approve', value: lateUnapproved, note: 'Komisinya masih kena potongan', class: lateUnapproved ? 'text-red-600 dark:text-red-400' : undefined },
+        { label: 'Diubah Manual', value: rows.filter(r => r.isAdjusted).length }
+    ]
+})
 
 const columns: TableColumn<InvoiceSummaryItem>[] = [
     {
@@ -155,20 +132,11 @@ const columns: TableColumn<InvoiceSummaryItem>[] = [
     },
     {
         accessorKey: 'aiInvoice',
-        header: ({ column }) => {
-            const isSorted = column.getIsSorted()
-            return h(UButton, {
-                color: 'neutral',
-                variant: 'ghost',
-                label: 'AI Invoice',
-                icon: isSorted ? (isSorted === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow') : 'i-lucide-arrow-up-down',
-                onClick: () => column.toggleSorting(column.getIsSorted() === 'asc')
-            })
-        },
+        header: sortableHeader('No. Invoice'),
         cell: ({ row }) => h('div', { class: ['flex items-center justify-center gap-1.5', row.original.isAdjusted ? 'row-adjusted' : ''] }, [
             h('span', row.original.aiInvoice),
             row.original.isAdjusted
-                ? h(UTooltip, { text: 'This row has been manually adjusted', delayDuration: 0 }, () =>
+                ? h(UTooltip, { text: 'Invoice ini sudah diubah manual oleh admin', delayDuration: 0 }, () =>
                     h(UIcon, { name: 'i-lucide-wrench', class: 'size-3.5 text-amber-500' }))
                 : null
         ])
@@ -180,16 +148,7 @@ const columns: TableColumn<InvoiceSummaryItem>[] = [
             const employeeId = row.sales?.employeeId || ''
             return `${name} ${employeeId}`
         },
-        header: ({ column }) => {
-            const isSorted = column.getIsSorted()
-            return h(UButton, {
-                color: 'neutral',
-                variant: 'ghost',
-                label: 'Account Manager',
-                icon: isSorted ? (isSorted === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow') : 'i-lucide-arrow-up-down',
-                onClick: () => column.toggleSorting(column.getIsSorted() === 'asc')
-            })
-        },
+        header: sortableHeader('Account Manager'),
         sortingFn: (rowA, rowB) => {
             const nameA = rowA.original.sales?.name || 'Customer Relation Officer'
             const nameB = rowB.original.sales?.name || 'Customer Relation Officer'
@@ -214,16 +173,7 @@ const columns: TableColumn<InvoiceSummaryItem>[] = [
     {
         id: 'manager',
         accessorFn: (row) => row.managerEmployee?.name || row.managerEmployee?.employeeId || '',
-        header: ({ column }) => {
-            const isSorted = column.getIsSorted()
-            return h(UButton, {
-                color: 'neutral',
-                variant: 'ghost',
-                label: 'Sales Manager',
-                icon: isSorted ? (isSorted === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow') : 'i-lucide-arrow-up-down',
-                onClick: () => column.toggleSorting(column.getIsSorted() === 'asc')
-            })
-        },
+        header: sortableHeader('Sales Manager'),
         sortingFn: (rowA, rowB) => {
             const nameA = rowA.original.managerEmployee?.name || ''
             const nameB = rowB.original.managerEmployee?.name || ''
@@ -247,16 +197,7 @@ const columns: TableColumn<InvoiceSummaryItem>[] = [
     },
     {
         accessorKey: 'customerName',
-        header: ({ column }) => {
-            const isSorted = column.getIsSorted()
-            return h(UButton, {
-                color: 'neutral',
-                variant: 'ghost',
-                label: 'Customer',
-                icon: isSorted ? (isSorted === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow') : 'i-lucide-arrow-up-down',
-                onClick: () => column.toggleSorting(column.getIsSorted() === 'asc')
-            })
-        },
+        header: sortableHeader('Pelanggan'),
         cell: ({ row }) => h('div', { class: 'flex flex-col' }, [
             h('span', { class: 'font-medium' }, row.original.customerName ?? '-'),
             h('a', {
@@ -268,16 +209,7 @@ const columns: TableColumn<InvoiceSummaryItem>[] = [
     },
     {
         accessorKey: 'customerServiceAccount',
-        header: ({ column }) => {
-            const isSorted = column.getIsSorted()
-            return h(UButton, {
-                color: 'neutral',
-                variant: 'ghost',
-                label: 'Service',
-                icon: isSorted ? (isSorted === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow') : 'i-lucide-arrow-up-down',
-                onClick: () => column.toggleSorting(column.getIsSorted() === 'asc')
-            })
-        },
+        header: sortableHeader('Layanan'),
         cell: ({ row }) => h('div', { class: 'flex flex-col' }, [
             h('a', {
                 href: `https://isx.nusa.net.id/v2/customer/service/${row.original.customerServiceId}/detail`,
@@ -289,127 +221,50 @@ const columns: TableColumn<InvoiceSummaryItem>[] = [
     },
     {
         accessorKey: 'type',
-        header: ({ column }) => {
-            const isSorted = column.getIsSorted()
-            return h(UButton, {
-                color: 'neutral',
-                variant: 'ghost',
-                label: 'Type',
-                icon: isSorted ? (isSorted === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow') : 'i-lucide-arrow-up-down',
-                onClick: () => column.toggleSorting(column.getIsSorted() === 'asc')
-            })
-        },
+        header: sortableHeader('Tipe'),
         cell: ({ row }) => h('span', { class: 'text-sm font-semibold' }, row.original.type)
     },
     {
         accessorKey: 'category',
-        header: ({ column }) => {
-            const isSorted = column.getIsSorted()
-            return h(UButton, {
-                color: 'neutral',
-                variant: 'ghost',
-                label: 'Category',
-                icon: isSorted ? (isSorted === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow') : 'i-lucide-arrow-up-down',
-                onClick: () => column.toggleSorting(column.getIsSorted() === 'asc')
-            })
-        },
+        header: sortableHeader('Kategori'),
         cell: ({ row }) => h('span', { class: 'text-sm text-gray-500 uppercase' }, row.original.category ?? '-')
     },
     {
         accessorKey: 'paidDate',
-        header: ({ column }) => {
-            const isSorted = column.getIsSorted()
-            return h(UButton, {
-                color: 'neutral',
-                variant: 'ghost',
-                label: 'Paid Date',
-                icon: isSorted ? (isSorted === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow') : 'i-lucide-arrow-up-down',
-                onClick: () => column.toggleSorting(column.getIsSorted() === 'asc')
-            })
-        },
+        header: sortableHeader('Tgl. Bayar'),
         cell: ({ row }) => h('div', { class: 'text-xs' }, row.original.paidDate ? formatDate(row.original.paidDate) : '-')
     },
     {
         accessorKey: 'subscription',
-        header: ({ column }) => {
-            const isSorted = column.getIsSorted()
-            return h(UButton, {
-                color: 'neutral',
-                variant: 'ghost',
-                label: 'Subscription',
-                icon: isSorted ? (isSorted === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow') : 'i-lucide-arrow-up-down',
-                onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-                class: 'ml-auto'
-            })
-        },
+        header: sortableHeader('Subscription', 'right'),
         cell: ({ row }) => h('div', { class: 'text-right font-medium' }, formatCurrency(row.original.subscription))
     },
     {
         accessorKey: 'commission',
-        header: ({ column }) => {
-            const isSorted = column.getIsSorted()
-            return h(UButton, {
-                color: 'neutral',
-                variant: 'ghost',
-                label: 'Commission',
-                icon: isSorted ? (isSorted === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow') : 'i-lucide-arrow-up-down',
-                onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-                class: 'ml-auto'
-            })
-        },
+        header: sortableHeader('Komisi', 'right'),
         cell: ({ row }) => h('div', { class: 'text-right font-bold text-primary-600 dark:text-primary-400' }, formatCurrency(row.original.commission))
     },
     {
         accessorKey: 'referralType',
-        header: ({ column }) => {
-            const isSorted = column.getIsSorted()
-            return h(UButton, {
-                color: 'neutral',
-                variant: 'ghost',
-                label: 'Ref Type',
-                icon: isSorted ? (isSorted === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow') : 'i-lucide-arrow-up-down',
-                onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-                class: 'ml-auto'
-            })
-        },
+        header: sortableHeader('Tipe Referral', 'right'),
         cell: ({ row }) => h('div', { class: 'text-right font-medium' }, row.original.referralType ?? '-')
     },
     {
         accessorKey: 'referralFee',
-        header: ({ column }) => {
-            const isSorted = column.getIsSorted()
-            return h(UButton, {
-                color: 'neutral',
-                variant: 'ghost',
-                label: 'Ref Fee',
-                icon: isSorted ? (isSorted === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow') : 'i-lucide-arrow-up-down',
-                onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-                class: 'ml-auto'
-            })
-        },
+        header: sortableHeader('Fee Referral', 'right'),
         cell: ({ row }) => h('div', { class: 'text-right font-medium' }, formatCurrency(row.original.referralFee))
     },
     {
         accessorKey: 'lateMonth',
-        header: ({ column }) => {
-            const isSorted = column.getIsSorted()
-            return h(UButton, {
-                color: 'neutral',
-                variant: 'ghost',
-                label: 'Late',
-                icon: isSorted ? (isSorted === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow') : 'i-lucide-arrow-up-down',
-                onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-                class: 'mx-auto'
-            })
-        },
-        cell: ({ row }) => h('div', { class: 'text-center' }, row.original.lateMonth)
+        header: sortableHeader('Telat Bayar', 'center'),
+        cell: ({ row }) => h('div', { class: ['text-center', row.original.lateMonth > 0 ? 'font-semibold text-red-500 dark:text-red-400' : 'text-gray-400'] }, row.original.lateMonth > 0 ? `${row.original.lateMonth} bln` : '–')
     },
     {
         accessorKey: 'isApproved',
         header: () => h('div', { class: 'flex items-center justify-center gap-1' }, [
-            h('span', 'Approve'),
+            h('span', 'Approve Telat'),
             h(UTooltip, {
-                text: 'Approve to pay late commission',
+                text: 'Aktifkan untuk menghapus potongan telat bayar (10%/bulan) pada invoice ini.',
                 delayDuration: 0
             }, () => h(UIcon, {
                 name: 'i-lucide-info',
@@ -430,8 +285,8 @@ const columns: TableColumn<InvoiceSummaryItem>[] = [
                             }
                         } catch (error) {
                             toast.add({
-                                title: 'Error',
-                                description: 'Failed to update status',
+                                title: 'Gagal',
+                                description: 'Status approve gagal diperbarui. Coba lagi.',
                                 color: 'error'
                             })
                         }
@@ -448,14 +303,14 @@ const columns: TableColumn<InvoiceSummaryItem>[] = [
                 {
                     content: { align: 'end' },
                     items: getRowItems(row),
-                    'aria-label': 'Actions dropdown'
+                    'aria-label': 'Aksi invoice'
                 },
                 () =>
                     h(UButton, {
                         icon: 'i-lucide-ellipsis-vertical',
                         color: 'neutral',
                         variant: 'ghost',
-                        'aria-label': 'Actions dropdown'
+                        'aria-label': 'Aksi invoice'
                     })
             )
         }
@@ -474,9 +329,6 @@ const fetchSummary = async () => {
 
 onMounted(() => {
     fetchSummary()
-    nextTick(() => {
-        isMounted.value = true
-    })
 })
 
 watch([year, selectedMonth], () => {
