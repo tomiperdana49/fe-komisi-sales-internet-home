@@ -76,7 +76,8 @@ export class AuthService {
 
   async login(employeeId: string, password: string): Promise<AuthResponse> {
     try {
-      const response = await apiService.client.post<AuthResponse>('/auth/dev', { employeeId, password })
+      const endpoint = useRuntimeConfig().public.devLogin ? '/auth/dev' : '/auth/login'
+      const response = await apiService.client.post<AuthResponse>(endpoint, { employeeId, password })
       this.setSession(response.data)
       return response.data
     } catch (error: any) {

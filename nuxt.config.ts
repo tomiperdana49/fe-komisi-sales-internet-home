@@ -23,6 +23,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiUrl: process.env.API_BASE_URL,
+      // Local development only: use the backend's password-less /auth/dev (needs ALLOW_DEV_LOGIN=true there).
+      devLogin: process.env.DEV_LOGIN === 'true',
     }
   },
 
