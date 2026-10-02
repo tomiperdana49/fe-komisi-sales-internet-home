@@ -69,8 +69,7 @@ const summaryService = new SummaryService()
 
 const table = useTemplateRef('table')
 const summaryData = ref<ChurnSummaryItem[]>([])
-const year = ref(new Date().getFullYear())
-const selectedMonth = ref(new Date().getMonth() + 1)
+const { year, month: selectedMonth } = useSelectedPeriod()
 
 const pagination = ref({
     pageIndex: 0,

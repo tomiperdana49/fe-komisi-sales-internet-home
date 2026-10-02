@@ -1,10 +1,10 @@
-import { h, resolveComponent } from 'vue'
+import { h } from 'vue'
+// Explicit import: Nuxt only rewrites resolveComponent() inside .vue files, not in composables.
+import { UButton } from '#components'
 import type { Column } from '@tanstack/vue-table'
 
 // Clickable column header that cycles the column's sort order.
 export const useSortableHeader = () => {
-    const UButton = resolveComponent('UButton')
-
     const sortableHeader = (label: string, align?: 'right' | 'center') => ({ column }: { column: Column<any> }) => {
         const isSorted = column.getIsSorted()
         return h(UButton, {

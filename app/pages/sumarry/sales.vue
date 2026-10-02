@@ -10,6 +10,7 @@
                         <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Ringkasan Account Manager</h2>
                         <p class="text-sm text-gray-500 dark:text-gray-400">
                             Komisi seluruh Account Manager untuk {{ selectedMonthLabel }} {{ year }}. Klik nama untuk melihat rinciannya.
+                            <span v-if="ongoing" class="block text-sky-600 dark:text-sky-400">Periode masih berjalan sampai {{ shortDate(periodEndDate(year, selectedMonth)) }} — status pencapaian & komisi masih sementara.</span>
                         </p>
                     </div>
                     <USwitch v-model="hideValues" label="Sembunyikan nominal" />
@@ -57,12 +58,12 @@ const { getAchievementTextClass } = useAchievementColor()
 const { hintHeader } = useInvoiceColumns()
 const summaryService = new SummaryService()
 
-const { monthLabel } = usePeriodOptions()
+const { monthLabel, isPeriodOngoing, periodEndDate, shortDate } = usePeriodOptions()
+const ongoing = computed(() => isPeriodOngoing(year.value, selectedMonth.value))
 const glossaryTerms: GlossaryKey[] = ['activity', 'new', 'recurring', 'alat', 'setup', 'subscription', 'mrc', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
 
 const summaryData = ref<SalesSummaryItem[]>([])
-const year = ref(new Date().getFullYear())
-const selectedMonth = ref(new Date().getMonth() + 1)
+const { year, month: selectedMonth } = useSelectedPeriod()
 const hideValues = ref(true)
 const search = ref('')
 const columnPinning = ref({ left: ['name'], right: [] })
@@ -90,7 +91,7 @@ const stats = computed(() => {
     const onTarget = rows.filter(r => isOnTarget(r.achievementStatus)).length
     return [
         { label: 'Jumlah Account Manager', value: rows.length },
-        { label: 'Capai Target', value: `${onTarget} / ${rows.length}`, class: 'text-green-600 dark:text-green-400' },
+        { label: ongoing.value ? 'Sudah Capai Target' : 'Capai Target', value: `${onTarget} / ${rows.length}`, note: ongoing.value ? 'Sementara, periode berjalan' : undefined, class: 'text-green-600 dark:text-green-400' },
         { label: 'Total Layanan Baru', value: rows.reduce((a, r) => a + r.activityCount, 0) },
         { label: 'Total Komisi Dibayar', value: maskedCurrency(rows.reduce((a, r) => a + r.totalCommission, 0)), class: 'text-primary-600 dark:text-primary-400' }
     ]
@@ -122,7 +123,9 @@ const columns: TableColumn<SalesSummaryItem>[] = [
     {
         accessorKey: 'achievementStatus',
         header: 'Status Pencapaian',
-        cell: ({ row }) => h('div', { class: getAchievementTextClass(row.original.achievementStatus) + ' text-xs uppercase' }, row.original.achievementStatus)
+        cell: ({ row }) => ongoing.value
+            ? h('div', { class: 'text-xs uppercase font-semibold text-sky-600 dark:text-sky-400', title: `Status final setelah periode berakhir. Sementara: ${row.original.achievementStatus}` }, 'Berjalan')
+            : h('div', { class: getAchievementTextClass(row.original.achievementStatus) + ' text-xs uppercase' }, row.original.achievementStatus)
     },
     {
         accessorKey: 'activityCount',

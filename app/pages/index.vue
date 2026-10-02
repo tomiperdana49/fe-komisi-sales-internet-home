@@ -19,13 +19,17 @@
                     Team member list
                 </p>
             </div>
-            <div class="w-full lg:w-auto">
-                <UInput v-model="searchQuery" icon="i-lucide-search" size="md" variant="outline" class="w-full" placeholder="Search..." />
+            <div class="w-full lg:w-auto flex flex-col sm:flex-row gap-2">
+                <UTabs v-model="roleFilter" :items="roleTabs" :content="false" size="sm" class="w-full sm:w-auto" />
+                <UInput v-model="searchQuery" icon="i-lucide-search" size="md" variant="outline" class="w-full sm:w-64" placeholder="Search..." />
             </div>
         </div>
         </div>
 
         <div class="py-2">
+        <p v-if="filteredEmployeeCards.length === 0 && employeeCard.length > 0" class="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+            Tidak ada anggota tim yang cocok dengan filter ini.
+        </p>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <UPageCard
                 v-for="card in filteredEmployeeCards"
@@ -68,6 +72,24 @@ import { EmployeeService } from '~/services/employee-service';
 const { state: authState } = useAuth()
 const employeeCard = ref<{ employeeId: string; name: string; photoProfile: string; position: string; organizationName: string; jobLevel: string; to: string }[]>([])
 const searchQuery = ref('')
+
+type RoleFilter = 'all' | 'sm' | 'am'
+// Remembered for the session so coming back from someone's dashboard keeps the choice.
+const chosenRole = useState<RoleFilter | null>('home-role-filter', () => null)
+// Until the user picks one: admins start on Sales Managers (if any), everyone else sees their whole team.
+const roleFilter = computed<RoleFilter>({
+    get: () => chosenRole.value
+        ?? (authState.user?.is_admin && employeeCard.value.some(c => roleOf(c) === 'sm') ? 'sm' : 'all'),
+    set: (value) => { chosenRole.value = value }
+})
+// Same split as the card links (useDashboardRoute): manager dashboards are SM, sales dashboards are AM.
+const roleOf = (card: { to: string }): RoleFilter | null =>
+    card.to.endsWith('/manager') ? 'sm' : card.to.endsWith('/sales') ? 'am' : null
+const roleTabs = computed(() => [
+    { label: `Semua (${employeeCard.value.length})`, value: 'all' },
+    { label: `Sales Manager (${employeeCard.value.filter(c => roleOf(c) === 'sm').length})`, value: 'sm' },
+    { label: `Account Manager (${employeeCard.value.filter(c => roleOf(c) === 'am').length})`, value: 'am' }
+])
 const { getRoute } = useDashboardRoute()
 
 const greeting = computed(() => {
@@ -78,11 +100,14 @@ const greeting = computed(() => {
 })
 
 const filteredEmployeeCards = computed(() => {
+    const byRole = roleFilter.value === 'all'
+        ? employeeCard.value
+        : employeeCard.value.filter(card => roleOf(card) === roleFilter.value)
     if (!searchQuery.value) {
-        return employeeCard.value
+        return byRole
     }
     const query = searchQuery.value.toLowerCase()
-    return employeeCard.value.filter(card => {
+    return byRole.filter(card => {
         return card.name.toLowerCase().includes(query) ||
                card.employeeId.toLowerCase().includes(query) ||
                card.position.toLowerCase().includes(query) ||

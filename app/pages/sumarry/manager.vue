@@ -10,6 +10,7 @@
                         <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Ringkasan Sales Manager</h2>
                         <p class="text-sm text-gray-500 dark:text-gray-400">
                             Capaian tim dan komisi overriding tiap Sales Manager untuk {{ selectedMonthLabel }} {{ year }}. Klik nama untuk melihat rinciannya.
+                            <span v-if="ongoing" class="block text-sky-600 dark:text-sky-400">Periode masih berjalan sampai {{ shortDate(periodEndDate(year, selectedMonth)) }} — status tim & komisi masih sementara.</span>
                         </p>
                     </div>
                     <USwitch v-model="hideValues" label="Sembunyikan nominal" />
@@ -57,12 +58,12 @@ const { formatCurrency } = useFormat()
 const { hintHeader } = useInvoiceColumns()
 const summaryService = new SummaryService()
 
-const { monthLabel } = usePeriodOptions()
+const { monthLabel, isPeriodOngoing, periodEndDate, shortDate } = usePeriodOptions()
+const ongoing = computed(() => isPeriodOngoing(year.value, selectedMonth.value))
 const glossaryTerms: GlossaryKey[] = ['teamSize', 'finalTarget', 'teamAchievement', 'overrideNew', 'overrideRecurring', 'subscription', 'mrc']
 
 const summaryData = ref<ManagerSummaryItem[]>([])
-const year = ref(new Date().getFullYear())
-const selectedMonth = ref(new Date().getMonth() + 1)
+const { year, month: selectedMonth } = useSelectedPeriod()
 const hideValues = ref(true)
 const search = ref('')
 const columnPinning = ref({ left: ['name'], right: [] })
@@ -84,7 +85,7 @@ const stats = computed(() => {
     const onTarget = rows.filter(r => r.isTargetAchieved).length
     return [
         { label: 'Jumlah Sales Manager', value: rows.length },
-        { label: 'Tim Capai Target', value: `${onTarget} / ${rows.length}`, class: 'text-green-600 dark:text-green-400' },
+        { label: ongoing.value ? 'Tim Sudah Capai Target' : 'Tim Capai Target', value: `${onTarget} / ${rows.length}`, note: ongoing.value ? 'Sementara, periode berjalan' : undefined, class: 'text-green-600 dark:text-green-400' },
         { label: 'Total Layanan Baru Tim', value: rows.reduce((a, r) => a + r.activityCount, 0) },
         { label: 'Total Komisi Manager', value: maskedCurrency(rows.reduce((a, r) => a + r.managerTotalCommission, 0)), class: 'text-primary-600 dark:text-primary-400' }
     ]
@@ -116,7 +117,9 @@ const columns: TableColumn<ManagerSummaryItem>[] = [
     {
         accessorKey: 'isTargetAchieved',
         header: 'Status Tim',
-        cell: ({ row }) => h(UBadge, { color: row.original.isTargetAchieved ? 'success' : 'error', variant: 'subtle' }, () => row.original.isTargetAchieved ? 'Capai Target' : 'Tidak Capai Target')
+        cell: ({ row }) => ongoing.value
+            ? h(UBadge, { color: 'info', variant: 'subtle', title: `Sementara: ${row.original.isTargetAchieved ? 'Capai Target' : 'Belum Capai Target'}` }, () => 'Berjalan')
+            : h(UBadge, { color: row.original.isTargetAchieved ? 'success' : 'error', variant: 'subtle' }, () => row.original.isTargetAchieved ? 'Capai Target' : 'Tidak Capai Target')
     },
     {
         accessorKey: 'totalCount',

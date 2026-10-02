@@ -28,6 +28,8 @@ export interface CommissionLineItem {
     businessOperation: string | null;
     manager: string | null;
     type: string;
+    /** Renewal price increase that billing marked as new — commissioned as recurring. */
+    isRenewal?: boolean;
     month: number;
     lateMonth: number;
     isApproved: boolean;
@@ -55,6 +57,8 @@ export interface SalesCommissionData {
     employeeId: string;
     status: string | null;
     activityCount: number;
+    /** NusaSelecta New units sold (before churn); they count toward New Achievement only in groups. */
+    nusaSelectaNewUnits?: { basicPrime: number; ultra: number };
     achievementStatus: string;
     motivation: string;
     bonusBulanan: number;

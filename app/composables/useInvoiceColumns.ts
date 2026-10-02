@@ -1,4 +1,6 @@
-import { h, resolveComponent } from 'vue'
+import { h } from 'vue'
+// Explicit import: Nuxt only rewrites resolveComponent() inside .vue files, not in composables.
+import { UBadge } from '#components'
 import TermHint from '~/components/TermHint.vue'
 import type { TableColumn } from '@nuxt/ui'
 import type { GlossaryKey } from '~/composables/useGlossary'
@@ -8,7 +10,6 @@ type TotalField = 'subscription' | 'mrc' | 'commission'
 
 // Shared by the sales and manager pages so both invoice tables read the same way.
 export const useInvoiceColumns = () => {
-    const UBadge = resolveComponent('UBadge')
     const { formatCurrency } = useFormat()
     const { getServiceLabel } = useServiceLabel()
 
@@ -25,7 +26,18 @@ export const useInvoiceColumns = () => {
             header: 'Produk',
             cell: ({ row }) => {
                 const { label, color } = getServiceLabel(row.original.category, row.original.serviceId)
-                return h(UBadge, { label, color, variant: 'subtle' })
+                const badge = h(UBadge, { label, color, variant: 'subtle' })
+                if (!row.original.isRenewal) return badge
+                return h('div', { class: 'flex flex-col items-start gap-1' }, [
+                    badge,
+                    h(UBadge, {
+                        label: 'Perpanjangan',
+                        color: 'neutral',
+                        variant: 'outline',
+                        size: 'sm',
+                        title: 'Kenaikan harga saat perpanjangan kontrak. Billing mencatatnya sebagai baru, tapi dihitung sebagai recurring dan tidak menambah pencapaian New.'
+                    })
+                ])
             }
         },
         {
@@ -71,5 +83,18 @@ export const useInvoiceColumns = () => {
         }
     ]
 
-    return { hintHeader, invoiceColumns }
+    /**
+     * Free-text match for the transaction tables: customer ID/name/company, service
+     * account/name and invoice number. Works for invoice line items and churn rows.
+     */
+    const matchesSearch = (row: Record<string, any>, query: string) => {
+        const q = query.trim().toLowerCase()
+        if (!q) return true
+        return [
+            row.customerId, row.customerName, row.customerCompany, row.customerServiceAccount, row.serviceName, row.aiInvoice,
+            row.customer_id, row.customer_name, row.customer_service_account, row.service_name
+        ].some(v => v !== null && v !== undefined && String(v).toLowerCase().includes(q))
+    }
+
+    return { hintHeader, invoiceColumns, matchesSearch }
 }

@@ -99,8 +99,7 @@ const getRowItems = (row: any) => [
 
 const table = useTemplateRef('table')
 const summaryData = ref<InvoiceSummaryItem[]>([])
-const year = ref(new Date().getFullYear())
-const selectedMonth = ref(new Date().getMonth() + 1)
+const { year, month: selectedMonth } = useSelectedPeriod()
 
 const pagination = ref({
     pageIndex: 0,
@@ -110,6 +109,7 @@ const sorting = ref([{ id: 'no', desc: false }])
 const globalFilter = ref('')
 
 const { monthLabel } = usePeriodOptions()
+const { rules } = useCommissionRules()
 
 const selectedMonthLabel = computed(() => monthLabel(selectedMonth.value))
 
@@ -264,7 +264,9 @@ const columns: TableColumn<InvoiceSummaryItem>[] = [
         header: () => h('div', { class: 'flex items-center justify-center gap-1' }, [
             h('span', 'Approve Telat'),
             h(UTooltip, {
-                text: 'Aktifkan untuk menghapus potongan telat bayar (10%/bulan) pada invoice ini.',
+                text: rules.value
+                    ? `Aktifkan untuk menghapus potongan telat bayar (${rules.value.penalties.latePerMonth}%/bulan) pada invoice ini.`
+                    : 'Aktifkan untuk menghapus potongan telat bayar pada invoice ini.',
                 delayDuration: 0
             }, () => h(UIcon, {
                 name: 'i-lucide-info',

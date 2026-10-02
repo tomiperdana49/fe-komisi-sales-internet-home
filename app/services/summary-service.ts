@@ -8,8 +8,6 @@ import type {
     InvoiceSummaryResponseData,
     ManagerSummaryResponseData,
     SalesSummaryResponseData,
-    SalesTargetResponseData,
-    SalesTargetUpdateInput,
     SnapshotAdjustmentResponseData,
     SnapshotDetailResponseData,
     SummaryQueryParams
@@ -127,34 +125,6 @@ export class SummaryService {
     async approveChurn(customerServiceId: number, data: InvoiceApprovalInput): Promise<any> {
         try {
             const response = await apiService.client.post(`/summary/churn/${customerServiceId}/approve`, data, {
-                headers: {
-                    authorization: `Bearer ${useAuth().state.token}`
-                }
-            })
-            return response.data
-        } catch (error: any) {
-            handleServiceError(error)
-        }
-    }
-
-    async salesTarget(params: SummaryQueryParams): Promise<SalesTargetResponseData> {
-        try {
-            const response = await apiService.client.get(`/summary/target`, {
-                params,
-                headers: {
-                    authorization: `Bearer ${useAuth().state.token}`
-                }
-            })
-            return response.data
-        } catch (error: any) {
-            handleServiceError(error)
-        }
-    }
-
-    async updateSalesTarget(employeeId: string, params: SummaryQueryParams, data: SalesTargetUpdateInput): Promise<any> {
-        try {
-            const response = await apiService.client.put(`/summary/target/${employeeId}`, data, {
-                params,
                 headers: {
                     authorization: `Bearer ${useAuth().state.token}`
                 }

@@ -8,7 +8,7 @@
             subtitle="Rincian komisi, bonus, dan transaksi per bulan"
         >
             <template #controls>
-                <USelectMenu v-model="selectedMonth" value-key="id" :items="monthSelect" class="w-36" />
+                <USelectMenu v-model="selectedMonth" value-key="id" :items="viewableMonths(year)" class="w-36" />
             </template>
         </CommissionHeader>
 
@@ -25,7 +25,7 @@
                                 </p>
                             </div>
                             <div class="md:text-right">
-                                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Total Komisi Diterima</p>
+                                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Total Komisi Diterima{{ periodData && isOngoingUntil(periodData.endDate) ? ' (sementara)' : '' }}</p>
                                 <p class="text-3xl md:text-4xl font-bold text-primary-500 dark:text-primary-400 tabular-nums">
                                     {{ formatCurrency(grandTotal) }}
                                 </p>
@@ -62,9 +62,12 @@
 
         <div class="py-2">
             <UCard>
-                <div class="mb-3">
-                    <h3 class="text-base font-semibold text-gray-900 dark:text-white">Daftar Transaksi</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Invoice yang dihitung komisinya pada periode ini, dikelompokkan per kategori.</p>
+                <div class="mb-3 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+                    <div>
+                        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Daftar Transaksi</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Invoice yang dihitung komisinya pada periode ini, dikelompokkan per kategori.</p>
+                    </div>
+                    <UInput v-model="transactionSearch" icon="i-lucide-search" placeholder="Cari pelanggan, layanan, no. invoice..." class="w-full sm:w-80" />
                 </div>
                 <UTabs :items="tabItems" class="w-full">
                     <template #content="{ item }">
@@ -76,7 +79,7 @@
                             sticky
                             :data="getTabData(item.key)"
                             :columns="getColumns(item.key)"
-                            :empty="`Tidak ada transaksi ${item.name} pada periode ini.`"
+                            :empty="transactionSearch.trim() ? `Tidak ada transaksi ${item.name} yang cocok dengan “${transactionSearch.trim()}”.` : `Tidak ada transaksi ${item.name} pada periode ini.`"
                             class="flex-1 max-h-[800px] [&_tr:has(.commission-zero)]:bg-yellow-50 dark:[&_tr:has(.commission-zero)]:bg-yellow-950/20"
                         />
                     </template>
@@ -107,11 +110,10 @@ const commissionService = new CommissionService()
 const employeeService = new EmployeeService()
 const invoiceService = new InvoiceService()
 
-const { monthSelect, yearItems } = usePeriodOptions()
+const { viewableMonths, yearItems, isOngoingUntil } = usePeriodOptions()
 
 const employee = ref<Employee>()
-const year = ref(new Date().getFullYear())
-const selectedMonth = ref(new Date().getMonth() + 1)
+const { year, month: selectedMonth } = useSelectedPeriod()
 
 const periodData = ref<SalesCommissionData | null>(null)
 const invoiceItems = ref<CommissionLineItem[]>([])
@@ -120,7 +122,7 @@ const churnData = ref<ChurnRow[]>([])
 const { formatCurrency, formatDate } = useFormat()
 
 const tabItems = computed(() => {
-    const byType = (key: string) => invoiceItems.value.filter(i => i.type === key).length
+    const byType = (key: string) => getTabData(key).length
     const tab = (name: string, key: string, count: number) => ({ label: `${name} (${count})`, name, key })
     return [
         tab('New', 'new', byType('new')),
@@ -129,7 +131,7 @@ const tabItems = computed(() => {
         tab('Upgrade', 'upgrade', byType('upgrade')),
         tab('Alat', 'alat', byType('alat')),
         tab('Setup', 'setup', byType('setup')),
-        tab('Churn', 'churn', churnData.value.length)
+        tab('Churn', 'churn', getTabData('churn').length)
     ]
 })
 
@@ -153,15 +155,20 @@ const totalParts = computed(() => {
     return parts.filter((p, i) => i === 0 || p.value !== 0)
 })
 
-const { hintHeader, invoiceColumns } = useInvoiceColumns()
+const { hintHeader, invoiceColumns, matchesSearch } = useInvoiceColumns()
+const transactionSearch = ref('')
 const glossaryTerms: GlossaryKey[] = ['new', 'recurring', 'prorate', 'upgrade', 'alat', 'setup', 'churn', 'subscription', 'mrc', 'contractMonths', 'lateMonth', 'commission', 'activity', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
 
-const getTabData = (key: string) => {
-    if (key === 'churn') return churnData.value
-    return invoiceItems.value.filter(i => i.type === key)
+const getTabData = (key: string): any[] => {
+    const rows: any[] = key === 'churn' ? churnData.value : invoiceItems.value.filter(i => i.type === key)
+    return rows.filter(r => matchesSearch(r, transactionSearch.value))
 }
 
-const boxTotal = (key: string, field: 'subscription' | 'mrc' | 'commission') => periodData.value?.breakdown[key as keyof typeof periodData.value.breakdown]?.[field] ?? 0
+// Footer totals: the period's official figures (net of churn) unless a search narrows the rows,
+// in which case the footer sums just the rows shown.
+const boxTotal = (key: string, field: 'subscription' | 'mrc' | 'commission') => transactionSearch.value.trim()
+    ? getTabData(key).reduce((sum, r) => sum + Number(r[field] ?? 0), 0)
+    : periodData.value?.breakdown[key as keyof typeof periodData.value.breakdown]?.[field] ?? 0
 
 const getColumns = (key: string): TableColumn<any>[] => {
     if (key === 'churn') {

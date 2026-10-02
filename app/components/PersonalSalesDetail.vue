@@ -19,7 +19,14 @@
                                 <span class="text-sm font-medium text-gray-500 dark:text-gray-400">layanan</span>
                             </p>
                         </div>
-                        <span :class="['text-xs font-bold uppercase px-2.5 py-1 rounded-md border bg-gray-50 dark:bg-gray-800 text-right', getAchievementBadgeClass(data.achievementStatus)]">
+                        <span
+                            v-if="ongoing"
+                            class="text-xs font-bold uppercase px-2.5 py-1 rounded-md border bg-gray-50 dark:bg-gray-800 text-right text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-800"
+                            :title="`Status final setelah ${shortDate(new Date(data.endDate))}. Sementara: ${data.achievementStatus}`"
+                        >
+                            Berjalan
+                        </span>
+                        <span v-else :class="['text-xs font-bold uppercase px-2.5 py-1 rounded-md border bg-gray-50 dark:bg-gray-800 text-right', getAchievementBadgeClass(data.achievementStatus)]">
                             {{ data.achievementStatus }}
                         </span>
                     </div>
@@ -27,8 +34,11 @@
                         <span class="text-gray-500 dark:text-gray-400">Status Karyawan</span>
                         <span class="font-semibold text-gray-900 dark:text-white">{{ data.status ?? '-' }}</span>
                     </div>
+                    <p v-if="ongoing" class="text-xs text-sky-600 dark:text-sky-400">
+                        Periode berjalan sampai {{ shortDate(new Date(data.endDate)) }}. Status pencapaian ditentukan setelah periode berakhir.
+                    </p>
                     <p class="pt-3 border-t border-gray-100 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-300 italic">
-                        "{{ data.motivation }}"
+                        "{{ ongoing ? 'Periode masih berjalan — terus semangat!' : data.motivation }}"
                     </p>
                 </div>
             </div>
@@ -45,12 +55,21 @@
                         :key="group"
                         :class="['p-3 md:p-4 rounded-lg md:rounded-xl border flex justify-between items-center', groupColor[group]!.bg]"
                     >
-                        <span :class="['text-sm font-semibold', groupColor[group]!.text]">{{ group }}</span>
+                        <span :class="['text-sm font-semibold', groupColor[group]!.text]">
+                            {{ group }}
+                            <span v-if="group === 'NusaSelecta' && nusaSelectaUnits > 0" class="block text-xs font-normal opacity-80">
+                                {{ nusaSelectaUnits }} unit terjual
+                            </span>
+                        </span>
                         <span :class="['text-lg sm:text-xl font-bold', groupColor[group]!.textStrong]">
                             {{ data.byServiceGroup[group]?.new.count ?? 0 }}
                         </span>
                     </div>
                 </div>
+                <p v-if="nusaSelectaUnits > 0" class="text-xs text-gray-500 dark:text-gray-400">
+                    Angka di kanan = pencapaian New. NusaSelecta dihitung berkelompok: 3 unit Basic/Prime atau 2 unit Ultra = 1 pencapaian.
+                    Setiap unit tetap mendapat komisi, sehingga jumlah invoice di tab New bisa lebih banyak dari pencapaian.
+                </p>
             </div>
 
             <!-- Jumlah transaksi per kategori -->
@@ -124,6 +143,11 @@ const props = defineProps<{
 
 const { formatCurrency } = useFormat()
 const { getAchievementBadgeClass } = useAchievementColor()
+const { isOngoingUntil, shortDate } = usePeriodOptions()
+const ongoing = computed(() => isOngoingUntil(props.data.endDate))
+// While the period runs the motivation line (tied to the provisional status, e.g. SP1) is swapped for a neutral one in the template.
+// NusaSelecta units sold vs. the grouped achievement shown next to it.
+const nusaSelectaUnits = computed(() => (props.data.nusaSelectaNewUnits?.basicPrime ?? 0) + (props.data.nusaSelectaNewUnits?.ultra ?? 0))
 
 const serviceGroupOrder = ['Home', 'NusaSelecta', 'Nusafiber'] as const
 // Recurring-only: carves Digital Business and Access Business out of Home (KOMISI.md 3) — New-side boxes stay on the 3-way serviceGroupOrder above.

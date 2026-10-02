@@ -8,7 +8,7 @@
             subtitle="Komisi manager dari penjualan pribadi dan capaian tim"
         >
             <template #controls>
-                <USelectMenu v-model="selectedMonth" value-key="id" :items="monthSelect" class="w-36" />
+                <USelectMenu v-model="selectedMonth" value-key="id" :items="viewableMonths(year)" class="w-36" />
             </template>
         </CommissionHeader>
 
@@ -25,7 +25,7 @@
                                 </p>
                             </div>
                             <div class="md:text-right">
-                                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Total Komisi Manager</p>
+                                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Total Komisi Manager{{ ongoing ? ' (sementara)' : '' }}</p>
                                 <p class="text-3xl md:text-4xl font-bold text-primary-500 dark:text-primary-400 tabular-nums">
                                     {{ formatCurrency(periodData.totalCommission) }}
                                 </p>
@@ -55,7 +55,8 @@
                         <div class="p-4 rounded-xl border border-gray-200 dark:border-gray-800">
                             <div class="flex justify-between items-center mb-4">
                                 <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Capaian Tim</h4>
-                                <UBadge :color="periodData.team.isTargetAchieved ? 'success' : 'error'" variant="subtle">
+                                <UBadge v-if="ongoing" color="info" variant="subtle">Periode Berjalan</UBadge>
+                                <UBadge v-else :color="periodData.team.isTargetAchieved ? 'success' : 'error'" variant="subtle">
                                     {{ periodData.team.isTargetAchieved ? 'Capai Target' : 'Tidak Capai Target' }}
                                 </UBadge>
                             </div>
@@ -66,7 +67,7 @@
                             <div class="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden mt-3">
                                 <div
                                     class="h-full"
-                                    :class="periodData.team.isTargetAchieved ? 'bg-green-500' : 'bg-red-500'"
+                                    :class="periodData.team.isTargetAchieved ? 'bg-green-500' : ongoing ? 'bg-sky-500' : 'bg-red-500'"
                                     :style="{ width: targetProgress + '%' }"
                                 />
                             </div>
@@ -217,11 +218,14 @@
 
         <div class="py-2">
             <UCard>
-                <div class="mb-3">
-                    <h3 class="text-base font-semibold text-gray-900 dark:text-white">Transaksi Penjualan Pribadi</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                        Invoice atas nama manager sendiri. Tab Recurring juga memuat invoice <TermHint term="cro">Customer Relation Officer</TermHint> yang dikreditkan ke manager.
-                    </p>
+                <div class="mb-3 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+                    <div>
+                        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Transaksi Penjualan Pribadi</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            Invoice atas nama manager sendiri. Tab Recurring juga memuat invoice <TermHint term="cro">Customer Relation Officer</TermHint> yang dikreditkan ke manager.
+                        </p>
+                    </div>
+                    <UInput v-model="transactionSearch" icon="i-lucide-search" placeholder="Cari pelanggan, layanan, no. invoice..." class="w-full sm:w-80" />
                 </div>
                 <UTabs :items="invoiceTabItems" class="w-full">
                     <template #content="{ item }">
@@ -233,7 +237,7 @@
                             sticky
                             :data="getInvoiceTabData(item.key)"
                             :columns="getInvoiceColumns(item.key)"
-                            :empty="`Tidak ada transaksi ${item.name} pada periode ini.`"
+                            :empty="transactionSearch.trim() ? `Tidak ada transaksi ${item.name} yang cocok dengan “${transactionSearch.trim()}”.` : `Tidak ada transaksi ${item.name} pada periode ini.`"
                             class="flex-1 max-h-[800px] [&_tr:has(.commission-zero)]:bg-yellow-50 dark:[&_tr:has(.commission-zero)]:bg-yellow-950/20"
                         />
                     </template>
@@ -263,17 +267,17 @@ const employeeService = new EmployeeService()
 const UAvatar = resolveComponent('UAvatar')
 const UButton = resolveComponent('UButton')
 
-const { monthSelect, yearItems } = usePeriodOptions()
-const { hintHeader, invoiceColumns } = useInvoiceColumns()
+const { viewableMonths, yearItems, isOngoingUntil, shortDate } = usePeriodOptions()
+const { hintHeader, invoiceColumns, matchesSearch } = useInvoiceColumns()
 const glossaryTerms: GlossaryKey[] = ['teamSize', 'baseTarget', 'finalTarget', 'teamAchievement', 'overrideNew', 'overrideRecurring', 'personalSales', 'cro', 'new', 'recurring', 'prorate', 'upgrade', 'alat', 'setup', 'subscription', 'mrc', 'contractMonths', 'lateMonth', 'commission', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
 
 const employee = ref<Employee>()
-const year = ref(new Date().getFullYear())
-const selectedMonth = ref(new Date().getMonth() + 1)
+const { year, month: selectedMonth } = useSelectedPeriod()
 
 const periodData = ref<ManagerCommissionData | null>(null)
+const ongoing = computed(() => periodData.value ? isOngoingUntil(periodData.value.endDate) : false)
 const expanded = ref({})
-const columnPinning = ref({ left: ['expand', 'employee'], right: [] })
+const columnPinning = ref({ left: ['employee'], right: [] })
 
 const { formatCurrency, formatDate } = useFormat()
 const { getAchievementTextClass } = useAchievementColor()
@@ -304,7 +308,7 @@ const targetGapText = computed(() => {
     const t = periodData.value?.team
     if (!t) return ''
     const gap = t.finalTarget - t.activityCount
-    if (gap > 0) return `Kurang ${gap} layanan baru lagi untuk capai target.`
+    if (gap > 0) return ongoing.value ? `Kurang ${gap} layanan baru lagi untuk capai target. Periode berjalan sampai ${shortDate(new Date(periodData.value!.endDate))}.` : `Kurang ${gap} layanan baru dari target.`
     if (gap < 0) return `Melebihi target sebanyak ${-gap} layanan baru.`
     return 'Tepat mencapai target.'
 })
@@ -366,11 +370,11 @@ const croItems = computed(() => periodData.value?.croRecurring ?? [])
 const recurringItems = computed(() => [...personalItems.value.filter(i => i.type === 'recurring'), ...croItems.value])
 
 const invoiceTabItems = computed(() => {
-    const byType = (key: string) => personalItems.value.filter(i => i.type === key).length
+    const byType = (key: string) => getInvoiceTabData(key).length
     const tab = (name: string, key: string, count: number) => ({ label: `${name} (${count})`, name, key })
     return [
         tab('New', 'new', byType('new')),
-        tab('Recurring', 'recurring', recurringItems.value.length),
+        tab('Recurring', 'recurring', byType('recurring')),
         tab('Prorate', 'prorate', byType('prorate')),
         tab('Upgrade', 'upgrade', byType('upgrade')),
         tab('Alat', 'alat', byType('alat')),
@@ -378,9 +382,10 @@ const invoiceTabItems = computed(() => {
     ]
 })
 
+const transactionSearch = ref('')
 const getInvoiceTabData = (key: string) => {
-    if (key === 'recurring') return recurringItems.value
-    return personalItems.value.filter(i => i.type === key)
+    const rows = key === 'recurring' ? recurringItems.value : personalItems.value.filter(i => i.type === key)
+    return rows.filter(r => matchesSearch(r, transactionSearch.value))
 }
 
 const getInvoiceColumns = (key: string) => invoiceColumns(field => getInvoiceTabData(key).reduce((sum, r) => sum + r[field], 0))
@@ -399,37 +404,39 @@ const moneyColumn = (key: MoneyField, label: string, opts: { hint?: GlossaryKey;
 
 const columns = computed<TableColumn<ManagerTeamMember>[]>(() => [
     {
-        id: 'expand',
-        header: '',
-        cell: ({ row }) => h(UButton, {
-            color: 'neutral',
-            variant: 'ghost',
-            icon: 'i-heroicons-chevron-down-20-solid',
-            'aria-label': 'Lihat rincian layanan baru',
-            class: 'transition-transform duration-200',
-            style: { transform: row.getIsExpanded() ? 'rotate(180deg)' : 'rotate(0deg)' },
-            onClick: () => row.toggleExpanded()
-        })
-    },
-    {
         accessorKey: 'employee',
         header: 'Karyawan',
-        cell: ({ row }) => h(resolveComponent('NuxtLink'), {
-            class: 'flex items-center gap-3 group',
-            to: `/${row.original.employeeId}/sales`
-        }, () => [
-            h(UAvatar, { src: row.original.photoProfile, alt: row.original.name, size: 'md' }),
-            h('div', { class: 'flex flex-col' }, [
-                h('span', { class: 'text-sm font-medium text-gray-900 dark:text-white group-hover:text-primary-500 transition-colors' }, row.original.name),
-                h('span', { class: 'text-xs text-gray-500' }, `${row.original.employeeId} · ${row.original.status ?? '-'}`)
+        // Expand toggle lives inside this cell so only one column needs pinning —
+        // pinning two columns offsets the second by the first's nominal size, not its rendered width.
+        cell: ({ row }) => h('div', { class: 'flex items-center gap-1' }, [
+            h(UButton, {
+                color: 'neutral',
+                variant: 'ghost',
+                icon: 'i-heroicons-chevron-down-20-solid',
+                'aria-label': 'Lihat rincian layanan baru',
+                class: 'transition-transform duration-200',
+                style: { transform: row.getIsExpanded() ? 'rotate(180deg)' : 'rotate(0deg)' },
+                onClick: () => row.toggleExpanded()
+            }),
+            h(resolveComponent('NuxtLink'), {
+                class: 'flex items-center gap-3 group',
+                to: `/${row.original.employeeId}/sales`
+            }, () => [
+                h(UAvatar, { src: row.original.photoProfile, alt: row.original.name, size: 'md' }),
+                h('div', { class: 'flex flex-col' }, [
+                    h('span', { class: 'text-sm font-medium text-gray-900 dark:text-white group-hover:text-primary-500 transition-colors' }, row.original.name),
+                    h('span', { class: 'text-xs text-gray-500' }, `${row.original.employeeId} · ${row.original.status ?? '-'}`)
+                ])
             ])
         ]),
-        footer: () => h('div', { class: 'font-bold py-3' }, 'Total Tim')
+        footer: () => h('div', { class: 'font-bold py-3 pl-10' }, 'Total Tim')
     },
     {
         id: 'achievement',
         header: 'Status Pencapaian',
-        cell: ({ row }) => h('div', { class: ['text-xs uppercase font-semibold', getAchievementTextClass(row.original.achievementStatus)] }, row.original.achievementStatus)
+        cell: ({ row }) => ongoing.value
+            ? h('div', { class: 'text-xs uppercase font-semibold text-sky-600 dark:text-sky-400', title: `Status final setelah periode berakhir. Sementara: ${row.original.achievementStatus}` }, 'Berjalan')
+            : h('div', { class: ['text-xs uppercase font-semibold', getAchievementTextClass(row.original.achievementStatus)] }, row.original.achievementStatus)
     },
     {
         accessorKey: 'activityCount',
