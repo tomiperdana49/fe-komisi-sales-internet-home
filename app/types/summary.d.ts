@@ -187,3 +187,16 @@ export interface ConsistencyBonusGrantInput {
     serviceCount: number;
     testimonialLink?: string;
 }
+
+/** A closed (frozen) commission period — the import jobs no longer re-crawl it. */
+export interface PeriodClosing {
+    period: string;
+    closedBy: string;
+    closedAt: string;
+}
+
+export interface PeriodClosingResponseData {
+    success: boolean;
+    message: string;
+    data: PeriodClosing[];
+}

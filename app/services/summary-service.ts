@@ -6,6 +6,7 @@ import type {
     InvoiceApprovalInput,
     InvoiceAdjustmentInput,
     InvoiceSummaryResponseData,
+    PeriodClosingResponseData,
     ManagerSummaryResponseData,
     SalesSummaryResponseData,
     SnapshotAdjustmentResponseData,
@@ -166,6 +167,47 @@ export class SummaryService {
     async revokeConsistencyBonus(employeeId: string, params: SummaryQueryParams): Promise<any> {
         try {
             const response = await apiService.client.delete(`/summary/consistency-bonus/${employeeId}`, {
+                params,
+                headers: {
+                    authorization: `Bearer ${useAuth().state.token}`
+                }
+            })
+            return response.data
+        } catch (error: any) {
+            handleServiceError(error)
+        }
+    }
+
+    async periodClosings(): Promise<PeriodClosingResponseData> {
+        try {
+            const response = await apiService.client.get(`/summary/period-closing`, {
+                headers: {
+                    authorization: `Bearer ${useAuth().state.token}`
+                }
+            })
+            return response.data
+        } catch (error: any) {
+            handleServiceError(error)
+        }
+    }
+
+    async closePeriod(params: SummaryQueryParams): Promise<any> {
+        try {
+            const response = await apiService.client.put(`/summary/period-closing`, {}, {
+                params,
+                headers: {
+                    authorization: `Bearer ${useAuth().state.token}`
+                }
+            })
+            return response.data
+        } catch (error: any) {
+            handleServiceError(error)
+        }
+    }
+
+    async reopenPeriod(params: SummaryQueryParams): Promise<any> {
+        try {
+            const response = await apiService.client.delete(`/summary/period-closing`, {
                 params,
                 headers: {
                     authorization: `Bearer ${useAuth().state.token}`

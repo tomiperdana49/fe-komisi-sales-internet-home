@@ -20,6 +20,7 @@
         </Teleport>
         <Teleport v-if="isMounted" to="#toolbar-right">
             <div class="flex items-center gap-2">
+                <PeriodClosingControl :month="month" :year="year" />
                 <USelectMenu v-model="month" :items="viewableMonths(year)" value-key="id" class="w-36" />
                 <USelectMenu v-model="year" :items="yearItems" class="w-24" />
             </div>
