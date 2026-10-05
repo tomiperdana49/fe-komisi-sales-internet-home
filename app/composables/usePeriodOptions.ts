@@ -1,5 +1,5 @@
-/** The dashboard went live with period October 2026 — nothing earlier is ever shown. */
-export const FIRST_PERIOD = { year: 2026, month: 10 }
+/** The earliest period the dashboard offers — nothing earlier is ever shown. */
+export const FIRST_PERIOD = { year: 2026, month: 1 }
 
 const MONTH_NAMES = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
 
@@ -7,8 +7,8 @@ export const usePeriodOptions = () => {
     // Every month — for picking a future period (e.g. when a rule set takes effect).
     const monthSelect = MONTH_NAMES.map((label, i) => ({ label, id: i + 1 }))
     /**
-     * Months that have data to view: from October 2026 (FIRST_PERIOD) up to the current month.
-     * The first year starts at October; the current year stops at the current month.
+     * Months that have data to view: from FIRST_PERIOD up to the current month.
+     * The first year starts at FIRST_PERIOD.month; the current year stops at the current month.
      */
     const viewableMonths = (year: number) => {
         const now = new Date()

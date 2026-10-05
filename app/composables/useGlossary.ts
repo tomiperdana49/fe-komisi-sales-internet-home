@@ -75,6 +75,10 @@ const GLOSSARY = {
         term: 'Pencapaian New',
         text: () => 'Jumlah pemasangan baru setelah dikurangi churn. Angka ini yang menentukan target, bonus, dan rate recurring.'
     },
+    newAchievement: {
+        term: 'Pencapaian New',
+        text: () => 'Jumlah pencapaian dari pemasangan baru. Home dan Nusafiber: 1 layanan = 1. NusaSelecta dihitung per kelompok: 3 unit Basic/Prime = 1, 2 unit Ultra = 1, sisa 2 Basic/Prime + 1 Ultra = 1; sisa unit lainnya tidak dihitung, tapi komisinya tetap dibayar.'
+    },
     bonusBulanan: {
         term: 'Bonus Bulanan',
         text: (r: Rules) => r
@@ -120,7 +124,7 @@ const GLOSSARY = {
     },
     overrideNew: {
         term: 'Overriding New',
-        text: () => 'Bagian manager dari total komisi New seluruh anggota tim, sesuai persentase Capaian Tim.'
+        text: () => 'Bagian manager dari total komisi New, Prorate, dan Alat seluruh anggota tim, sesuai persentase Capaian Tim.'
     },
     overrideRecurring: {
         term: 'Overriding Recurring',

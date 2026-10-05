@@ -116,7 +116,7 @@
                                         <span class="font-semibold text-gray-900 dark:text-white tabular-nums">{{ formatCurrency(periodData.override.newCommission) }}</span>
                                     </div>
                                     <p class="text-xs text-gray-500 dark:text-gray-400">
-                                        {{ periodData.override.newCommissionRate }}% × komisi New tim {{ formatCurrency(periodData.teamTotals.newCommission) }}
+                                        {{ periodData.override.newCommissionRate }}% × komisi New, Prorate &amp; Alat tim {{ formatCurrency(periodData.teamTotals.newCommission) }}
                                     </p>
                                 </li>
                                 <li>
@@ -146,7 +146,7 @@
                             <UIcon name="i-heroicons-squares-2x2" class="w-4 h-4 sm:w-5 sm:h-5 text-primary-500" />
                             Produksi Tim per Produk
                         </h4>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3 md:mb-4">Gabungan seluruh anggota tim, sudah dikurangi churn.</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3 md:mb-4">Gabungan seluruh anggota tim, penjualan pribadi manager, dan recurring Customer Relation Officer; sudah dikurangi churn. NusaSelecta dihitung dalam pencapaian, bukan jumlah unit.</p>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                             <div v-for="box in teamServiceBoxes" :key="box.title" class="p-4 rounded-xl border border-gray-200 dark:border-gray-800">
                                 <h5 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 pb-2 border-b border-gray-200 dark:border-gray-700">
@@ -196,7 +196,7 @@
                                 <div v-for="service in row.original.newService" :key="service.name" class="p-3 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
                                     <div class="flex justify-between items-start mb-2">
                                         <span class="font-semibold text-gray-900 dark:text-white">{{ service.name }}</span>
-                                        <span class="font-medium">{{ service.count }} layanan</span>
+                                        <span class="font-medium">{{ service.count }} {{ service.name === 'NusaSelecta' ? 'pencapaian' : 'layanan' }}</span>
                                     </div>
                                     <div class="space-y-1 text-xs text-gray-600 dark:text-gray-400">
                                         <div class="flex justify-between">
@@ -330,8 +330,8 @@ const teamServiceBoxes = computed<TeamServiceBox[]>(() => {
     const g = periodData.value.teamTotals.byServiceGroup
     return [
         {
-            title: 'Jumlah Layanan Baru',
-            hint: 'new',
+            title: 'Pencapaian New',
+            hint: 'newAchievement',
             rows: serviceGroupOrder.map(name => ({ label: name, value: g[name].newCount })),
             total: serviceGroupOrder.reduce((sum, name) => sum + g[name].newCount, 0),
             isCount: true
