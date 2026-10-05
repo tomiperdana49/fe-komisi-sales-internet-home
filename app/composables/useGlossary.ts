@@ -90,8 +90,8 @@ const GLOSSARY = {
         text: (r: Rules) => {
             const last = r?.bonus.tiers.at(-1)
             return r && last
-                ? `Menggantikan Bonus Bulanan bila pencapaian melebihi ${last.at}: ${rp(last.amount)} + ${rp(r.bonus.excessPerUnit)} per service tambahan.`
-                : 'Menggantikan Bonus Bulanan bila pencapaian melebihi tier tertinggi, ditambah bonus per service tambahan.'
+                ? `Tambahan di atas Bonus Bulanan bila pencapaian melebihi ${last.at}: ${rp(r.bonus.excessPerUnit)} per service di atas ${last.at}.`
+                : 'Tambahan di atas Bonus Bulanan bila pencapaian melebihi tier tertinggi: bonus per service di atas tier itu.'
         }
     },
     consistencyBonus: {

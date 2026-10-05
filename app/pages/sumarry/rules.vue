@@ -262,7 +262,7 @@
                                 <div class="mt-4 space-y-4 max-w-xl">
                                     <p class="text-sm text-gray-500 dark:text-gray-400">
                                         Tier berlaku untuk AM dengan target default ({{ form.targets.permanent }}). Untuk AM Permanent dengan target lain, tier ikut bergeser sebesar selisih targetnya.
-                                        Di atas tier terakhir, AM mendapat Bonus Kelebihan Service sebagai gantinya.
+                                        Di atas tier terakhir, AM tetap mendapat bonus tier terakhir ditambah Bonus Kelebihan Service per layanan di atasnya.
                                     </p>
                                     <div v-for="(t, i) in form.bonus.tiers" :key="i" class="flex items-end gap-2">
                                         <UFormField label="Pencapaian New" class="w-36"><UInput v-model.number="t.at" type="number" min="0" :disabled="!isDraft" /></UFormField>
