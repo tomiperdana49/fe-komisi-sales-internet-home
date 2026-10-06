@@ -188,6 +188,46 @@ export interface ConsistencyBonusGrantInput {
     testimonialLink?: string;
 }
 
+/** One manual target range for an Account Manager (Target AM page). Periods are YYYYMM. */
+export interface TargetOverride {
+    id: number;
+    target: number;
+    startPeriod: string;
+    endPeriod: string;
+    note: string | null;
+    updatedBy: string;
+    updatedByName: string | null;
+    updatedAt: string;
+}
+
+export interface TargetOverrideRosterItem {
+    employeeId: string;
+    name: string;
+    photoProfile: string;
+    status: string | null;
+    /** Target from the commission rules for this period and status. */
+    defaultTarget: number;
+    /** Target actually used this period: the manual one when active, else defaultTarget. */
+    effectiveTarget: number;
+    /** The manual range covering this period, if any. */
+    active: TargetOverride | null;
+    /** Manual ranges starting after this period, oldest first. */
+    upcoming: TargetOverride[];
+}
+
+export interface TargetOverrideResponseData {
+    success: boolean;
+    message: string;
+    data: TargetOverrideRosterItem[];
+}
+
+export interface TargetOverrideInput {
+    target: number;
+    startPeriod: string;
+    endPeriod: string;
+    note?: string;
+}
+
 /** A closed (frozen) commission period — the import jobs no longer re-crawl it. */
 export interface PeriodClosing {
     period: string;

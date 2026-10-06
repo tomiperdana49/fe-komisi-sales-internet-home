@@ -41,6 +41,7 @@ const links = [
     { to: '/sumarry/invoice', icon: 'i-heroicons-document-text', label: 'Invoice' },
     { to: '/sumarry/churn', icon: 'i-heroicons-archive-box-x-mark', label: 'Churn' },
     { to: '/sumarry/consistency-bonus', icon: 'i-heroicons-gift', label: 'Bonus Konsistensi' },
+    { to: '/sumarry/target', icon: 'i-heroicons-flag', label: 'Target AM' },
     { to: '/sumarry/rules', icon: 'i-heroicons-adjustments-horizontal', label: 'Aturan Komisi' }
 ]
 

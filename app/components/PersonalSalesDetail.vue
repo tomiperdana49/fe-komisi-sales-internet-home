@@ -14,9 +14,9 @@
                             <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
                                 <TermHint term="activity">Pencapaian New</TermHint>
                             </p>
-                            <p class="text-3xl font-bold text-gray-900 dark:text-white leading-none">
+                            <p class="text-3xl font-bold text-gray-900 dark:text-white leading-none tabular-nums">
                                 {{ data.activityCount }}
-                                <span class="text-sm font-medium text-gray-500 dark:text-gray-400">layanan</span>
+                                <span class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ data.target > 0 ? `/ ${data.target} layanan` : 'layanan' }}</span>
                             </p>
                         </div>
                         <span
@@ -28,6 +28,23 @@
                         </span>
                         <span v-else :class="['text-xs font-bold uppercase px-2.5 py-1 rounded-md border bg-gray-50 dark:bg-gray-800 text-right', getAchievementBadgeClass(data.achievementStatus)]">
                             {{ data.achievementStatus }}
+                        </span>
+                    </div>
+                    <div v-if="data.target > 0" class="space-y-2">
+                        <div class="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                            <div
+                                class="h-full"
+                                :class="data.activityCount >= data.target ? 'bg-green-500' : ongoing ? 'bg-sky-500' : 'bg-red-500'"
+                                :style="{ width: targetProgress + '%' }"
+                            />
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ targetGapText }}</p>
+                    </div>
+                    <div v-if="data.manualTarget" class="flex justify-between items-center gap-3 text-sm">
+                        <span class="text-gray-500 dark:text-gray-400">Target khusus</span>
+                        <span class="flex items-center gap-2">
+                            <UBadge color="primary" variant="subtle" size="sm">{{ manualRangeLabel }}</UBadge>
+                            <span class="font-semibold text-gray-900 dark:text-white tabular-nums">{{ data.manualTarget.target }}</span>
                         </span>
                     </div>
                     <div class="flex justify-between text-sm">
@@ -143,8 +160,24 @@ const props = defineProps<{
 
 const { formatCurrency } = useFormat()
 const { getAchievementBadgeClass } = useAchievementColor()
-const { isOngoingUntil, shortDate } = usePeriodOptions()
+const { isOngoingUntil, shortDate, monthLabel } = usePeriodOptions()
 const ongoing = computed(() => isOngoingUntil(props.data.endDate))
+
+const targetProgress = computed(() => Math.min(100, Math.max(0, (props.data.activityCount / props.data.target) * 100)))
+const targetGapText = computed(() => {
+    const gap = props.data.target - props.data.activityCount
+    if (gap <= 0) return `Target ${props.data.target} layanan tercapai.`
+    return ongoing.value
+        ? `Kurang ${gap} layanan lagi untuk capai target.`
+        : `Kurang ${gap} layanan dari target.`
+})
+// Admin-set target (Target AM page): shown with its range so the AM knows when it reverts to the default.
+const periodShort = (period: string) => `${monthLabel(Number(period.slice(4, 6))).slice(0, 3)} ${period.slice(0, 4)}`
+const manualRangeLabel = computed(() => {
+    const m = props.data.manualTarget
+    if (!m) return ''
+    return m.startPeriod === m.endPeriod ? periodShort(m.startPeriod) : `${periodShort(m.startPeriod)} – ${periodShort(m.endPeriod)}`
+})
 // While the period runs the motivation line (tied to the provisional status, e.g. SP1) is swapped for a neutral one in the template.
 // NusaSelecta units sold vs. the grouped achievement shown next to it.
 const nusaSelectaUnits = computed(() => (props.data.nusaSelectaNewUnits?.basicPrime ?? 0) + (props.data.nusaSelectaNewUnits?.ultra ?? 0))

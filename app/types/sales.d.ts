@@ -57,6 +57,10 @@ export interface SalesCommissionData {
     employeeId: string;
     status: string | null;
     activityCount: number;
+    /** New Achievement target used this period: the admin-set one (Target AM page) when present, else the rules' default. */
+    target: number;
+    /** The admin-set target and its period range (YYYYMM), when one covers this period. */
+    manualTarget: { target: number; startPeriod: string; endPeriod: string } | null;
     /** NusaSelecta New units sold (before churn); they count toward New Achievement only in groups. */
     nusaSelectaNewUnits?: { basicPrime: number; ultra: number };
     achievementStatus: string;

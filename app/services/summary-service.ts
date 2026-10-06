@@ -11,7 +11,9 @@ import type {
     SalesSummaryResponseData,
     SnapshotAdjustmentResponseData,
     SnapshotDetailResponseData,
-    SummaryQueryParams
+    SummaryQueryParams,
+    TargetOverrideInput,
+    TargetOverrideResponseData
 } from "~/types/summary"
 
 export class SummaryService {
@@ -168,6 +170,59 @@ export class SummaryService {
         try {
             const response = await apiService.client.delete(`/summary/consistency-bonus/${employeeId}`, {
                 params,
+                headers: {
+                    authorization: `Bearer ${useAuth().state.token}`
+                }
+            })
+            return response.data
+        } catch (error: any) {
+            handleServiceError(error)
+        }
+    }
+
+    async targetOverrides(params: SummaryQueryParams): Promise<TargetOverrideResponseData> {
+        try {
+            const response = await apiService.client.get(`/summary/target-override`, {
+                params,
+                headers: {
+                    authorization: `Bearer ${useAuth().state.token}`
+                }
+            })
+            return response.data
+        } catch (error: any) {
+            handleServiceError(error)
+        }
+    }
+
+    async createTargetOverride(data: TargetOverrideInput & { employeeId: string }): Promise<any> {
+        try {
+            const response = await apiService.client.post(`/summary/target-override`, data, {
+                headers: {
+                    authorization: `Bearer ${useAuth().state.token}`
+                }
+            })
+            return response.data
+        } catch (error: any) {
+            handleServiceError(error)
+        }
+    }
+
+    async updateTargetOverride(id: number, data: TargetOverrideInput): Promise<any> {
+        try {
+            const response = await apiService.client.put(`/summary/target-override/${id}`, data, {
+                headers: {
+                    authorization: `Bearer ${useAuth().state.token}`
+                }
+            })
+            return response.data
+        } catch (error: any) {
+            handleServiceError(error)
+        }
+    }
+
+    async deleteTargetOverride(id: number): Promise<any> {
+        try {
+            const response = await apiService.client.delete(`/summary/target-override/${id}`, {
                 headers: {
                     authorization: `Bearer ${useAuth().state.token}`
                 }

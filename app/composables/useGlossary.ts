@@ -82,7 +82,7 @@ const GLOSSARY = {
     bonusBulanan: {
         term: 'Bonus Bulanan',
         text: (r: Rules) => r
-            ? `Bonus bila pencapaian New mencapai ${r.bonus.tiers.map(t => t.at).join(' / ')} (untuk target ${r.targets.permanent}): ${r.bonus.tiers.map(t => rp(t.amount)).join(' / ')}.`
+            ? `Bonus bila pencapaian New mencapai ${r.bonus.tiers.map(t => t.at).join(' / ')} (untuk target ${r.targets.permanent}; bila target AM berbeda, tiap tier bergeser sebanyak selisihnya): ${r.bonus.tiers.map(t => rp(t.amount)).join(' / ')}.`
             : 'Bonus tunai bila pencapaian New mencapai tier tertentu.'
     },
     bonusKelebihanService: {
@@ -90,7 +90,7 @@ const GLOSSARY = {
         text: (r: Rules) => {
             const last = r?.bonus.tiers.at(-1)
             return r && last
-                ? `Tambahan di atas Bonus Bulanan bila pencapaian melebihi ${last.at}: ${rp(r.bonus.excessPerUnit)} per service di atas ${last.at}.`
+                ? `Tambahan di atas Bonus Bulanan bila pencapaian melebihi ${last.at} (untuk target ${r.targets.permanent}; bergeser bila target AM berbeda): ${rp(r.bonus.excessPerUnit)} per service di atas batas itu.`
                 : 'Tambahan di atas Bonus Bulanan bila pencapaian melebihi tier tertinggi: bonus per service di atas tier itu.'
         }
     },
