@@ -71,6 +71,12 @@ export interface InvoiceApprovalInput {
     isApproved: boolean;
 }
 
+export interface ChurnApprovalInput {
+    isApproved: boolean;
+    /** Required when isApproved: why the churn is waived. */
+    note?: string;
+}
+
 export interface ChurnSummaryItem {
     customer_service_id: number;
     customer_id: string;
@@ -86,6 +92,11 @@ export interface ChurnSummaryItem {
     sales_id: string | null;
     manager_id: string | null;
     is_approved: boolean;
+    /** Why an admin waived this churn; null while not approved (or approved before reasons were recorded). */
+    approval_note: string | null;
+    approved_by: string | null;
+    approved_by_name: string | null;
+    approved_at: string | null;
     employee_name: string | null;
     employee_eid: string | null;
     employee_photo: string | null;

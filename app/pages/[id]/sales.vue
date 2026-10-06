@@ -95,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { h } from 'vue'
+import { h, resolveComponent } from 'vue'
 import { CommissionService } from '~/services/commission-service'
 import { EmployeeService } from '~/services/employee-service'
 import { InvoiceService } from '~/services/invoice-service'
@@ -103,6 +103,8 @@ import type { Employee } from '~/types/employee'
 import type { TableColumn } from '@nuxt/ui'
 import type { GlossaryKey } from '~/composables/useGlossary'
 import type { ChurnRow, CommissionLineItem, SalesCommissionData } from '~/types/sales'
+
+const UBadge = resolveComponent('UBadge')
 
 const { setLoading } = useLoading()
 const route = useRoute()
@@ -200,10 +202,19 @@ const getColumns = (key: string): TableColumn<any>[] => {
             {
                 id: 'commission',
                 header: hintHeader('Potongan Komisi', 'churn'),
-                cell: ({ row }) => h('div', { class: 'flex flex-col items-end' }, [
-                    h('span', { class: 'text-xs font-medium bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-gray-600 dark:text-gray-300 mb-1' }, `${row.original.commissionPercentage}%`),
-                    h('span', { class: 'text-sm font-bold text-gray-900 dark:text-white' }, formatCurrency(row.original.commission))
-                ])
+                // A waived churn cuts nothing: show the would-be amount struck through, with the admin's reason.
+                cell: ({ row }) => row.original.is_approved
+                    ? h('div', { class: 'flex flex-col items-end max-w-[220px]' }, [
+                        h(UBadge, { color: 'success', variant: 'subtle', size: 'sm', class: 'mb-1' }, () => 'Dibebaskan'),
+                        h('span', { class: 'text-sm text-gray-400 line-through' }, formatCurrency(row.original.commission)),
+                        row.original.approval_note
+                            ? h('span', { class: 'text-[11px] text-gray-500 dark:text-gray-400 text-right whitespace-normal mt-1' }, row.original.approval_note)
+                            : null
+                    ])
+                    : h('div', { class: 'flex flex-col items-end' }, [
+                        h('span', { class: 'text-xs font-medium bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-gray-600 dark:text-gray-300 mb-1' }, `${row.original.commissionPercentage}%`),
+                        h('span', { class: 'text-sm font-bold text-gray-900 dark:text-white' }, formatCurrency(row.original.commission))
+                    ])
             }
         ]
     }

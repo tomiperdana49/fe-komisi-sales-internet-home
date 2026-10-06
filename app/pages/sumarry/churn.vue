@@ -41,6 +41,8 @@
                 </UCard>
             </div>
         </UContainer>
+
+        <ApproveChurnModal v-model:open="isApproveModalOpen" :churn="approvingChurn" @success="onApproved" />
     </div>
 </template>
 
@@ -81,6 +83,34 @@ const globalFilter = ref('')
 const { monthLabel } = usePeriodOptions()
 
 const selectedMonthLabel = computed(() => monthLabel(selectedMonth.value))
+
+// Waiving needs a reason, so switching on opens the reason form; switching off reinstates the cut right away.
+const isApproveModalOpen = ref(false)
+const approvingChurn = ref<ChurnSummaryItem | null>(null)
+const authState = useAuth().state
+const onApproved = (note: string) => {
+    const row = approvingChurn.value
+    if (!row) return
+    row.is_approved = true
+    row.approval_note = note
+    row.approved_by = authState.user?.employee_id ?? null
+    row.approved_by_name = authState.user?.name ?? null
+    row.approved_at = new Date().toISOString()
+}
+const revokeApproval = async (row: ChurnSummaryItem) => {
+    try {
+        const response = await summaryService.approveChurn(row.customer_service_id, { isApproved: false })
+        if (response && response.success) {
+            row.is_approved = false
+            row.approval_note = null
+            row.approved_by = null
+            row.approved_by_name = null
+            row.approved_at = null
+        }
+    } catch (error) {
+        toast.add({ title: 'Gagal', description: 'Status approve gagal diperbarui. Coba lagi.', color: 'error' })
+    }
+}
 
 const stats = computed(() => {
     const rows = summaryData.value
@@ -188,22 +218,35 @@ const columns: TableColumn<ChurnSummaryItem>[] = [
         cell: ({ row }) => h('div', { class: 'flex justify-center' }, [
             h(USwitch, {
                 modelValue: row.original.is_approved,
-                'onUpdate:modelValue': async (val: boolean) => {
-                    try {
-                        const response = await summaryService.approveChurn(row.original.customer_service_id, { isApproved: val })
-                        if (response && response.success) {
-                            row.original.is_approved = val
-                        }
-                    } catch (error) {
-                        toast.add({
-                            title: 'Gagal',
-                            description: 'Status approve gagal diperbarui. Coba lagi.',
-                            color: 'error'
-                        })
+                'onUpdate:modelValue': (val: boolean) => {
+                    if (val) {
+                        approvingChurn.value = row.original
+                        isApproveModalOpen.value = true
+                    } else {
+                        revokeApproval(row.original)
                     }
                 }
             })
         ])
+    },
+    {
+        accessorKey: 'approval_note',
+        header: 'Alasan Dibebaskan',
+        cell: ({ row }) => {
+            const r = row.original
+            if (!r.is_approved) return h('span', { class: 'text-xs text-gray-400 italic' }, '-')
+            return h('div', { class: 'flex flex-col min-w-[180px] max-w-[300px]' }, [
+                r.approval_note
+                    ? h('span', { class: 'text-xs text-gray-700 dark:text-gray-200 whitespace-normal' }, r.approval_note)
+                    : h('span', { class: 'text-xs text-gray-400 italic' }, 'Alasan belum dicatat'),
+                r.approved_by
+                    ? h('span', { class: 'text-[10px] text-gray-400 mt-0.5' }, [
+                        r.approved_by_name ?? r.approved_by,
+                        r.approved_at ? ` · ${new Date(r.approved_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}` : ''
+                    ].join(''))
+                    : null
+            ])
+        }
     }
 ]
 

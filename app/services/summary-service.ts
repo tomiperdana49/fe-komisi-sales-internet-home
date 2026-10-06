@@ -1,5 +1,6 @@
 import { apiService } from "./api-service"
 import type {
+    ChurnApprovalInput,
     ChurnSummaryResponseData,
     ConsistencyBonusGrantInput,
     ConsistencyBonusResponseData,
@@ -125,7 +126,7 @@ export class SummaryService {
         }
     }
 
-    async approveChurn(customerServiceId: number, data: InvoiceApprovalInput): Promise<any> {
+    async approveChurn(customerServiceId: number, data: ChurnApprovalInput): Promise<any> {
         try {
             const response = await apiService.client.post(`/summary/churn/${customerServiceId}/approve`, data, {
                 headers: {

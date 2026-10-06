@@ -126,6 +126,8 @@ export interface ChurnRow {
     sales_id: string | null;
     manager_id: string | null;
     is_approved: boolean;
+    /** Why an admin waived this churn (it then cuts nothing); null when not waived or no reason was recorded. */
+    approval_note: string | null;
     mrc: number;
     commission: number;
     commissionPercentage: number;
