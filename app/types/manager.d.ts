@@ -66,14 +66,9 @@ export interface ManagerCommissionData {
         recurringCommission: number;
         newSubscription: number;
         newMrc: number;
-        byServiceGroup: Record<'Home' | 'Nusafiber' | 'NusaSelecta' | 'Digital Business' | 'Access Business', {
-            newCount: number;
-            newSubscription: number;
-            newMrc: number;
-            newCommission: number;
-            recurringSubscription: number;
-            recurringCommission: number;
-        }>;
+        byServiceGroup: Record<ManagerServiceGroup, ManagerServiceGroupTotal>;
+        /** The manager's own personal sales, kept apart so byServiceGroup's new count matches team activity. */
+        personalByServiceGroup: Record<ManagerServiceGroup, ManagerServiceGroupTotal>;
     };
     /** The manager's own personal-sales commission (KOMISI.md 6.F), invoice items included. */
     personal: SalesCommissionData & { items: CommissionLineItem[] };
@@ -100,3 +95,14 @@ export interface ManagerCommissionYearResponseData {
     message: string;
     data: ManagerCommissionYearData;
 }
+
+export type ManagerServiceGroup = 'Home' | 'Nusafiber' | 'NusaSelecta' | 'Digital Business' | 'Access Business';
+
+export type ManagerServiceGroupTotal = {
+    newCount: number;
+    newSubscription: number;
+    newMrc: number;
+    newCommission: number;
+    recurringSubscription: number;
+    recurringCommission: number;
+};

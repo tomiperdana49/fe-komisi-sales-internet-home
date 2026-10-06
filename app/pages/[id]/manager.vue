@@ -146,7 +146,7 @@
                             <UIcon name="i-heroicons-squares-2x2" class="w-4 h-4 sm:w-5 sm:h-5 text-primary-500" />
                             Produksi Tim per Produk
                         </h4>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3 md:mb-4">Gabungan seluruh anggota tim, penjualan pribadi manager, dan recurring Customer Relation Officer; sudah dikurangi churn. NusaSelecta dihitung dalam pencapaian, bukan jumlah unit.</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3 md:mb-4">Gabungan seluruh anggota tim dan recurring Customer Relation Officer; sudah dikurangi churn. Total tim sama dengan Capaian Tim; penjualan pribadi manager ditampilkan terpisah. NusaSelecta dihitung dalam pencapaian, bukan jumlah unit.</p>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                             <div v-for="box in teamServiceBoxes" :key="box.title" class="p-4 rounded-xl border border-gray-200 dark:border-gray-800">
                                 <h5 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 pb-2 border-b border-gray-200 dark:border-gray-700">
@@ -161,9 +161,19 @@
                                         </span>
                                     </li>
                                     <li class="flex justify-between items-center text-sm pt-3 mt-1 border-t border-gray-200 dark:border-gray-700">
-                                        <span class="font-bold text-gray-900 dark:text-white">Total</span>
+                                        <span class="font-bold text-gray-900 dark:text-white">{{ box.personal ? 'Total tim' : 'Total' }}</span>
                                         <span class="font-bold text-primary-600 dark:text-primary-400 tabular-nums">{{ box.isCount ? box.total : formatCurrency(box.total) }}</span>
                                     </li>
+                                    <template v-if="box.personal">
+                                        <li class="flex justify-between items-center gap-3 text-sm">
+                                            <span class="text-gray-600 dark:text-gray-400">Pribadi manager</span>
+                                            <span class="font-semibold tabular-nums text-gray-900 dark:text-white">{{ box.isCount ? formatSigned(box.personal) : formatCurrency(box.personal) }}</span>
+                                        </li>
+                                        <li class="flex justify-between items-center text-sm pt-2 border-t border-gray-200 dark:border-gray-700">
+                                            <span class="font-bold text-gray-900 dark:text-white">Total area</span>
+                                            <span class="font-bold text-gray-900 dark:text-white tabular-nums">{{ box.isCount ? box.total + box.personal : formatCurrency(box.total + box.personal) }}</span>
+                                        </li>
+                                    </template>
                                 </ul>
                             </div>
                         </div>
@@ -258,7 +268,7 @@ import { EmployeeService } from '~/services/employee-service'
 import type { Employee } from '~/types/employee'
 import type { TableColumn } from '@nuxt/ui'
 import type { GlossaryKey } from '~/composables/useGlossary'
-import type { ManagerCommissionData, ManagerTeamMember } from '~/types/manager'
+import type { ManagerCommissionData, ManagerServiceGroup, ManagerServiceGroupTotal, ManagerTeamMember } from '~/types/manager'
 
 const { setLoading } = useLoading()
 const route = useRoute()
@@ -300,8 +310,8 @@ const totalParts = computed<{ label: string; hint: GlossaryKey; value: number }[
 
 const targetProgress = computed(() => {
     const t = periodData.value?.team
-    if (!t || t.finalTarget <= 0) return t?.activityCount ? 100 : 0
-    return Math.min(100, (t.activityCount / t.finalTarget) * 100)
+    if (!t || t.finalTarget <= 0) return (t?.activityCount ?? 0) > 0 ? 100 : 0
+    return Math.min(100, Math.max(0, (t.activityCount / t.finalTarget) * 100))
 })
 
 const targetGapText = computed(() => {
@@ -317,9 +327,14 @@ interface TeamServiceBox {
     title: string
     hint?: GlossaryKey
     rows: { label: string; value: number }[]
+    /** Team members (+ Customer Relation Officer recurring) only — matches Capaian Tim for the count box. */
     total: number
+    /** The manager's own personal sales for the same box; 0 hides the personal/area rows. */
+    personal: number
     isCount?: boolean
 }
+
+const formatSigned = (n: number) => (n > 0 ? `+${n}` : `${n}`)
 
 const serviceGroupOrder = ['Home', 'Nusafiber', 'NusaSelecta'] as const
 // Recurring-only: carves Digital Business and Access Business out of Home (KOMISI.md 3) — New-side boxes stay on the 3-way serviceGroupOrder above.
@@ -328,37 +343,25 @@ const recurringServiceGroupOrder = ['Home', 'Nusafiber', 'NusaSelecta', 'Digital
 const teamServiceBoxes = computed<TeamServiceBox[]>(() => {
     if (!periodData.value) return []
     const g = periodData.value.teamTotals.byServiceGroup
+    const p = periodData.value.teamTotals.personalByServiceGroup
+    const box = (
+        title: string,
+        groups: readonly ManagerServiceGroup[],
+        field: keyof ManagerServiceGroupTotal,
+        opts: { hint?: GlossaryKey; isCount?: boolean } = {}
+    ): TeamServiceBox => ({
+        title,
+        ...opts,
+        rows: groups.map(name => ({ label: name, value: g[name][field] })),
+        total: groups.reduce((sum, name) => sum + g[name][field], 0),
+        personal: groups.reduce((sum, name) => sum + p[name][field], 0)
+    })
     return [
-        {
-            title: 'Pencapaian New',
-            hint: 'newAchievement',
-            rows: serviceGroupOrder.map(name => ({ label: name, value: g[name].newCount })),
-            total: serviceGroupOrder.reduce((sum, name) => sum + g[name].newCount, 0),
-            isCount: true
-        },
-        {
-            title: 'Subscription Baru',
-            hint: 'subscription',
-            rows: serviceGroupOrder.map(name => ({ label: name, value: g[name].newSubscription })),
-            total: serviceGroupOrder.reduce((sum, name) => sum + g[name].newSubscription, 0)
-        },
-        {
-            title: 'MRC Baru',
-            hint: 'mrc',
-            rows: serviceGroupOrder.map(name => ({ label: name, value: g[name].newMrc })),
-            total: serviceGroupOrder.reduce((sum, name) => sum + g[name].newMrc, 0)
-        },
-        {
-            title: 'Subscription Recurring',
-            hint: 'recurring',
-            rows: recurringServiceGroupOrder.map(name => ({ label: name, value: g[name].recurringSubscription })),
-            total: recurringServiceGroupOrder.reduce((sum, name) => sum + g[name].recurringSubscription, 0)
-        },
-        {
-            title: 'Komisi Recurring Tim',
-            rows: recurringServiceGroupOrder.map(name => ({ label: name, value: g[name].recurringCommission })),
-            total: recurringServiceGroupOrder.reduce((sum, name) => sum + g[name].recurringCommission, 0)
-        }
+        box('Pencapaian New', serviceGroupOrder, 'newCount', { hint: 'newAchievement', isCount: true }),
+        box('Subscription Baru', serviceGroupOrder, 'newSubscription', { hint: 'subscription' }),
+        box('MRC Baru', serviceGroupOrder, 'newMrc', { hint: 'mrc' }),
+        box('Subscription Recurring', recurringServiceGroupOrder, 'recurringSubscription', { hint: 'recurring' }),
+        box('Komisi Recurring Tim', recurringServiceGroupOrder, 'recurringCommission')
     ]
 })
 
