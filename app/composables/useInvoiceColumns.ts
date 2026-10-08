@@ -25,7 +25,7 @@ export const useInvoiceColumns = () => {
             id: 'label',
             header: 'Produk',
             cell: ({ row }) => {
-                const { label, color } = getServiceLabel(row.original.category, row.original.serviceId)
+                const { label, color } = getServiceLabel(row.original.category, row.original.serviceGroup)
                 const badge = h(UBadge, { label, color, variant: 'subtle' })
                 if (!row.original.isRenewal) return badge
                 return h('div', { class: 'flex flex-col items-start gap-1' }, [

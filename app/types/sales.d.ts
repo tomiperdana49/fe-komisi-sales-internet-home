@@ -1,3 +1,5 @@
+import type { ManagerServiceGroup } from './manager'
+
 export interface CommissionStats {
     count: number;
     commission: number;
@@ -25,6 +27,8 @@ export interface CommissionLineItem {
     serviceId: string | null;
     serviceName: string | null;
     category: string | null;
+    /** Product label from the period's Aturan Komisi, computed on the BE. */
+    serviceGroup: ManagerServiceGroup;
     businessOperation: string | null;
     manager: string | null;
     type: string;
