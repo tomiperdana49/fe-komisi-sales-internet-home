@@ -13,6 +13,8 @@ export interface CommissionProductRule {
     twelveMonthRateFrom: number;
     /** null = use rates.setup */
     setupRate: number | null;
+    /** Stopped services of this product are pulled in as churn. */
+    churn: boolean;
 }
 
 export interface CommissionRules {

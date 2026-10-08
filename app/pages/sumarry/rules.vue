@@ -62,7 +62,7 @@
                     <UCard v-if="form">
                         <template #header>
                             <div class="flex flex-col md:flex-row md:items-start justify-between gap-3">
-                                <div class="space-y-1">
+                                <div class="space-y-1 min-w-0">
                                     <div class="flex items-center gap-2">
                                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
                                             {{ selectedSet ? `Berlaku mulai ${periodLabel(selectedSet.effectivePeriod)}` : 'Aturan bawaan sistem' }}
@@ -80,7 +80,7 @@
                                         <p v-if="!isDraft" class="text-sm text-gray-700 dark:text-gray-300 pt-1"><span class="font-medium">Catatan:</span> {{ selectedSet.note }}</p>
                                     </template>
                                 </div>
-                                <div class="flex flex-wrap gap-2">
+                                <div class="flex flex-wrap items-center gap-2 md:shrink-0 md:flex-nowrap">
                                     <template v-if="isDraft">
                                         <UButton color="neutral" variant="ghost" icon="i-lucide-trash-2" @click="isDeleteOpen = true">Hapus</UButton>
                                         <UButton color="neutral" variant="outline" icon="i-lucide-save" :loading="saving" :disabled="!isDirty" @click="saveDraft">Simpan Draft</UButton>
@@ -137,10 +137,10 @@
                             <template #products>
                                 <p class="text-sm text-gray-500 dark:text-gray-400 my-3">
                                     Rate komisi New & Upgrade per produk. Penjualan New/Upgrade produk yang <strong>tidak ada</strong> di tabel ini tidak mendapat komisi dan tidak menambah pencapaian.
-                                    Pisahkan beberapa ServiceId dengan koma. Kontrak di bawah batas rate 6 bulan memakai rate 1 bulan. Kosongkan kolom Setup untuk memakai rate setup umum.
+                                    Pisahkan beberapa ServiceId dengan koma. Kontrak di bawah batas rate 6 bulan memakai rate 1 bulan. Kosongkan kolom Setup untuk memakai rate setup umum. Centang <strong>Churn</strong> agar layanan produk tersebut yang berhenti kurang dari 1 tahun dihitung sebagai churn.
                                 </p>
                                 <div class="overflow-x-auto">
-                                    <table class="w-full min-w-[1150px] text-sm">
+                                    <table class="w-full min-w-[1230px] text-sm">
                                         <thead>
                                             <tr class="text-left text-xs uppercase text-gray-500 border-b border-gray-200 dark:border-gray-800">
                                                 <th class="py-2 pr-2 min-w-56">Produk</th>
@@ -152,6 +152,7 @@
                                                 <th class="py-2 pr-2 w-32 min-w-32">Rate 6 bln mulai kontrak ≥</th>
                                                 <th class="py-2 pr-2 w-32 min-w-32">Rate 12 bln mulai kontrak ≥</th>
                                                 <th class="py-2 pr-2 w-28 min-w-28">Setup %</th>
+                                                <th class="py-2 pr-2 w-20 min-w-20 text-center">Churn</th>
                                                 <th v-if="isDraft" class="py-2 w-10" />
                                             </tr>
                                         </thead>
@@ -184,6 +185,7 @@
                                                         @update:model-value="(v: string | number) => p.setupRate = v === '' || v === null ? null : Number(v)"
                                                     />
                                                 </td>
+                                                <td class="py-2 pr-2 text-center"><UCheckbox v-model="p.churn" :disabled="!isDraft" class="justify-center pt-2" aria-label="Hitung churn" /></td>
                                                 <td v-if="isDraft" class="py-2">
                                                     <UButton icon="i-lucide-x" color="neutral" variant="ghost" aria-label="Hapus produk" @click="form.products.splice(i, 1)" />
                                                 </td>
@@ -588,7 +590,7 @@ const deleteDraft = async () => {
 }
 
 const addProduct = () => {
-    form.value?.products.push({ name: '', serviceIds: [], group: 'Home', rate1: 0, rate6: 0, rate12: 0, sixMonthRateFrom: 2, twelveMonthRateFrom: 12, setupRate: null })
+    form.value?.products.push({ name: '', serviceIds: [], group: 'Home', rate1: 0, rate6: 0, rate12: 0, sixMonthRateFrom: 2, twelveMonthRateFrom: 12, setupRate: null, churn: true })
 }
 
 // --- Preview ---
