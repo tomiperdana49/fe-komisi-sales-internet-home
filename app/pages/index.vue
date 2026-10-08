@@ -43,23 +43,23 @@
                         :ui="{ avatar: 'h-14 w-14' }"
                     >
                         <div class="min-w-0">
-                        <UTooltip :text="card.name" :disabled="!card.name" :delay-duration="0" :content="{ side: 'top' }" :ui="textTooltipUi">
+                        <TextTooltip :text="card.name" hover-only>
                             <h1 class="text-md font-medium text-gray-900 dark:text-white truncate">
                                 {{ card.name }}
                             </h1>
-                        </UTooltip>
+                        </TextTooltip>
 
-                        <UTooltip :text="`${card.employeeId} - ${card.organizationName}`" :delay-duration="0" :content="{ side: 'top' }" :ui="textTooltipUi">
+                        <TextTooltip :text="`${card.employeeId} - ${card.organizationName}`" hover-only>
                             <p class="text-xs text-gray-500 dark:text-gray-400 truncate mb-1">
                                 {{ card.employeeId }} - {{ card.organizationName }}
                             </p>
-                        </UTooltip>
+                        </TextTooltip>
 
-                        <UTooltip :text="card.position" :disabled="!card.position" :delay-duration="0" :content="{ side: 'top' }" :ui="textTooltipUi">
+                        <TextTooltip :text="card.position" hover-only>
                             <p class="text-sm text-gray-600 dark:text-gray-300 truncate">
                                 {{ card.position }}
                             </p>
-                        </UTooltip>
+                        </TextTooltip>
                         </div>
                     </UUser>
                     </template>
