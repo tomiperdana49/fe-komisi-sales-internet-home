@@ -63,6 +63,7 @@ const { sortableHeader } = useSortableHeader()
 const USwitch = resolveComponent('USwitch')
 const UIcon = resolveComponent('UIcon')
 const UTooltip = resolveComponent('UTooltip')
+const { withTooltip } = useTextTooltip()
 
 const { setLoading } = useLoading()
 const { formatCurrency, formatDate } = useFormat()
@@ -175,7 +176,7 @@ const columns: TableColumn<ChurnSummaryItem>[] = [
                 target: '_blank',
                 class: 'font-medium text-blue-500 hover:underline'
             }, row.original.customer_service_account ?? '-'),
-            h('span', { class: 'text-xs text-gray-400 truncate max-w-[200px]' }, row.original.service_name ?? '-')
+            withTooltip(row.original.service_name, h('span', { class: 'text-xs text-gray-400 truncate max-w-[200px]' }, row.original.service_name ?? '-'))
         ])
     },
     {

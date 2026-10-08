@@ -12,6 +12,7 @@ type TotalField = 'subscription' | 'mrc' | 'commission'
 export const useInvoiceColumns = () => {
     const { formatCurrency } = useFormat()
     const { getServiceLabel } = useServiceLabel()
+    const { withTooltip } = useTextTooltip()
 
     const hintHeader = (label: string, term: GlossaryKey) => () => h(TermHint, { term }, () => label)
 
@@ -44,14 +45,14 @@ export const useInvoiceColumns = () => {
             header: 'Layanan',
             cell: ({ row }) => h('div', { class: 'flex flex-col min-w-[120px]' }, [
                 h('a', { href: `https://isx.nusa.net.id/v2/customer/service/${row.original.customerServiceId}/detail`, target: '_blank', class: 'text-blue-500 hover:underline font-semibold text-sm break-all' }, row.original.customerServiceAccount ?? ''),
-                h('span', { class: 'text-xs text-gray-500 dark:text-gray-400 whitespace-normal break-words line-clamp-2' }, row.original.serviceName ?? '')
+                withTooltip(row.original.serviceName, h('span', { class: 'text-xs text-gray-500 dark:text-gray-400 whitespace-normal break-words line-clamp-2' }, row.original.serviceName ?? ''))
             ])
         },
         {
             header: 'Pelanggan',
             cell: ({ row }) => h('div', { class: 'flex flex-col min-w-[120px]' }, [
                 h('a', { href: `https://isx.nusa.net.id/customer.php?custId=${row.original.customerId}&pid=profile`, target: '_blank', class: 'text-blue-500 hover:underline font-semibold text-sm' }, row.original.customerId),
-                h('span', { class: 'text-xs text-gray-500 dark:text-gray-400 whitespace-normal break-words line-clamp-2' }, row.original.customerName ?? '')
+                withTooltip(row.original.customerName, h('span', { class: 'text-xs text-gray-500 dark:text-gray-400 whitespace-normal break-words line-clamp-2' }, row.original.customerName ?? ''))
             ])
         },
         {

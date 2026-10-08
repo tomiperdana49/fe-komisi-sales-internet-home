@@ -105,6 +105,7 @@ import type { GlossaryKey } from '~/composables/useGlossary'
 import type { ChurnRow, CommissionLineItem, SalesCommissionData } from '~/types/sales'
 
 const UBadge = resolveComponent('UBadge')
+const { withTooltip } = useTextTooltip()
 
 const { setLoading } = useLoading()
 const route = useRoute()
@@ -179,17 +180,21 @@ const getColumns = (key: string): TableColumn<any>[] => {
                 header: 'Layanan',
                 cell: ({ row }) => h('div', { class: 'flex flex-col min-w-[120px]' }, [
                     h('a', { href: `https://isx.nusa.net.id/v2/customer/service/${row.original.customer_service_id}/detail`, target: '_blank', class: 'text-blue-500 hover:underline font-semibold text-sm break-all' }, row.original.customer_service_account),
-                    h('span', { class: 'text-xs text-gray-500 dark:text-gray-400 whitespace-normal break-words line-clamp-2' }, row.original.service_name ?? '')
+                    withTooltip(row.original.service_name, h('span', { class: 'text-xs text-gray-500 dark:text-gray-400 whitespace-normal break-words line-clamp-2' }, row.original.service_name ?? ''))
                 ])
             },
             {
                 header: 'Pelanggan',
                 cell: ({ row }) => h('div', { class: 'flex flex-col min-w-[120px]' }, [
                     h('a', { href: `https://isx.nusa.net.id/customer.php?custId=${row.original.customer_id}&pid=profile`, target: '_blank', class: 'text-blue-500 hover:underline font-semibold text-sm' }, row.original.customer_id),
-                    h('span', { class: 'text-xs text-gray-500 dark:text-gray-400 whitespace-normal break-words line-clamp-2' }, row.original.customer_name ?? '')
+                    withTooltip(row.original.customer_name, h('span', { class: 'text-xs text-gray-500 dark:text-gray-400 whitespace-normal break-words line-clamp-2' }, row.original.customer_name ?? ''))
                 ])
             },
-            { accessorKey: 'reason', header: 'Alasan Berhenti', cell: ({ row }) => h('span', { class: 'text-xs italic text-gray-500 dark:text-gray-400 whitespace-normal line-clamp-2 min-w-[150px]' }, row.original.reason ?? '') },
+            {
+                accessorKey: 'reason',
+                header: 'Alasan Berhenti',
+                cell: ({ row }) => withTooltip(row.original.reason, h('span', { class: 'text-xs italic text-gray-500 dark:text-gray-400 whitespace-normal line-clamp-2 min-w-[150px]' }, row.original.reason ?? ''))
+            },
             {
                 header: 'Lama Berlangganan',
                 cell: ({ row }) => h('div', { class: 'flex flex-col' }, [

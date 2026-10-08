@@ -35,7 +35,9 @@
                                             {{ set.status === 'draft' ? 'Draft' : activeId === set.id ? 'Aktif' : 'Terbit' }}
                                         </UBadge>
                                     </div>
-                                    <p class="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 mt-0.5">{{ set.note || '-' }}</p>
+                                    <UTooltip :text="set.note" :disabled="!set.note" :delay-duration="0" :content="{ side: 'top' }" :ui="textTooltipUi">
+                                        <p class="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 mt-0.5">{{ set.note || '-' }}</p>
+                                    </UTooltip>
                                     <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-1 flex items-center gap-1">
                                         <UIcon name="i-lucide-user" class="size-3" />
                                         {{ set.status === 'published' ? `Diterbitkan ${set.publishedByName} · ${formatDate(set.publishedAt)}` : `${set.updatedByName ?? set.createdByName} · ${formatDate(set.updatedAt ?? set.createdAt)}` }}

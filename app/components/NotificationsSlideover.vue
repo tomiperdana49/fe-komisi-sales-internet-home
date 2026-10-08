@@ -63,7 +63,9 @@
                                 </span>
                             </div>
                             <div>
-                                <p class="font-medium text-gray-700 dark:text-gray-200 line-clamp-1">{{ item.companyName }}</p>
+                                <UTooltip :text="item.companyName" :disabled="!item.companyName" :delay-duration="0" :content="{ side: 'top' }" :ui="textTooltipUi">
+                                    <p class="font-medium text-gray-700 dark:text-gray-200 line-clamp-1">{{ item.companyName }}</p>
+                                </UTooltip>
                                 <p class="text-[10px] text-gray-500">{{ item.customerId }} • {{ item.serviceGroupId }}</p>
                             </div>
                         </div>

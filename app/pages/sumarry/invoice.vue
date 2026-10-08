@@ -72,6 +72,7 @@ const UButton = resolveComponent('UButton')
 const USwitch = resolveComponent('USwitch')
 const UIcon = resolveComponent('UIcon')
 const UTooltip = resolveComponent('UTooltip')
+const { withTooltip } = useTextTooltip()
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 
 const { setLoading } = useLoading()
@@ -216,7 +217,7 @@ const columns: TableColumn<InvoiceSummaryItem>[] = [
                 target: '_blank',
                 class: 'font-medium text-blue-500 hover:underline'
             }, row.original.customerServiceAccount ?? '-'),
-            h('span', { class: 'text-xs text-gray-400 truncate max-w-[200px]' }, row.original.serviceName ?? '-')
+            withTooltip(row.original.serviceName, h('span', { class: 'text-xs text-gray-400 truncate max-w-[200px]' }, row.original.serviceName ?? '-'))
         ])
     },
     {
