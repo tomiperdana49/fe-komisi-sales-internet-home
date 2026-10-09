@@ -74,11 +74,16 @@
                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
                                 {{ targetGapText }}
                             </p>
-                            <div class="flex justify-between items-center text-sm mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
-                                <span class="text-gray-600 dark:text-gray-400">
-                                    <TermHint term="teamAchievement">Capaian vs Target Dasar</TermHint>
-                                </span>
-                                <span class="font-bold text-gray-900 dark:text-white">{{ Math.round(periodData.team.achievementPercentage) }}%</span>
+                            <div class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
+                                <div class="flex justify-between items-center text-sm">
+                                    <span class="text-gray-600 dark:text-gray-400">
+                                        <TermHint term="teamAchievement">Capaian untuk Overriding New</TermHint>
+                                    </span>
+                                    <span class="font-bold text-gray-900 dark:text-white tabular-nums">{{ Math.round(periodData.team.achievementPercentage) }}%</span>
+                                </div>
+                                <p v-if="periodData.team.achievementTarget > 0" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    {{ periodData.team.activityCount }} ÷ {{ periodData.team.achievementTarget === periodData.team.finalTarget ? 'Target Akhir' : 'Target Dasar' }} {{ periodData.team.achievementTarget }} — penentu persentase Overriding New.
+                                </p>
                             </div>
                         </div>
 
@@ -279,7 +284,7 @@ const UButton = resolveComponent('UButton')
 
 const { viewableMonths, yearItems, isOngoingUntil, shortDate } = usePeriodOptions()
 const { hintHeader, invoiceColumns, matchesSearch } = useInvoiceColumns()
-const glossaryTerms: GlossaryKey[] = ['teamSize', 'baseTarget', 'finalTarget', 'teamAchievement', 'overrideNew', 'overrideRecurring', 'personalSales', 'cro', 'new', 'recurring', 'prorate', 'upgrade', 'alat', 'setup', 'subscription', 'mrc', 'contractMonths', 'lateMonth', 'commission', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
+const glossaryTerms: GlossaryKey[] = ['teamSize', 'baseTarget', 'finalTarget', 'teamAchievement', 'overrideNew', 'overrideRecurring', 'personalSales', 'cro', 'new', 'recurring', 'prorate', 'upgrade', 'alat', 'setup', 'subscription', 'mrc', 'contractMonths', 'lateMonth', 'managerCommission', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
 
 const employee = ref<Employee>()
 const { year, month: selectedMonth } = useSelectedPeriod()
@@ -391,9 +396,11 @@ const getInvoiceTabData = (key: string) => {
     return rows.filter(r => matchesSearch(r, transactionSearch.value))
 }
 
-const getInvoiceColumns = (key: string) => invoiceColumns(field => getInvoiceTabData(key).reduce((sum, r) => sum + r[field], 0))
+const getInvoiceColumns = (key: string) => invoiceColumns(field => getInvoiceTabData(key).reduce((sum, r) => sum + r[field], 0), 'managerCommission')
 
-const members = computed(() => periodData.value?.members ?? [])
+// Most new services first; ties go to the higher total commission.
+const members = computed(() => [...(periodData.value?.members ?? [])]
+    .sort((a, b) => b.activityCount - a.activityCount || b.totalCommission - a.totalCommission))
 
 type MoneyField = 'newSubscription' | 'newMrc' | 'newCommission' | 'recurringSubscription' | 'recurringCommission' | 'otherSubscription'
     | 'otherCommission' | 'bonusBulanan' | 'bonusKelebihanService' | 'consistencyBonus' | 'totalCommission' | 'managerNewCommission' | 'managerRecurringCommission'

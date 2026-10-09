@@ -16,7 +16,7 @@ export const useInvoiceColumns = () => {
 
     const hintHeader = (label: string, term: GlossaryKey) => () => h(TermHint, { term }, () => label)
 
-    const invoiceColumns = (total: (field: TotalField) => number): TableColumn<CommissionLineItem>[] => [
+    const invoiceColumns = (total: (field: TotalField) => number, commissionTerm: GlossaryKey = 'commission'): TableColumn<CommissionLineItem>[] => [
         {
             accessorKey: 'paidDate',
             header: 'Tgl. Bayar',
@@ -71,7 +71,7 @@ export const useInvoiceColumns = () => {
         { id: 'lateMonth', header: hintHeader('Telat Bayar', 'lateMonth'), cell: ({ row }) => h('span', { class: ['font-medium', row.original.lateMonth > 0 ? 'text-red-500 dark:text-red-400' : ''] }, row.original.lateMonth > 0 ? `${row.original.lateMonth} bln` : '–') },
         {
             id: 'commission',
-            header: hintHeader('Komisi', 'commission'),
+            header: hintHeader('Komisi', commissionTerm),
             cell: ({ row }) => {
                 const isZero = row.original.commission === 0
                 return h('div', { class: ['flex flex-col items-end', isZero ? 'commission-zero' : ''] }, [

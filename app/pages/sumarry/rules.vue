@@ -300,7 +300,7 @@
                                     </section>
                                     <section class="space-y-2">
                                         <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Overriding New</h4>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">Bagian manager dari komisi New tim, berdasarkan Capaian Tim terhadap Target Dasar. Di bawah tier terendah = 0%.</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Bagian manager dari komisi New tim, berdasarkan Capaian Tim terhadap Target Akhir. Di bawah tier terendah = 0%.</p>
                                         <div v-for="(t, i) in form.manager.newCommissionTiers" :key="i" class="flex items-end gap-2">
                                             <UFormField :label="i === 0 ? 'Capaian ≥ %' : undefined" class="w-32"><UInput v-model.number="t.minAchievement" type="number" min="0" :disabled="!isDraft" /></UFormField>
                                             <UFormField :label="i === 0 ? 'Rate %' : undefined" class="w-28"><UInput v-model.number="t.rate" type="number" min="0" max="100" :disabled="!isDraft" /></UFormField>

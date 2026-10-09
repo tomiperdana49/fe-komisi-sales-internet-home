@@ -15,7 +15,7 @@ type Rules = CommissionRules | null
 const GLOSSARY = {
     new: {
         term: 'New',
-        text: (r: Rules) => `Pemasangan baru. Komisi tergantung paket dan lama kontrak; terkena potongan${r ? ` ${pct(r.penalties.missedTarget)}` : ''} bila sales Permanent tidak capai target.`
+        text: (r: Rules) => `Pemasangan baru. Komisi tergantung paket dan lama kontrak; bila sales Permanent tidak capai target, komisi${r ? ` hanya dihitung dari ${pct(100 - r.penalties.missedTarget)} dasar komisi (potongan ${pct(r.penalties.missedTarget)})` : ' dipotong'}.`
     },
     recurring: {
         term: 'Recurring',
@@ -69,7 +69,15 @@ const GLOSSARY = {
     },
     commission: {
         term: 'Komisi',
-        text: () => 'Dasar komisi × persentase = komisi yang diterima.'
+        text: (r: Rules) => r
+            ? `Dasar komisi × persentase = komisi yang diterima. Recurring: ${pct(r.rates.recurringOnTarget)} bila capai target (atau Probation), ${pct(r.rates.recurringMissedTarget)} bila tidak capai target (Digital Business tetap ${pct(r.rates.digitalBusinessInternal)} Internal / ${pct(r.rates.digitalBusinessResell)} Resell). Komisi New hanya dihitung dari ${pct(100 - r.penalties.missedTarget)} dasar komisi (potongan ${pct(r.penalties.missedTarget)}) bila sales Permanent tidak capai target.`
+            : 'Dasar komisi × persentase = komisi yang diterima. Persentase Recurring lebih tinggi bila capai target; New dipotong bila sales Permanent tidak capai target.'
+    },
+    managerCommission: {
+        term: 'Komisi (Penjualan Pribadi Manager)',
+        text: (r: Rules) => r
+            ? `Dasar komisi × persentase = komisi yang diterima. Persentase mengikuti status tim, bukan penjualan pribadi: Recurring ${pct(r.rates.recurringOnTarget)} bila tim capai Target Akhir, ${pct(r.rates.recurringMissedTarget)} bila tidak (Digital Business tetap ${pct(r.rates.digitalBusinessInternal)} Internal / ${pct(r.rates.digitalBusinessResell)} Resell). Komisi New hanya dihitung dari ${pct(100 - r.penalties.missedTarget)} dasar komisi (potongan ${pct(r.penalties.missedTarget)}) bila tim tidak capai Target Akhir.`
+            : 'Dasar komisi × persentase = komisi yang diterima. Persentase mengikuti status tim: Recurring lebih tinggi dan New tidak dipotong bila tim capai Target Akhir.'
     },
     activity: {
         term: 'Pencapaian New',
@@ -117,9 +125,9 @@ const GLOSSARY = {
     teamAchievement: {
         term: 'Capaian Tim',
         text: (r: Rules) => {
-            if (!r) return 'Total pencapaian New tim ÷ Target Dasar. Menentukan persentase Overriding New.'
+            if (!r) return 'Total pencapaian New tim ÷ Target Akhir (sebelum Oktober 2026: ÷ Target Dasar). Menentukan persentase Overriding New.'
             const tiers = [...r.manager.newCommissionTiers].sort((a, b) => b.minAchievement - a.minAchievement)
-            return `Total pencapaian New tim ÷ Target Dasar. Menentukan persentase Overriding New: ${tiers.map(t => `≥${t.minAchievement}% → ${pct(t.rate)}`).join(', ')}, di bawahnya 0%.`
+            return `Total pencapaian New tim ÷ Target Akhir (sebelum Oktober 2026: ÷ Target Dasar). Menentukan persentase Overriding New: ${tiers.map(t => `≥${t.minAchievement}% → ${pct(t.rate)}`).join(', ')}, di bawahnya 0%.`
         }
     },
     overrideNew: {
