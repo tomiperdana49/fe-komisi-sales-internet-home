@@ -58,6 +58,8 @@ export interface SalesCommissionData {
     period: string;
     startDate: string;
     endDate: string;
+    /** When an admin closed (froze) this period; null while it is still open. */
+    closedAt: string | null;
     employeeId: string;
     status: string | null;
     activityCount: number;

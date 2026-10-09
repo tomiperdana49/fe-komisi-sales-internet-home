@@ -23,6 +23,10 @@
                                 <p class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
                                     {{ formatDate(periodData.startDate) }} – {{ formatDate(periodData.endDate) }}
                                 </p>
+                                <div v-if="periodData.closedAt" class="flex flex-wrap items-center gap-2 mt-2">
+                                    <UBadge color="neutral" variant="subtle" icon="i-lucide-lock">Periode Ditutup</UBadge>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">Komisi sudah final sejak {{ shortDate(new Date(periodData.closedAt)) }}.</span>
+                                </div>
                             </div>
                             <div class="md:text-right">
                                 <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Total Komisi Manager{{ ongoing ? ' (sementara)' : '' }}</p>

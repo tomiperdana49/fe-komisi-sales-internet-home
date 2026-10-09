@@ -60,6 +60,8 @@ export interface ManagerCommissionData {
     period: string;
     startDate: string;
     endDate: string;
+    /** When an admin closed (froze) this period; null while it is still open. */
+    closedAt: string | null;
     managerId: string;
     team: ManagerTeamPerformance;
     override: ManagerOverride;
