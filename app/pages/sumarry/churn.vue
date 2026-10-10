@@ -200,6 +200,14 @@ const columns: TableColumn<ChurnSummaryItem>[] = [
         cell: ({ row }) => h('div', { class: 'text-right font-medium' }, formatCurrency(row.original.price ?? 0))
     },
     {
+        accessorKey: 'close_reason',
+        header: 'Reason Close',
+        cell: ({ row }) => h('div', { class: 'flex flex-col min-w-[120px]' }, [
+            h('span', { class: 'text-xs whitespace-normal' }, row.original.close_reason ?? '-'),
+            h('span', { class: 'text-[10px] text-gray-400' }, row.original.close_status ?? '')
+        ])
+    },
+    {
         accessorKey: 'reason',
         header: 'Alasan Berhenti',
         cell: ({ row }) => h('div', { class: 'text-xs italic text-gray-500 whitespace-normal min-w-[200px] max-w-[400px]', title: row.original.reason ?? '' }, row.original.reason ?? '-')

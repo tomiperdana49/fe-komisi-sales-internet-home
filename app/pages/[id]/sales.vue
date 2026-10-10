@@ -195,6 +195,14 @@ const getColumns = (key: string): TableColumn<any>[] => {
                 ])
             },
             {
+                accessorKey: 'close_reason',
+                header: 'Reason Close',
+                cell: ({ row }) => h('div', { class: 'flex flex-col min-w-[120px]' }, [
+                    h('span', { class: 'text-sm whitespace-normal' }, row.original.close_reason ?? '-'),
+                    h('span', { class: 'text-[10px] text-gray-400 dark:text-gray-500' }, row.original.close_status ?? '')
+                ])
+            },
+            {
                 accessorKey: 'reason',
                 header: 'Alasan Berhenti',
                 cell: ({ row }) => withTooltip(row.original.reason, h('span', { class: 'text-xs italic text-gray-500 dark:text-gray-400 whitespace-normal line-clamp-2 min-w-[150px]' }, row.original.reason ?? ''))

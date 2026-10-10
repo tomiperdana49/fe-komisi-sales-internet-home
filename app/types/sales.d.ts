@@ -127,6 +127,9 @@ export interface ChurnRow {
     registration_date: string | null;
     unregistration_date: string | null;
     reason: string | null;
+    /** NIS close category: status when closed (e.g. "Renewal") and the reason picked; null for legacy closings. */
+    close_status: string | null;
+    close_reason: string | null;
     period: number;
     price: number | null;
     sales_id: string | null;
