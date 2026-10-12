@@ -20,6 +20,7 @@
                 </p>
             </div>
             <div class="w-full lg:w-auto flex flex-col sm:flex-row gap-2">
+                <USelectMenu v-model="branchFilter" :items="branchItems" value-key="value" :search-input="false" icon="i-lucide-building-2" class="w-full sm:w-48" />
                 <UTabs v-model="roleFilter" :items="roleTabs" :content="false" size="sm" class="w-full sm:w-auto" />
                 <UInput v-model="searchQuery" icon="i-lucide-search" size="md" variant="outline" class="w-full sm:w-64" placeholder="Search..." />
             </div>
@@ -76,7 +77,7 @@ const { setLoading } = useLoading()
 import { EmployeeService } from '~/services/employee-service';
 
 const { state: authState } = useAuth()
-const employeeCard = ref<{ employeeId: string; name: string; photoProfile: string; position: string; organizationName: string; jobLevel: string; to: string }[]>([])
+const employeeCard = ref<{ employeeId: string; name: string; photoProfile: string; position: string; organizationName: string; jobLevel: string; branch: string; to: string }[]>([])
 const searchQuery = ref('')
 
 type RoleFilter = 'all' | 'sm' | 'am'
@@ -85,18 +86,36 @@ const chosenRole = useState<RoleFilter | null>('home-role-filter', () => null)
 // Until the user picks one: admins start on Sales Managers (if any), everyone else sees their whole team.
 const roleFilter = computed<RoleFilter>({
     get: () => chosenRole.value
-        ?? (authState.user?.is_admin && employeeCard.value.some(c => roleOf(c) === 'sm') ? 'sm' : 'all'),
+        ?? (authState.user?.is_admin && cardsInBranch.value.some(c => roleOf(c) === 'sm') ? 'sm' : 'all'),
     set: (value) => { chosenRole.value = value }
 })
 // Same split as the card links (useDashboardRoute): manager dashboards are SM, sales dashboards are AM.
 const roleOf = (card: { to: string }): RoleFilter | null =>
     card.to.endsWith('/manager') ? 'sm' : card.to.endsWith('/sales') ? 'am' : null
 const roleTabs = computed(() => [
-    { label: `Semua (${employeeCard.value.length})`, value: 'all' },
-    { label: `Sales Manager (${employeeCard.value.filter(c => roleOf(c) === 'sm').length})`, value: 'sm' },
-    { label: `Account Manager (${employeeCard.value.filter(c => roleOf(c) === 'am').length})`, value: 'am' }
+    { label: `Semua (${cardsInBranch.value.length})`, value: 'all' },
+    { label: `Sales Manager (${cardsInBranch.value.filter(c => roleOf(c) === 'sm').length})`, value: 'sm' },
+    { label: `Account Manager (${cardsInBranch.value.filter(c => roleOf(c) === 'am').length})`, value: 'am' }
 ])
 const { getRoute } = useDashboardRoute()
+
+// Branch names arrive as "PT. Media Antar Nusa - Medan"; the city alone is enough in the filter.
+const branchLabel = (branch: string) => branch.replace(/^PT\.\s*Media Antar Nusa\s*-\s*/i, '').trim() || branch
+const branches = computed(() => [...new Set(employeeCard.value.map(c => c.branch).filter(Boolean))].sort())
+const chosenBranch = useState<string | null>('home-branch-filter', () => null)
+// Until the user picks one: their own branch, or every branch when nobody on the team shares it.
+const branchFilter = computed<string>({
+    get: () => chosenBranch.value
+        ?? (branches.value.includes(authState.user?.branch ?? '') ? authState.user!.branch : 'all'),
+    set: (value) => { chosenBranch.value = value }
+})
+const cardsInBranch = computed(() => branchFilter.value === 'all'
+    ? employeeCard.value
+    : employeeCard.value.filter(c => c.branch === branchFilter.value))
+const branchItems = computed(() => [
+    { label: 'Semua Branch', value: 'all' },
+    ...branches.value.map(b => ({ label: branchLabel(b), value: b }))
+])
 
 const greeting = computed(() => {
     const hour = new Date().getHours()
@@ -107,8 +126,8 @@ const greeting = computed(() => {
 
 const filteredEmployeeCards = computed(() => {
     const byRole = roleFilter.value === 'all'
-        ? employeeCard.value
-        : employeeCard.value.filter(card => roleOf(card) === roleFilter.value)
+        ? cardsInBranch.value
+        : cardsInBranch.value.filter(card => roleOf(card) === roleFilter.value)
     if (!searchQuery.value) {
         return byRole
     }
@@ -117,7 +136,8 @@ const filteredEmployeeCards = computed(() => {
         return card.name.toLowerCase().includes(query) ||
                card.employeeId.toLowerCase().includes(query) ||
                card.position.toLowerCase().includes(query) ||
-               card.organizationName.toLowerCase().includes(query)
+               card.organizationName.toLowerCase().includes(query) ||
+               card.branch.toLowerCase().includes(query)
     })
 })
 
@@ -134,6 +154,7 @@ const fetchEmployeeCard = async () => {
                 position: item.job_position,
                 organizationName: item.organization_name,
                 jobLevel: item.job_level,
+                branch: item.branch ?? '',
                 to: getRoute(item),
             }
         })
