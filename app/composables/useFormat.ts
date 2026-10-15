@@ -1,5 +1,10 @@
+import { useHideAmounts } from '~/composables/useHideAmounts'
+
 export const useFormat = () => {
+    const { hidden } = useHideAmounts()
+
     const formatCurrency = (value: number): string => {
+        if (hidden.value) return 'Rp ••••••'
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value)
     }
 

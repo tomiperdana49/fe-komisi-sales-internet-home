@@ -26,6 +26,18 @@
                 @click="triggerFeedback()"
             />
 
+            <UTooltip :text="amountsHidden ? 'Tampilkan nominal' : 'Sembunyikan nominal'">
+                <UButton
+                    :icon="amountsHidden ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+                    size="sm"
+                    color="neutral"
+                    variant="ghost"
+                    :aria-label="amountsHidden ? 'Tampilkan nominal' : 'Sembunyikan nominal'"
+                    :aria-pressed="amountsHidden"
+                    @click="toggleAmounts()"
+                />
+            </UTooltip>
+
             <UTooltip text="List Feedback">
                 <UButton
                     icon="i-lucide-list-checks"
@@ -93,11 +105,13 @@
 <script setup lang="ts">
     import type { DropdownMenuItem } from '@nuxt/ui'
     import { useFeedback } from '~/composables/useFeedback'
+    import { useHideAmounts } from '~/composables/useHideAmounts'
 
     const { state: authState, service: authService } = useAuth()
     const toast = useToast()
 
     const { triggerFeedback, isCapturing, isOpen } = useFeedback()
+    const { hidden: amountsHidden, toggle: toggleAmounts } = useHideAmounts()
 
     const handleLogout = async () => {
         await authService.logout()
