@@ -310,6 +310,7 @@ const UButton = resolveComponent('UButton')
 
 const { viewableMonths, yearItems, isOngoingUntil, shortDate } = usePeriodOptions()
 const { hintHeader, invoiceColumns, churnColumns, matchesSearch } = useInvoiceColumns()
+const { withTooltip } = useTextTooltip()
 const glossaryTerms: GlossaryKey[] = ['period', 'periodClosed', 'teamSize', 'baseTarget', 'finalTarget', 'teamAchievement', 'overrideNew', 'overrideRecurring', 'personalSales', 'cro', 'memberTotal', 'achievementStatus', 'churn', 'churnWaived', 'new', 'recurring', 'prorate', 'upgrade', 'alat', 'setup', 'subscription', 'baseCommission', 'mrc', 'contractMonths', 'lateMonth', 'managerCommission', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
 
 const employee = ref<Employee>()
@@ -471,7 +472,7 @@ const columns = computed<TableColumn<ManagerTeamMember>[]>(() => [
         id: 'achievement',
         header: hintHeader('Status Pencapaian', 'achievementStatus'),
         cell: ({ row }) => ongoing.value
-            ? h('div', { class: 'text-xs uppercase font-semibold text-sky-600 dark:text-sky-400', title: `Status final setelah periode berakhir. Sementara: ${row.original.achievementStatus}` }, 'Berjalan')
+            ? withTooltip(`Status final setelah periode berakhir. Sementara: ${row.original.achievementStatus}`, h('div', { class: 'text-xs uppercase font-semibold text-sky-600 dark:text-sky-400' }, 'Berjalan'))
             : h('div', { class: ['text-xs uppercase font-semibold', getAchievementTextClass(row.original.achievementStatus)] }, row.original.achievementStatus)
     },
     {

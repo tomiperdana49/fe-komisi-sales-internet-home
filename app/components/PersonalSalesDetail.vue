@@ -19,13 +19,11 @@
                                 <span class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ data.target > 0 ? `/ ${data.target} layanan` : 'layanan' }}</span>
                             </p>
                         </div>
-                        <span
-                            v-if="ongoing"
-                            class="text-xs font-bold uppercase px-2.5 py-1 rounded-md border bg-gray-50 dark:bg-gray-800 text-right text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-800"
-                            :title="`Status final setelah ${shortDate(new Date(data.endDate))}. Sementara: ${data.achievementStatus}`"
-                        >
-                            Berjalan
-                        </span>
+                        <TextTooltip v-if="ongoing" :text="`Status final setelah ${shortDate(new Date(data.endDate))}. Sementara: ${data.achievementStatus}`">
+                            <span class="text-xs font-bold uppercase px-2.5 py-1 rounded-md border bg-gray-50 dark:bg-gray-800 text-right text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-800">
+                                Berjalan
+                            </span>
+                        </TextTooltip>
                         <TermHint v-else term="achievementStatus">
                             <span :class="['text-xs font-bold uppercase px-2.5 py-1 rounded-md border bg-gray-50 dark:bg-gray-800 text-right', getAchievementBadgeClass(data.achievementStatus)]">
                                 {{ data.achievementStatus }}
