@@ -13,7 +13,6 @@
                             <span v-if="ongoing" class="block text-sky-600 dark:text-sky-400">Periode masih berjalan sampai {{ shortDate(periodEndDate(year, selectedMonth)) }} — status pencapaian & komisi masih sementara.</span>
                         </p>
                     </div>
-                    <USwitch v-model="hideValues" label="Sembunyikan nominal" />
                 </div>
 
                 <SummaryStats :stats="stats" />
@@ -64,13 +63,10 @@ const glossaryTerms: GlossaryKey[] = ['activity', 'new', 'recurring', 'alat', 's
 
 const summaryData = ref<SalesSummaryItem[]>([])
 const { year, month: selectedMonth } = useSelectedPeriod()
-const hideValues = ref(true)
 const search = ref('')
 const columnPinning = ref({ left: ['name'], right: [] })
 
 const selectedMonthLabel = computed(() => monthLabel(selectedMonth.value))
-
-const maskedCurrency = (value: number) => hideValues.value ? '•••' : formatCurrency(value)
 
 const filteredData = computed(() => {
     const q = search.value.trim().toLowerCase()
@@ -93,7 +89,7 @@ const stats = computed(() => {
         { label: 'Jumlah Account Manager', value: rows.length },
         { label: ongoing.value ? 'Sudah Capai Target' : 'Capai Target', value: `${onTarget} / ${rows.length}`, note: ongoing.value ? 'Sementara, periode berjalan' : undefined, class: 'text-green-600 dark:text-green-400' },
         { label: 'Total Layanan Baru', value: rows.reduce((a, r) => a + r.activityCount, 0) },
-        { label: 'Total Komisi Dibayar', value: maskedCurrency(rows.reduce((a, r) => a + r.totalCommission, 0)), class: 'text-primary-600 dark:text-primary-400' }
+        { label: 'Total Komisi Dibayar', value: formatCurrency(rows.reduce((a, r) => a + r.totalCommission, 0)), class: 'text-primary-600 dark:text-primary-400' }
     ]
 })
 
@@ -103,8 +99,8 @@ type MoneyKey = 'newMrc' | 'newSubscription' | 'newCommission' | 'recurringSubsc
 const moneyColumn = (key: MoneyKey, label: string, opts: { hint?: GlossaryKey; cellClass?: string } = {}): TableColumn<SalesSummaryItem> => ({
     accessorKey: key,
     header: () => h('div', { class: 'text-right whitespace-nowrap' }, opts.hint ? [hintHeader(label, opts.hint)()] : label),
-    cell: ({ row }) => h('div', { class: ['text-right tabular-nums', opts.cellClass ?? 'font-medium'] }, maskedCurrency(row.original[key])),
-    footer: () => h('div', { class: 'text-right font-bold tabular-nums' }, maskedCurrency(sum(key)))
+    cell: ({ row }) => h('div', { class: ['text-right tabular-nums', opts.cellClass ?? 'font-medium'] }, formatCurrency(row.original[key])),
+    footer: () => h('div', { class: 'text-right font-bold tabular-nums' }, formatCurrency(sum(key)))
 })
 
 const columns: TableColumn<SalesSummaryItem>[] = [
