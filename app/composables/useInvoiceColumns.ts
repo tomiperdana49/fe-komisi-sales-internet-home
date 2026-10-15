@@ -4,13 +4,13 @@ import { UBadge } from '#components'
 import TermHint from '~/components/TermHint.vue'
 import type { TableColumn } from '@nuxt/ui'
 import type { GlossaryKey } from '~/composables/useGlossary'
-import type { CommissionLineItem } from '~/types/sales'
+import type { ChurnRow, CommissionLineItem } from '~/types/sales'
 
 type TotalField = 'subscription' | 'mrc' | 'commission'
 
 // Shared by the sales and manager pages so both invoice tables read the same way.
 export const useInvoiceColumns = () => {
-    const { formatCurrency } = useFormat()
+    const { formatCurrency, formatDate } = useFormat()
     const { getServiceLabel } = useServiceLabel()
     const { withTooltip } = useTextTooltip()
 
@@ -84,6 +84,64 @@ export const useInvoiceColumns = () => {
         }
     ]
 
+    /** Churn table: the AM page's Churn tab, and (with a leading Account Manager column) the manager's team churn. */
+    const churnColumns = <T extends ChurnRow>(salesColumn?: TableColumn<T>): TableColumn<T>[] => [
+        ...(salesColumn ? [salesColumn] : []),
+        {
+            header: 'Layanan',
+            cell: ({ row }) => h('div', { class: 'flex flex-col min-w-[120px]' }, [
+                h('a', { href: `https://isx.nusa.net.id/v2/customer/service/${row.original.customer_service_id}/detail`, target: '_blank', class: 'text-blue-500 hover:underline font-semibold text-sm break-all' }, row.original.customer_service_account ?? ''),
+                withTooltip(row.original.service_name, h('span', { class: 'text-xs text-gray-500 dark:text-gray-400 whitespace-normal break-words line-clamp-2' }, row.original.service_name ?? ''))
+            ])
+        },
+        {
+            header: 'Pelanggan',
+            cell: ({ row }) => h('div', { class: 'flex flex-col min-w-[120px]' }, [
+                h('a', { href: `https://isx.nusa.net.id/customer.php?custId=${row.original.customer_id}&pid=profile`, target: '_blank', class: 'text-blue-500 hover:underline font-semibold text-sm' }, row.original.customer_id),
+                withTooltip(row.original.customer_name, h('span', { class: 'text-xs text-gray-500 dark:text-gray-400 whitespace-normal break-words line-clamp-2' }, row.original.customer_name ?? ''))
+            ])
+        },
+        {
+            accessorKey: 'close_reason',
+            header: 'Reason Close',
+            cell: ({ row }) => h('div', { class: 'flex flex-col min-w-[120px]' }, [
+                h('span', { class: 'text-sm whitespace-normal' }, row.original.close_reason ?? '-'),
+                h('span', { class: 'text-[10px] text-gray-400 dark:text-gray-500' }, row.original.close_status ?? '')
+            ])
+        },
+        {
+            accessorKey: 'reason',
+            header: 'Alasan Berhenti',
+            cell: ({ row }) => withTooltip(row.original.reason, h('span', { class: 'text-xs italic text-gray-500 dark:text-gray-400 whitespace-normal line-clamp-2 min-w-[150px]' }, row.original.reason ?? ''))
+        },
+        {
+            header: 'Lama Berlangganan',
+            cell: ({ row }) => h('div', { class: 'flex flex-col' }, [
+                h('span', { class: 'text-sm font-medium' }, `${row.original.period} bulan`),
+                h('span', { class: 'text-[10px] text-gray-400 dark:text-gray-500' }, `${formatDate(String(row.original.registration_date).slice(0, 10))} - ${formatDate(String(row.original.unregistration_date).slice(0, 10))}`)
+            ])
+        },
+        { id: 'price', header: hintHeader('Subscription', 'subscription'), cell: ({ row }) => h('span', { class: 'font-medium' }, formatCurrency(row.original.price ?? 0)) },
+        { id: 'mrc', header: hintHeader('MRC', 'mrc'), cell: ({ row }) => h('span', { class: 'font-medium' }, formatCurrency(row.original.mrc)) },
+        {
+            id: 'commission',
+            header: hintHeader('Potongan Komisi', 'churn'),
+            // A waived churn cuts nothing: show the would-be amount struck through, with the admin's reason.
+            cell: ({ row }) => row.original.is_approved
+                ? h('div', { class: 'flex flex-col items-end max-w-[220px]' }, [
+                    h(UBadge, { color: 'success', variant: 'subtle', size: 'sm', class: 'mb-1' }, () => 'Dibebaskan'),
+                    h('span', { class: 'text-sm text-gray-400 line-through' }, formatCurrency(row.original.commission)),
+                    row.original.approval_note
+                        ? h('span', { class: 'text-[11px] text-gray-500 dark:text-gray-400 text-right whitespace-normal mt-1' }, row.original.approval_note)
+                        : null
+                ])
+                : h('div', { class: 'flex flex-col items-end' }, [
+                    h('span', { class: 'text-xs font-medium bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-gray-600 dark:text-gray-300 mb-1' }, `${row.original.commissionPercentage}%`),
+                    h('span', { class: 'text-sm font-bold text-gray-900 dark:text-white' }, formatCurrency(row.original.commission))
+                ])
+        }
+    ]
+
     /**
      * Free-text match for the transaction tables: customer ID/name/company, service
      * account/name and invoice number. Works for invoice line items and churn rows.
@@ -93,9 +151,9 @@ export const useInvoiceColumns = () => {
         if (!q) return true
         return [
             row.customerId, row.customerName, row.customerCompany, row.customerServiceAccount, row.serviceName, row.aiInvoice,
-            row.customer_id, row.customer_name, row.customer_service_account, row.service_name
+            row.customer_id, row.customer_name, row.customer_service_account, row.service_name, row.sales_name
         ].some(v => v !== null && v !== undefined && String(v).toLowerCase().includes(q))
     }
 
-    return { hintHeader, invoiceColumns, matchesSearch }
+    return { hintHeader, invoiceColumns, churnColumns, matchesSearch }
 }

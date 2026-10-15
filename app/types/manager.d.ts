@@ -1,4 +1,4 @@
-import type { CommissionLineItem, SalesCommissionData } from "./sales"
+import type { ChurnRow, CommissionLineItem, SalesCommissionData } from "./sales"
 
 export interface ManagerCommissionQueryParams {
     period?: string;
@@ -98,6 +98,18 @@ export interface ManagerCommissionYearResponseData {
     success: boolean;
     message: string;
     data: ManagerCommissionYearData;
+}
+
+/** A churn row from the manager's team list, tagged with the salesperson it belongs to. */
+export interface ManagerChurnRow extends ChurnRow {
+    sales_name: string;
+    sales_photo_profile: string | null;
+}
+
+export interface ManagerChurnResponseData {
+    success: boolean;
+    message: string;
+    data: ManagerChurnRow[];
 }
 
 export type ManagerServiceGroup = 'Home' | 'Nusafiber' | 'NusaSelecta' | 'Digital Business' | 'Access Business';

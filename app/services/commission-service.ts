@@ -7,6 +7,7 @@ import type {
     SalesCommissionYearResponseData
 } from "~/types/sales"
 import type {
+    ManagerChurnResponseData,
     ManagerCommissionQueryParams,
     ManagerCommissionResponseData,
     ManagerCommissionYearQueryParams,
@@ -59,6 +60,20 @@ export class CommissionService {
     async managerCommission(managerId: string, params: ManagerCommissionQueryParams): Promise<ManagerCommissionResponseData> {
         try {
             const response = await apiService.client.get(`/manager/${managerId}/commission`, {
+                params,
+                headers: {
+                    authorization: `Bearer ${useAuth().state.token}`
+                }
+            })
+            return response.data
+        } catch (error: any) {
+            handleServiceError(error)
+        }
+    }
+
+    async managerChurn(managerId: string, params: ManagerCommissionQueryParams): Promise<ManagerChurnResponseData> {
+        try {
+            const response = await apiService.client.get(`/manager/${managerId}/churn`, {
                 params,
                 headers: {
                     authorization: `Bearer ${useAuth().state.token}`

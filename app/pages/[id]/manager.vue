@@ -239,6 +239,28 @@
             <UCard>
                 <div class="mb-3 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
                     <div>
+                        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Churn Tim ({{ teamChurn.length }})</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            Seluruh <TermHint term="churn">churn</TermHint> anggota tim dan manager pada periode ini.
+                            {{ countedChurn.length }} dihitung (potongan komisi AM {{ formatCurrency(countedChurnCommission) }}), {{ teamChurn.length - countedChurn.length }} dibebaskan.
+                        </p>
+                    </div>
+                    <UInput v-model="churnSearch" icon="i-lucide-search" placeholder="Cari AM, pelanggan, layanan..." class="w-full sm:w-80" />
+                </div>
+                <UTable
+                    sticky
+                    :data="filteredTeamChurn"
+                    :columns="teamChurnColumns"
+                    :empty="churnSearch.trim() ? `Tidak ada churn yang cocok dengan “${churnSearch.trim()}”.` : 'Tidak ada churn tim pada periode ini 🎉'"
+                    class="flex-1 max-h-[800px]"
+                />
+            </UCard>
+        </div>
+
+        <div class="py-2">
+            <UCard>
+                <div class="mb-3 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+                    <div>
                         <h3 class="text-base font-semibold text-gray-900 dark:text-white">Transaksi Penjualan Pribadi</h3>
                         <p class="text-sm text-gray-500 dark:text-gray-400">
                             Invoice atas nama manager sendiri. Tab Recurring juga memuat invoice <TermHint term="cro">Customer Relation Officer</TermHint> yang dikreditkan ke manager.
@@ -277,7 +299,7 @@ import { EmployeeService } from '~/services/employee-service'
 import type { Employee } from '~/types/employee'
 import type { TableColumn } from '@nuxt/ui'
 import type { GlossaryKey } from '~/composables/useGlossary'
-import type { ManagerCommissionData, ManagerServiceGroup, ManagerServiceGroupTotal, ManagerTeamMember } from '~/types/manager'
+import type { ManagerChurnRow, ManagerCommissionData, ManagerServiceGroup, ManagerServiceGroupTotal, ManagerTeamMember } from '~/types/manager'
 
 const { setLoading } = useLoading()
 const route = useRoute()
@@ -287,8 +309,8 @@ const UAvatar = resolveComponent('UAvatar')
 const UButton = resolveComponent('UButton')
 
 const { viewableMonths, yearItems, isOngoingUntil, shortDate } = usePeriodOptions()
-const { hintHeader, invoiceColumns, matchesSearch } = useInvoiceColumns()
-const glossaryTerms: GlossaryKey[] = ['teamSize', 'baseTarget', 'finalTarget', 'teamAchievement', 'overrideNew', 'overrideRecurring', 'personalSales', 'cro', 'new', 'recurring', 'prorate', 'upgrade', 'alat', 'setup', 'subscription', 'mrc', 'contractMonths', 'lateMonth', 'managerCommission', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
+const { hintHeader, invoiceColumns, churnColumns, matchesSearch } = useInvoiceColumns()
+const glossaryTerms: GlossaryKey[] = ['teamSize', 'baseTarget', 'finalTarget', 'teamAchievement', 'overrideNew', 'overrideRecurring', 'personalSales', 'cro', 'churn', 'new', 'recurring', 'prorate', 'upgrade', 'alat', 'setup', 'subscription', 'mrc', 'contractMonths', 'lateMonth', 'managerCommission', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
 
 const employee = ref<Employee>()
 const { year, month: selectedMonth } = useSelectedPeriod()
@@ -473,29 +495,61 @@ const columns = computed<TableColumn<ManagerTeamMember>[]>(() => [
     moneyColumn('consistencyBonus', 'Bonus Konsistensi', { hint: 'consistencyBonus' })
 ])
 
+// --- Churn tim ---
+const teamChurn = ref<ManagerChurnRow[]>([])
+const churnSearch = ref('')
+const countedChurn = computed(() => teamChurn.value.filter(c => !c.is_approved))
+const countedChurnCommission = computed(() => countedChurn.value.reduce((sum, c) => sum + c.commission, 0))
+// Grouped by AM, newest stop date first within each.
+const filteredTeamChurn = computed(() => teamChurn.value
+    .filter(c => matchesSearch(c, churnSearch.value))
+    .sort((a, b) => a.sales_name.localeCompare(b.sales_name) || String(b.unregistration_date).localeCompare(String(a.unregistration_date))))
+
+const teamChurnColumns = computed(() => churnColumns<ManagerChurnRow>({
+    id: 'sales',
+    header: 'Account Manager',
+    cell: ({ row }) => h(resolveComponent('NuxtLink'), {
+        class: 'flex items-center gap-2 group min-w-[160px]',
+        to: `/${row.original.sales_id}/sales`
+    }, () => [
+        h(UAvatar, { src: row.original.sales_photo_profile ?? undefined, alt: row.original.sales_name, size: 'sm' }),
+        h('div', { class: 'flex flex-col' }, [
+            h('span', { class: 'text-sm font-medium text-gray-900 dark:text-white group-hover:text-primary-500 transition-colors' }, row.original.sales_name),
+            h('span', { class: 'text-xs text-gray-500' }, row.original.sales_id ?? '')
+        ])
+    ])
+}))
+
 // --- Data fetching ---
 const fetchPeriodData = async () => {
     const response = await commissionService.managerCommission(route.params.id as string, { month: selectedMonth.value, year: year.value })
     periodData.value = response.data
 }
 
+const fetchTeamChurn = async () => {
+    const response = await commissionService.managerChurn(route.params.id as string, { month: selectedMonth.value, year: year.value })
+    teamChurn.value = response.data
+}
+
+const fetchMonthData = () => Promise.all([fetchPeriodData(), fetchTeamChurn()])
+
 const initData = async () => {
     setLoading(true)
     try {
         const employeeData = await employeeService.getEmployee(route.params.id as string)
         employee.value = employeeData.data
-        await fetchPeriodData()
+        await fetchMonthData()
     } finally {
         setLoading(false)
     }
 }
 
 watch(year, () => {
-    fetchPeriodData()
+    fetchMonthData()
 })
 
 watch(selectedMonth, () => {
-    fetchPeriodData()
+    fetchMonthData()
 })
 
 initData()
