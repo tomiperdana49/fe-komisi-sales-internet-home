@@ -26,6 +26,17 @@
                 @click="triggerFeedback()"
             />
 
+            <UTooltip text="List Feedback">
+                <UButton
+                    icon="i-lucide-list-checks"
+                    size="sm"
+                    color="neutral"
+                    variant="ghost"
+                    to="https://docs.google.com/spreadsheets/d/1jbOM0sOHAauo2xdEQvieHPZJlCum9Vn-16F2bYFv-rw/edit?gid=0#gid=0"
+                    target="_blank"
+                />
+            </UTooltip>
+
             <NotificationsSlideover />
 
             <UColorModeButton size="sm" />
