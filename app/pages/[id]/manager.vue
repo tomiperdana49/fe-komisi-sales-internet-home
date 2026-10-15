@@ -19,12 +19,12 @@
                     <div class="border-b border-gray-100 dark:border-gray-800 pb-4 md:pb-6 space-y-4">
                         <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
                             <div>
-                                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Periode Perhitungan</p>
+                                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1"><TermHint term="period">Periode Perhitungan</TermHint></p>
                                 <p class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
                                     {{ formatDate(periodData.startDate) }} – {{ formatDate(periodData.endDate) }}
                                 </p>
                                 <div v-if="periodData.closedAt" class="flex flex-wrap items-center gap-2 mt-2">
-                                    <UBadge color="neutral" variant="subtle" icon="i-lucide-lock">Periode Ditutup</UBadge>
+                                    <TermHint term="periodClosed"><UBadge color="neutral" variant="subtle" icon="i-lucide-lock">Periode Ditutup</UBadge></TermHint>
                                     <span class="text-xs text-gray-500 dark:text-gray-400">Komisi sudah final sejak {{ shortDate(new Date(periodData.closedAt)) }}.</span>
                                 </div>
                             </div>
@@ -310,7 +310,7 @@ const UButton = resolveComponent('UButton')
 
 const { viewableMonths, yearItems, isOngoingUntil, shortDate } = usePeriodOptions()
 const { hintHeader, invoiceColumns, churnColumns, matchesSearch } = useInvoiceColumns()
-const glossaryTerms: GlossaryKey[] = ['teamSize', 'baseTarget', 'finalTarget', 'teamAchievement', 'overrideNew', 'overrideRecurring', 'personalSales', 'cro', 'churn', 'new', 'recurring', 'prorate', 'upgrade', 'alat', 'setup', 'subscription', 'mrc', 'contractMonths', 'lateMonth', 'managerCommission', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
+const glossaryTerms: GlossaryKey[] = ['period', 'periodClosed', 'teamSize', 'baseTarget', 'finalTarget', 'teamAchievement', 'overrideNew', 'overrideRecurring', 'personalSales', 'cro', 'memberTotal', 'achievementStatus', 'churn', 'churnWaived', 'new', 'recurring', 'prorate', 'upgrade', 'alat', 'setup', 'subscription', 'baseCommission', 'mrc', 'contractMonths', 'lateMonth', 'managerCommission', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
 
 const employee = ref<Employee>()
 const { year, month: selectedMonth } = useSelectedPeriod()
@@ -469,7 +469,7 @@ const columns = computed<TableColumn<ManagerTeamMember>[]>(() => [
     },
     {
         id: 'achievement',
-        header: 'Status Pencapaian',
+        header: hintHeader('Status Pencapaian', 'achievementStatus'),
         cell: ({ row }) => ongoing.value
             ? h('div', { class: 'text-xs uppercase font-semibold text-sky-600 dark:text-sky-400', title: `Status final setelah periode berakhir. Sementara: ${row.original.achievementStatus}` }, 'Berjalan')
             : h('div', { class: ['text-xs uppercase font-semibold', getAchievementTextClass(row.original.achievementStatus)] }, row.original.achievementStatus)
@@ -480,7 +480,7 @@ const columns = computed<TableColumn<ManagerTeamMember>[]>(() => [
         cell: ({ row }) => h('div', { class: 'text-center font-medium' }, row.original.activityCount),
         footer: () => h('div', { class: 'text-center font-bold py-3' }, members.value.reduce((sum, m) => sum + m.activityCount, 0))
     },
-    moneyColumn('totalCommission', 'Total Komisi Sales', { strong: true }),
+    moneyColumn('totalCommission', 'Total Komisi Sales', { hint: 'memberTotal', strong: true }),
     moneyColumn('managerNewCommission', 'Overriding New', { hint: 'overrideNew', strong: true }),
     moneyColumn('managerRecurringCommission', 'Overriding Recurring', { hint: 'overrideRecurring', strong: true }),
     moneyColumn('newCommission', 'Komisi New'),

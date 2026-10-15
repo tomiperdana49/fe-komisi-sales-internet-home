@@ -84,6 +84,15 @@ export const useInvoiceColumns = () => {
         }
     ]
 
+    /** Whole months between activation and stop, e.g. "7 bulan"; "< 1 bulan" when it stopped within the first month. */
+    const activeMonthsLabel = (from: string | null, to: string | null) => {
+        if (!from || !to) return '-'
+        const a = new Date(from)
+        const b = new Date(to)
+        const months = (b.getFullYear() - a.getFullYear()) * 12 + b.getMonth() - a.getMonth() - (b.getDate() < a.getDate() ? 1 : 0)
+        return months < 1 ? '< 1 bulan' : `${months} bulan`
+    }
+
     /** Churn table: the AM page's Churn tab, and (with a leading Account Manager column) the manager's team churn. */
     const churnColumns = <T extends ChurnRow>(salesColumn?: TableColumn<T>): TableColumn<T>[] => [
         ...(salesColumn ? [salesColumn] : []),
@@ -103,7 +112,7 @@ export const useInvoiceColumns = () => {
         },
         {
             accessorKey: 'close_reason',
-            header: 'Reason Close',
+            header: hintHeader('Reason Close', 'closeReason'),
             cell: ({ row }) => h('div', { class: 'flex flex-col min-w-[120px]' }, [
                 h('span', { class: 'text-sm whitespace-normal' }, row.original.close_reason ?? '-'),
                 h('span', { class: 'text-[10px] text-gray-400 dark:text-gray-500' }, row.original.close_status ?? '')
@@ -111,14 +120,16 @@ export const useInvoiceColumns = () => {
         },
         {
             accessorKey: 'reason',
-            header: 'Alasan Berhenti',
+            header: hintHeader('Alasan Berhenti', 'closeNote'),
             cell: ({ row }) => withTooltip(row.original.reason, h('span', { class: 'text-xs italic text-gray-500 dark:text-gray-400 whitespace-normal line-clamp-2 min-w-[150px]' }, row.original.reason ?? ''))
         },
         {
-            header: 'Lama Berlangganan',
-            cell: ({ row }) => h('div', { class: 'flex flex-col' }, [
-                h('span', { class: 'text-sm font-medium' }, `${row.original.period} bulan`),
-                h('span', { class: 'text-[10px] text-gray-400 dark:text-gray-500' }, `${formatDate(String(row.original.registration_date).slice(0, 10))} - ${formatDate(String(row.original.unregistration_date).slice(0, 10))}`)
+            id: 'activePeriod',
+            header: hintHeader('Masa Aktif', 'activePeriod'),
+            cell: ({ row }) => h('div', { class: 'flex flex-col whitespace-nowrap' }, [
+                h('span', { class: 'text-sm font-medium' }, activeMonthsLabel(row.original.registration_date, row.original.unregistration_date)),
+                h('span', { class: 'text-[10px] text-gray-400 dark:text-gray-500' }, `${formatDate(String(row.original.registration_date).slice(0, 10))} - ${formatDate(String(row.original.unregistration_date).slice(0, 10))}`),
+                h('span', { class: 'text-[10px] text-gray-400 dark:text-gray-500' }, `Tagihan per ${row.original.period} bulan`)
             ])
         },
         { id: 'price', header: hintHeader('Subscription', 'subscription'), cell: ({ row }) => h('span', { class: 'font-medium' }, formatCurrency(row.original.price ?? 0)) },
@@ -129,7 +140,7 @@ export const useInvoiceColumns = () => {
             // A waived churn cuts nothing: show the would-be amount struck through, with the admin's reason.
             cell: ({ row }) => row.original.is_approved
                 ? h('div', { class: 'flex flex-col items-end max-w-[220px]' }, [
-                    h(UBadge, { color: 'success', variant: 'subtle', size: 'sm', class: 'mb-1' }, () => 'Dibebaskan'),
+                    h(TermHint, { term: 'churnWaived', class: 'mb-1' }, () => h(UBadge, { color: 'success', variant: 'subtle', size: 'sm' }, () => 'Dibebaskan')),
                     h('span', { class: 'text-sm text-gray-400 line-through' }, formatCurrency(row.original.commission)),
                     row.original.approval_note
                         ? h('span', { class: 'text-[11px] text-gray-500 dark:text-gray-400 text-right whitespace-normal mt-1' }, row.original.approval_note)

@@ -26,9 +26,11 @@
                         >
                             Berjalan
                         </span>
-                        <span v-else :class="['text-xs font-bold uppercase px-2.5 py-1 rounded-md border bg-gray-50 dark:bg-gray-800 text-right', getAchievementBadgeClass(data.achievementStatus)]">
-                            {{ data.achievementStatus }}
-                        </span>
+                        <TermHint v-else term="achievementStatus">
+                            <span :class="['text-xs font-bold uppercase px-2.5 py-1 rounded-md border bg-gray-50 dark:bg-gray-800 text-right', getAchievementBadgeClass(data.achievementStatus)]">
+                                {{ data.achievementStatus }}
+                            </span>
+                        </TermHint>
                     </div>
                     <div v-if="data.target > 0" class="space-y-2">
                         <div class="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">

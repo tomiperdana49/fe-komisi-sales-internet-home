@@ -13,19 +13,31 @@ const rp = (n: number) => n >= 1_000_000
 type Rules = CommissionRules | null
 
 const GLOSSARY = {
+    period: {
+        term: 'Periode Perhitungan',
+        text: () => 'Satu periode komisi berjalan dari tanggal 26 bulan sebelumnya sampai tanggal 25. Invoice masuk periode menurut tanggal bayarnya; bila dibayar sampai tanggal 25 tetapi baru diinput finance tanggal 27 atau sesudahnya di bulan yang sama, invoice masuk periode berikutnya. Data diambil otomatis dari billing NIS setiap jam untuk periode berjalan dan periode sebelumnya.'
+    },
+    periodClosed: {
+        term: 'Periode Ditutup',
+        text: () => 'Admin sudah menutup periode ini. Data tidak lagi ditarik ulang dari NIS, jadi angka komisi sudah final: pembayaran, churn, atau log call yang masuk belakangan tidak mengubahnya.'
+    },
     new: {
         term: 'New',
-        text: (r: Rules) => `Pemasangan baru. Komisi tergantung paket dan lama kontrak; bila sales Permanent tidak capai target, komisi${r ? ` hanya dihitung dari ${pct(100 - r.penalties.missedTarget)} dasar komisi (potongan ${pct(r.penalties.missedTarget)})` : ' dipotong'}.`
+        text: (r: Rules) => `Pemasangan baru yang sudah dibayar. Rate tergantung produk dan Lama Kontrak. Hanya produk yang ada di daftar rate Aturan Komisi yang dihitung; produk lain (mis. CBSHM, HOME30, HOME50, BOOSTER) tidak menghasilkan komisi New maupun pencapaian. Bila sales Permanent tidak capai target, komisi${r ? ` hanya dihitung dari ${pct(100 - r.penalties.missedTarget)} dasar komisi (potongan ${pct(r.penalties.missedTarget)})` : ' dipotong'}.`
     },
     recurring: {
         term: 'Recurring',
-        text: (r: Rules) => r
-            ? `Tagihan bulanan rutin dari pelanggan yang sudah berjalan. Rate ${pct(r.rates.recurringOnTarget)} (capai target / Probation) atau ${pct(r.rates.recurringMissedTarget)} (tidak capai target).`
-            : 'Tagihan bulanan rutin dari pelanggan yang sudah berjalan. Rate-nya lebih tinggi bila sales capai target.'
+        text: (r: Rules) => {
+            const excluded = r?.excludedRecurringCategories.length ? ` dan kategori ${r.excludedRecurringCategories.join(', ')}` : ''
+            const rate = r
+                ? `Rate ${pct(r.rates.recurringOnTarget)} (capai target / Probation) atau ${pct(r.rates.recurringMissedTarget)} (Permanent tidak capai target); Digital Business tetap ${pct(r.rates.digitalBusinessInternal)} Internal / ${pct(r.rates.digitalBusinessResell)} Resell.`
+                : 'Rate-nya lebih tinggi bila sales capai target.'
+            return `Tagihan rutin dari pelanggan yang sudah berjalan. ${rate} Recurring NusaSelecta${excluded} tidak mendapat komisi. Invoice berlabel Perpanjangan (kenaikan harga saat perpanjangan kontrak) juga dihitung di sini dan tidak menambah pencapaian New.`
+        }
     },
     prorate: {
         term: 'Prorate',
-        text: (r: Rules) => `Tagihan sebagian bulan (prorata) di awal berlangganan.${r ? ` Komisi flat ${pct(r.rates.prorate)}.` : ''}`
+        text: (r: Rules) => `Tagihan sebagian bulan (prorata) di awal berlangganan.${r ? ` Komisi flat ${pct(r.rates.prorate)}, tanpa potongan target.` : ''}`
     },
     upgrade: {
         term: 'Upgrade',
@@ -47,11 +59,36 @@ const GLOSSARY = {
     },
     churn: {
         term: 'Churn',
-        text: () => 'Pelanggan berhenti berlangganan kurang dari 1 tahun sejak registrasi. Mengurangi komisi dan jumlah pencapaian New.'
+        text: (r: Rules) => {
+            const products = r ? r.products.filter(p => p.churn).flatMap(p => p.serviceIds).join(', ') : ''
+            return `Layanan yang berhenti (status NA di NIS) dan dihitung churn bila semua syarat terpenuhi: produknya ${products ? `termasuk ${products}` : 'dicentang Churn di Aturan Komisi'}; berhenti paling lama 1 tahun sejak registrasi; alasan close di NIS berstatus Active to NA, Renewal, atau New Installation dengan alasan "Paid not yet to install"; pernah ditagih; dan belum lunas 12 bulan. Churn mengurangi Pencapaian New, MRC, dan komisi; potongannya dihitung seperti komisi New dengan rate saat capai target. Churn bisa dibebaskan oleh admin, atau lewat log call NIS berisi "Churn = false" dari approver.`
+        }
+    },
+    closeReason: {
+        term: 'Reason Close',
+        text: () => 'Alasan close yang dipilih di NIS (data close terakhir layanan). Teks kecil di bawahnya adalah status layanan saat ditutup: New Installation, Active to NA, atau Renewal. Strip (-) berarti layanan ditutup sebelum ada kategori close di NIS.'
+    },
+    closeNote: {
+        term: 'Alasan Berhenti',
+        text: () => 'Catatan alasan berhenti yang ditulis saat layanan ditutup di NIS.'
+    },
+    activePeriod: {
+        term: 'Masa Aktif',
+        text: () => 'Lama layanan aktif, dari tanggal aktivasi sampai tanggal berhenti. Siklus tagihan (per 1, 6, atau 12 bulan) dipakai untuk menghitung nilai bulanan churn.'
+    },
+    churnWaived: {
+        term: 'Dibebaskan',
+        text: () => 'Churn ini tidak memotong komisi maupun pencapaian. Dibebaskan oleh admin di Summary > Churn, atau otomatis dari log call NIS berisi "Churn = false" oleh approver. Catatan di bawahnya menunjukkan alasannya.'
     },
     subscription: {
         term: 'Subscription',
-        text: () => 'Nilai invoice yang sudah dibayar pelanggan.'
+        text: () => 'Nilai invoice yang sudah dibayar pelanggan, diambil dari billing NIS. Dasar komisinya dikurangi referral fee dari spreadsheet reseller, kecuali referral bertipe OTC.'
+    },
+    baseCommission: {
+        term: 'Dasar Komisi',
+        text: (r: Rules) => r
+            ? `Subscription dikurangi referral fee, lalu dipotong Telat Bayar (${pct(r.penalties.latePerMonth)} per bulan, maks. ${pct(r.penalties.lateMax)}) dan, khusus New untuk sales Permanent yang tidak capai target, potongan ${pct(r.penalties.missedTarget)}. Komisi = Dasar Komisi × persentase.`
+            : 'Subscription dikurangi referral fee, lalu dipotong Telat Bayar dan potongan target (khusus New, sales Permanent). Komisi = Dasar Komisi × persentase.'
     },
     mrc: {
         term: 'MRC',
@@ -59,13 +96,15 @@ const GLOSSARY = {
     },
     contractMonths: {
         term: 'Lama Kontrak',
-        text: () => 'Jumlah bulan yang dibayar di invoice ini. Menentukan rate komisi yang dipakai: rate 1 bulan, 6 bulan, atau 12 bulan.'
+        text: (r: Rules) => {
+            const later = r ? [...new Set(r.products.filter(p => p.sixMonthRateFrom > 2).map(p => p.group.replace(/ (Basic\/Prime|Ultra)$/, '')))] : []
+            const exception = later.length ? ` Pengecualian ${later.join(', ')}: rate 6 bulan baru berlaku mulai kontrak ${r!.products.find(p => p.sixMonthRateFrom > 2)!.sixMonthRateFrom} bulan; di bawahnya tetap rate 1 bulan.` : ''
+            return `Jumlah bulan yang dibayar di invoice ini, menentukan rate komisi: kontrak tepat 1 bulan memakai rate 1 bulan, 2–11 bulan memakai rate 6 bulan, 12 bulan ke atas memakai rate 12 bulan.${exception}`
+        }
     },
     lateMonth: {
         term: 'Telat Bayar',
-        text: (r: Rules) => r
-            ? `Berapa bulan pembayaran terlambat. Komisi dipotong ${pct(r.penalties.latePerMonth)} per bulan (maks. ${pct(r.penalties.lateMax)}), kecuali invoice sudah disetujui.`
-            : 'Berapa bulan pembayaran terlambat. Komisi dipotong per bulan keterlambatan, kecuali invoice sudah disetujui.'
+        text: (r: Rules) => `Dihitung dari Tanggal Jatuh Tempo sampai tanggal transaksi pembayaran. Pembayaran sampai 1 bulan setelah jatuh tempo belum dihitung telat; setiap bulan lewat dari itu dihitung 1 bulan telat. Dasar komisi dipotong ${r ? `${pct(r.penalties.latePerMonth)} per bulan (maks. ${pct(r.penalties.lateMax)})` : 'per bulan keterlambatan'}, kecuali invoice sudah disetujui admin.`
     },
     commission: {
         term: 'Komisi',
@@ -81,37 +120,49 @@ const GLOSSARY = {
     },
     activity: {
         term: 'Pencapaian New',
-        text: () => 'Jumlah pemasangan baru setelah dikurangi churn. Angka ini yang menentukan target, bonus, dan rate recurring.'
+        text: () => 'Jumlah pemasangan baru setelah dikurangi churn yang tidak dibebaskan. Angka ini yang menentukan status target, bonus, dan rate recurring. NusaSelecta dihitung per kelompok unit, bukan per layanan.'
     },
     newAchievement: {
-        term: 'Pencapaian New',
+        term: 'Pencapaian New per Produk',
         text: () => 'Jumlah pencapaian dari pemasangan baru. Home dan Nusafiber: 1 layanan = 1. NusaSelecta dihitung per kelompok: 3 unit Basic/Prime = 1, 2 unit Ultra = 1, sisa 2 Basic/Prime + 1 Ultra = 1; sisa unit lainnya tidak dihitung, tapi komisinya tetap dibayar.'
+    },
+    achievementStatus: {
+        term: 'Status Pencapaian',
+        text: (r: Rules) => {
+            if (!r) return 'Ditentukan dari Pencapaian New setelah periode berakhir, dengan batas berbeda untuk Permanent dan Probation/Contract.'
+            const a = r.achievement
+            return `Ditentukan dari Pencapaian New setelah periode berakhir. Permanent: ≥${a.permanentBonus} Capai target Bonus, ≥${a.permanentOnTarget} Capai target, di bawah ${a.permanentSp1Below} SP1, selebihnya Tidak Capai target (batas Capai target bergeser bila AM punya target khusus). Probation/Contract: ≥${a.probationExcellent} Excellent, ≥${a.probationVeryGood} Very Good, ≥${a.probationAverage} Average, selebihnya Below Average.`
+        }
     },
     bonusBulanan: {
         term: 'Bonus Bulanan',
         text: (r: Rules) => r
-            ? `Bonus bila pencapaian New mencapai ${r.bonus.tiers.map(t => t.at).join(' / ')} (untuk target ${r.targets.permanent}; bila target AM berbeda, tiap tier bergeser sebanyak selisihnya): ${r.bonus.tiers.map(t => rp(t.amount)).join(' / ')}.`
-            : 'Bonus tunai bila pencapaian New mencapai tier tertentu.'
+            ? `Bonus bila Pencapaian New mencapai ${r.bonus.tiers.map(t => t.at).join(' / ')}: ${r.bonus.tiers.map(t => rp(t.amount)).join(' / ')}. Untuk sales Permanent dengan target berbeda dari ${r.targets.permanent}, tiap tier bergeser sebanyak selisihnya; untuk Probation/Contract tier selalu tetap.`
+            : 'Bonus tunai bila Pencapaian New mencapai tier tertentu.'
     },
     bonusKelebihanService: {
         term: 'Bonus Kelebihan Service',
         text: (r: Rules) => {
             const last = r?.bonus.tiers.at(-1)
             return r && last
-                ? `Tambahan di atas Bonus Bulanan bila pencapaian melebihi ${last.at} (untuk target ${r.targets.permanent}; bergeser bila target AM berbeda): ${rp(r.bonus.excessPerUnit)} per service di atas batas itu.`
+                ? `Tambahan di atas Bonus Bulanan bila Pencapaian New melebihi ${last.at}: ${rp(r.bonus.excessPerUnit)} per service di atas batas itu. Batasnya bergeser untuk sales Permanent dengan target berbeda dari ${r.targets.permanent}; untuk Probation/Contract tetap.`
                 : 'Tambahan di atas Bonus Bulanan bila pencapaian melebihi tier tertinggi: bonus per service di atas tier itu.'
         }
     },
     consistencyBonus: {
         term: 'Bonus Konsistensi',
-        text: () => 'Bonus yang diberikan manual oleh admin untuk periode ini.'
+        text: () => 'Bonus yang diberikan manual oleh admin untuk periode ini, nominalnya ditentukan admin. Tidak otomatis berulang ke bulan berikutnya.'
+    },
+    memberTotal: {
+        term: 'Total Komisi Sales',
+        text: () => 'Total yang diterima AM ini: komisi semua transaksi setelah potongan churn, ditambah Bonus Bulanan, Bonus Kelebihan Service, dan Bonus Konsistensi.'
     },
     teamSize: {
         term: 'Jumlah AM',
         text: (r: Rules) => {
             const t = r?.manager.teamThresholds
             const range = t && t.length ? ` (${t[0]!.teamSize} AM = ${pct(t[0]!.percent)} … ${t.at(-1)!.teamSize}+ AM = ${pct(t.at(-1)!.percent)})` : ''
-            return `Semua anggota tim termasuk Probation. Menentukan threshold target: makin besar tim, makin ringan targetnya${range}.`
+            return `Semua anggota tim termasuk Probation yang sudah terdaftar status kepegawaiannya pada periode ini; yang belum terdaftar tidak dihitung sama sekali. Menentukan threshold target: makin besar tim, makin ringan targetnya${range}.`
         }
     },
     baseTarget: {
@@ -137,12 +188,12 @@ const GLOSSARY = {
     overrideRecurring: {
         term: 'Overriding Recurring',
         text: (r: Rules) => r
-            ? `Persentase dari total subscription recurring tim: ${pct(r.manager.recurringOnTarget)} bila Capai Target, ${pct(r.manager.recurringMissedTarget)} bila tidak.`
+            ? `Persentase dari total subscription recurring tim (setelah dikurangi referral fee dan potongan Telat Bayar; invoice Perpanjangan tidak ikut): ${pct(r.manager.recurringOnTarget)} bila Capai Target, ${pct(r.manager.recurringMissedTarget)} bila tidak.`
             : 'Persentase dari total subscription recurring tim; lebih tinggi bila tim Capai Target.'
     },
     personalSales: {
         term: 'Penjualan Pribadi',
-        text: () => 'Komisi dari penjualan atas nama manager sendiri. Aturannya sama seperti sales, tapi status capai target mengikuti capaian tim.'
+        text: () => 'Komisi dari penjualan atas nama manager sendiri. Aturannya sama seperti sales, tapi status capai target mengikuti capaian tim. Penjualan pribadi tidak ikut dihitung ke Capaian Tim.'
     },
     cro: {
         term: 'Customer Relation Officer',

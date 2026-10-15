@@ -19,12 +19,12 @@
                     <div class="border-b border-gray-100 dark:border-gray-800 pb-4 md:pb-6 space-y-4">
                         <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
                             <div>
-                                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Periode Perhitungan</p>
+                                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1"><TermHint term="period">Periode Perhitungan</TermHint></p>
                                 <p class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
                                     {{ formatDate(periodData.startDate) }} – {{ formatDate(periodData.endDate) }}
                                 </p>
                                 <div v-if="periodData.closedAt" class="flex flex-wrap items-center gap-2 mt-2">
-                                    <UBadge color="neutral" variant="subtle" icon="i-lucide-lock">Periode Ditutup</UBadge>
+                                    <TermHint term="periodClosed"><UBadge color="neutral" variant="subtle" icon="i-lucide-lock">Periode Ditutup</UBadge></TermHint>
                                     <span class="text-xs text-gray-500 dark:text-gray-400">Komisi sudah final sejak {{ shortDate(new Date(periodData.closedAt)) }}.</span>
                                 </div>
                             </div>
@@ -160,7 +160,7 @@ const totalParts = computed(() => {
 
 const { invoiceColumns, churnColumns, matchesSearch } = useInvoiceColumns()
 const transactionSearch = ref('')
-const glossaryTerms: GlossaryKey[] = ['new', 'recurring', 'prorate', 'upgrade', 'alat', 'setup', 'churn', 'subscription', 'mrc', 'contractMonths', 'lateMonth', 'commission', 'activity', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
+const glossaryTerms: GlossaryKey[] = ['period', 'periodClosed', 'new', 'recurring', 'prorate', 'upgrade', 'alat', 'setup', 'churn', 'churnWaived', 'subscription', 'baseCommission', 'mrc', 'contractMonths', 'lateMonth', 'commission', 'activity', 'achievementStatus', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
 
 const getTabData = (key: string): any[] => {
     const rows: any[] = key === 'churn' ? churnData.value : invoiceItems.value.filter(i => i.type === key)
