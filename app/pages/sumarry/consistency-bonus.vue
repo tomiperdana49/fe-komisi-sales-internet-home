@@ -17,7 +17,10 @@
 
                 <UCard>
                     <template #header>
-                        <UInput v-model="globalFilter" icon="i-heroicons-magnifying-glass" placeholder="Cari nama atau ID karyawan..." class="w-full sm:w-72" />
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                            <UInput v-model="globalFilter" icon="i-heroicons-magnifying-glass" placeholder="Cari nama atau ID karyawan..." class="w-full sm:w-72" />
+                            <BranchFilter :branches="summaryData.map(r => r.branch)" />
+                        </div>
                     </template>
                     <UTable sticky :columns="columns" :data="filteredData" empty="Belum ada Account Manager yang terdata untuk periode ini." class="flex-1 max-h-[800px]" />
                 </UCard>
@@ -73,6 +76,8 @@ const summaryService = new SummaryService()
 const { monthLabel } = usePeriodOptions()
 
 const summaryData = ref<ConsistencyBonusItem[]>([])
+const { byBranch } = useBranchFilter()
+const branchData = computed(() => byBranch(summaryData.value, r => r.branch))
 const { year, month: selectedMonth } = useSelectedPeriod()
 const globalFilter = ref('')
 const revokingIds = ref(new Set<string>())
@@ -94,9 +99,9 @@ const formatMonths = (months: string | null) => months ? months.split(',').map(m
 const selectedMonthLabel = computed(() => monthLabel(selectedMonth.value))
 
 const stats = computed(() => {
-    const granted = summaryData.value.filter(r => r.amount > 0)
+    const granted = branchData.value.filter(r => r.amount > 0)
     return [
-        { label: 'Jumlah Account Manager', value: summaryData.value.length },
+        { label: 'Jumlah Account Manager', value: branchData.value.length },
         { label: 'Sudah Diberi Bonus', value: granted.length, class: 'text-violet-600 dark:text-violet-400' },
         { label: 'Total Bonus', value: formatCurrency(granted.reduce((a, r) => a + r.amount, 0)), class: 'text-violet-600 dark:text-violet-400' },
         { label: 'Total Service Dicapai', value: granted.reduce((a, r) => a + (r.serviceCount ?? 0), 0), note: 'Dari sales yang diberi bonus' }
@@ -115,8 +120,8 @@ const confirmRevoke = async () => {
 
 const filteredData = computed(() => {
     const query = globalFilter.value.trim().toLowerCase()
-    if (!query) return summaryData.value
-    return summaryData.value.filter(row =>
+    if (!query) return branchData.value
+    return branchData.value.filter(row =>
         row.name.toLowerCase().includes(query) || row.employeeId.toLowerCase().includes(query)
     )
 })

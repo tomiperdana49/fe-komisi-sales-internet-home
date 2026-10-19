@@ -19,7 +19,10 @@
 
                 <UCard>
                     <template #header>
-                        <UInput v-model="search" icon="i-lucide-search" placeholder="Cari nama atau ID karyawan..." class="w-full sm:w-72" />
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                            <UInput v-model="search" icon="i-lucide-search" placeholder="Cari nama atau ID karyawan..." class="w-full sm:w-72" />
+                            <BranchFilter :branches="summaryData.map(r => r.branch)" />
+                        </div>
                     </template>
                     <UTable
                         v-model:column-pinning="columnPinning"
@@ -64,14 +67,19 @@ const glossaryTerms: GlossaryKey[] = ['activity', 'new', 'recurring', 'alat', 's
 const summaryData = ref<SalesSummaryItem[]>([])
 const { year, month: selectedMonth } = useSelectedPeriod()
 const search = ref('')
+const { byBranch } = useBranchFilter()
+const branchData = computed(() => byBranch(summaryData.value, r => r.branch))
 const columnPinning = ref({ left: ['name'], right: [] })
 
 const selectedMonthLabel = computed(() => monthLabel(selectedMonth.value))
 
+// Most new services first; ties keep the API's alphabetical order (sort is stable).
 const filteredData = computed(() => {
     const q = search.value.trim().toLowerCase()
-    if (!q) return summaryData.value
-    return summaryData.value.filter(r => r.name.toLowerCase().includes(q) || r.employeeId.toLowerCase().includes(q))
+    const rows = q
+        ? branchData.value.filter(r => r.name.toLowerCase().includes(q) || r.employeeId.toLowerCase().includes(q))
+        : branchData.value
+    return [...rows].sort((a, b) => b.activityCount - a.activityCount)
 })
 
 const sum = (key: keyof SalesSummaryItem) => filteredData.value.reduce((acc, r) => acc + Number(r[key] ?? 0), 0)
@@ -83,7 +91,7 @@ const isOnTarget = (status: string) => {
 }
 
 const stats = computed(() => {
-    const rows = summaryData.value
+    const rows = branchData.value
     const onTarget = rows.filter(r => isOnTarget(r.achievementStatus)).length
     return [
         { label: 'Jumlah Account Manager', value: rows.length },

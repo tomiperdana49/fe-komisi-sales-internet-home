@@ -17,7 +17,10 @@
 
                 <UCard>
                     <template #header>
-                        <UInput v-model="globalFilter" icon="i-heroicons-magnifying-glass" placeholder="Cari pelanggan, layanan, sales..." class="w-full sm:w-72" />
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                            <UInput v-model="globalFilter" icon="i-heroicons-magnifying-glass" placeholder="Cari pelanggan, layanan, sales..." class="w-full sm:w-72" />
+                            <BranchFilter :branches="summaryData.map(r => r.employee_branch)" />
+                        </div>
                     </template>
 
                     <UTable
@@ -27,7 +30,7 @@
                         v-model:global-filter="globalFilter"
                         v-model:sorting="sorting"
                         :columns="columns"
-                        :data="summaryData"
+                        :data="branchData"
                         :pagination-options="{
                             getPaginationRowModel: getPaginationRowModel()
                         }"
@@ -72,6 +75,8 @@ const summaryService = new SummaryService()
 
 const table = useTemplateRef('table')
 const summaryData = ref<ChurnSummaryItem[]>([])
+const { byBranch } = useBranchFilter()
+const branchData = computed(() => byBranch(summaryData.value, r => r.employee_branch))
 const { year, month: selectedMonth } = useSelectedPeriod()
 
 const pagination = ref({
@@ -114,7 +119,7 @@ const revokeApproval = async (row: ChurnSummaryItem) => {
 }
 
 const stats = computed(() => {
-    const rows = summaryData.value
+    const rows = branchData.value
     const pending = rows.filter(r => !r.is_approved)
     return [
         { label: 'Jumlah Churn', value: rows.length },

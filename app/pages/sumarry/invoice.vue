@@ -21,7 +21,10 @@
                                 <span class="inline-block size-3 rounded-sm bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700" />
                                 Baris oranye = invoice sudah diubah manual oleh admin.
                             </p>
-                            <UInput v-model="globalFilter" icon="i-heroicons-magnifying-glass" placeholder="Cari invoice, pelanggan, sales..." class="w-full sm:w-72" />
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                                <BranchFilter :branches="summaryData.map(r => r.branch)" />
+                                <UInput v-model="globalFilter" icon="i-heroicons-magnifying-glass" placeholder="Cari invoice, pelanggan, sales..." class="w-full sm:w-72" />
+                            </div>
                         </div>
                     </template>
 
@@ -32,7 +35,7 @@
                         v-model:global-filter="globalFilter"
                         v-model:sorting="sorting"
                         :columns="columns"
-                        :data="summaryData"
+                        :data="branchData"
                         :pagination-options="{
                             getPaginationRowModel: getPaginationRowModel()
                         }"
@@ -100,6 +103,8 @@ const getRowItems = (row: any) => [
 
 const table = useTemplateRef('table')
 const summaryData = ref<InvoiceSummaryItem[]>([])
+const { byBranch } = useBranchFilter()
+const branchData = computed(() => byBranch(summaryData.value, r => r.branch))
 const { year, month: selectedMonth } = useSelectedPeriod()
 
 const pagination = ref({
@@ -115,7 +120,7 @@ const { rules } = useCommissionRules()
 const selectedMonthLabel = computed(() => monthLabel(selectedMonth.value))
 
 const stats = computed(() => {
-    const rows = summaryData.value
+    const rows = branchData.value
     const lateUnapproved = rows.filter(r => r.lateMonth > 0 && !r.isApproved).length
     return [
         { label: 'Jumlah Invoice', value: rows.length },

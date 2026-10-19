@@ -10,6 +10,7 @@ export interface SalesSummaryItem {
     employeeId: string;
     name: string;
     photoProfile: string;
+    branch: string | null;
     status: string | null;
     achievementStatus: string;
     activityCount: number;
@@ -36,6 +37,7 @@ export interface ManagerSummaryItem {
     employeeId: string;
     name: string;
     photoProfile: string;
+    branch: string | null;
     totalCount: number;
     achievementPercentage: number;
     activityCount: number;
@@ -59,6 +61,8 @@ export interface ManagerSummaryResponseData {
 export interface InvoiceSummaryItem extends CommissionLineItem {
     sales: { employeeId: string; name: string; photoProfile: string } | null;
     managerEmployee: { employeeId: string; name: string; photoProfile: string } | null;
+    /** The selling Account Manager's branch. */
+    branch: string | null;
 }
 
 export interface InvoiceSummaryResponseData {
@@ -103,6 +107,7 @@ export interface ChurnSummaryItem {
     employee_name: string | null;
     employee_eid: string | null;
     employee_photo: string | null;
+    employee_branch: string | null;
 }
 
 export interface ChurnSummaryResponseData {
@@ -176,6 +181,7 @@ export interface ConsistencyBonusItem {
     employeeId: string;
     name: string;
     photoProfile: string;
+    branch: string | null;
     status: string | null;
     amount: number;
     note: string | null;
