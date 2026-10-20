@@ -132,8 +132,8 @@
                                 <TermHint v-if="row.hint" :term="row.hint">{{ row.label }}</TermHint>
                                 <template v-else>{{ row.label }}</template>
                             </span>
-                            <span :class="['font-semibold tabular-nums', box.negative ? 'text-red-500 dark:text-red-400' : row.value === 0 ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white']">
-                                {{ box.negative && row.value ? '−' : '' }}{{ box.isCount ? `${row.value} layanan` : formatCurrency(row.value) }}
+                            <span :class="['font-semibold tabular-nums', box.negative || (row.negative && row.value) ? 'text-red-500 dark:text-red-400' : row.value === 0 ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white']">
+                                {{ (box.negative || row.negative) && row.value ? '−' : '' }}{{ box.isCount ? `${row.value} layanan` : formatCurrency(row.value) }}
                             </span>
                         </li>
                         <li v-if="box.total !== undefined" class="flex justify-between items-center text-sm pt-3 mt-1 border-t border-gray-200 dark:border-gray-700">
@@ -222,9 +222,21 @@ const churnByService = computed(() => {
     return Array.from(counts.entries()).map(([label, value]) => ({ label, value }))
 })
 
+// Unwaived churn per service group, to add back onto the group's New figures (which the BE stores net of churn).
+const churnByGroup = computed(() => {
+    const sums: Record<string, { mrc: number; subscription: number }> = {}
+    for (const c of props.churnData ?? []) {
+        if (c.is_approved) continue
+        const sum = sums[c.serviceGroup] ??= { mrc: 0, subscription: 0 }
+        sum.mrc += Number(c.mrc ?? 0)
+        sum.subscription += Number(c.price ?? 0)
+    }
+    return sums
+})
+
 interface FinancialBox {
     title: string
-    rows: { label: string; value: number; hint?: GlossaryKey }[]
+    rows: { label: string; value: number; hint?: GlossaryKey; negative?: boolean }[]
     total?: number
     totalLabel?: string
     negative?: boolean
@@ -245,7 +257,8 @@ const financialBoxes = computed<FinancialBox[]>(() => {
             title: 'Komisi & Bonus',
             class: 'border-primary-200 dark:border-primary-800 bg-primary-50/40 dark:bg-primary-950/10 lg:row-span-3',
             rows: [
-                { label: 'New', hint: 'new', value: b.new.commission },
+                // b.new is net of churn; show New before churn and the deduction as its own line.
+                { label: 'New', hint: 'new', value: b.new.commission + data.deduction.commission },
                 { label: 'Prorate', hint: 'prorate', value: b.prorate.commission },
                 { label: 'Recurring', hint: 'recurring', value: b.recurring.commission },
                 { label: 'Upgrade', hint: 'upgrade', value: b.upgrade.commission },
@@ -253,7 +266,8 @@ const financialBoxes = computed<FinancialBox[]>(() => {
                 { label: 'Setup', hint: 'setup', value: b.setup.commission },
                 { label: 'Bonus Bulanan', hint: 'bonusBulanan', value: data.bonusBulanan },
                 { label: 'Bonus Kelebihan Service', hint: 'bonusKelebihanService', value: data.bonusKelebihanService },
-                { label: 'Bonus Konsistensi', hint: 'consistencyBonus', value: data.consistencyBonus }
+                { label: 'Bonus Konsistensi', hint: 'consistencyBonus', value: data.consistencyBonus },
+                { label: 'Potongan Churn', hint: 'churn', value: data.deduction.commission, negative: true }
             ],
             total: data.total.commission + data.bonusBulanan + data.bonusKelebihanService + data.consistencyBonus,
             totalLabel: 'Total Diterima'
@@ -262,8 +276,9 @@ const financialBoxes = computed<FinancialBox[]>(() => {
             title: 'MRC Layanan Baru',
             class: plainBox,
             rows: [
-                ...serviceGroupOrder.map(name => ({ label: name, value: g[name]?.new.mrc ?? 0 })),
-                { label: 'Upgrade', value: b.upgrade.mrc }
+                ...serviceGroupOrder.map(name => ({ label: name, value: (g[name]?.new.mrc ?? 0) + (churnByGroup.value[name]?.mrc ?? 0) })),
+                { label: 'Upgrade', value: b.upgrade.mrc },
+                { label: 'Potongan Churn', hint: 'churn', value: data.deduction.mrc, negative: true }
             ],
             total: b.new.mrc + b.upgrade.mrc
         },
@@ -271,9 +286,10 @@ const financialBoxes = computed<FinancialBox[]>(() => {
             title: 'Subscription Layanan Baru',
             class: plainBox,
             rows: [
-                ...serviceGroupOrder.map(name => ({ label: name, value: g[name]?.new.subscription ?? 0 })),
+                ...serviceGroupOrder.map(name => ({ label: name, value: (g[name]?.new.subscription ?? 0) + (churnByGroup.value[name]?.subscription ?? 0) })),
                 { label: 'Prorate', value: b.prorate.subscription },
-                { label: 'Upgrade', value: b.upgrade.subscription }
+                { label: 'Upgrade', value: b.upgrade.subscription },
+                { label: 'Potongan Churn', hint: 'churn', value: data.deduction.subscription, negative: true }
             ],
             total: b.new.subscription + b.prorate.subscription + b.upgrade.subscription
         },

@@ -140,6 +140,8 @@ export interface ChurnRow {
     mrc: number;
     commission: number;
     commissionPercentage: number;
+    /** Service group whose New figures this churn was deducted from. */
+    serviceGroup: ManagerServiceGroup;
 }
 
 export interface SalesChurnResponseData {
