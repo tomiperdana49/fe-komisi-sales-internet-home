@@ -173,10 +173,20 @@ const boxTotal = (key: string, field: 'subscription' | 'mrc' | 'commission') => 
     ? getTabData(key).reduce((sum, r) => sum + Number(r[field] ?? 0), 0)
     : periodData.value?.breakdown[key as keyof typeof periodData.value.breakdown]?.[field] ?? 0
 
+// Unwaived churn is subtracted from the New total, so summing the New rows by hand comes out higher; say why.
+const boxTotalNote = (key: string, field: 'subscription' | 'mrc' | 'commission') => {
+    const deduction = periodData.value?.deduction
+    if (key !== 'new' || transactionSearch.value.trim() || !deduction?.count) return null
+
+    const rows = getTabData(key)
+    const rowSum = rows.reduce((sum, r) => sum + Number(r[field] ?? 0), 0)
+    return `Jumlah ${rows.length} baris ${formatCurrency(rowSum)} dikurangi potongan ${deduction.count} churn yang tidak dibebaskan ${formatCurrency(deduction[field])} (lihat tab Churn) = ${formatCurrency(boxTotal(key, field))}.`
+}
+
 const getColumns = (key: string): TableColumn<any>[] => {
     if (key === 'churn') return churnColumns()
 
-    return invoiceColumns(field => boxTotal(key, field))
+    return invoiceColumns(field => boxTotal(key, field), 'commission', field => boxTotalNote(key, field))
 }
 
 // --- Data fetching ---

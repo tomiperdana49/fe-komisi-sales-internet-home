@@ -1,6 +1,6 @@
 import { h } from 'vue'
 // Explicit import: Nuxt only rewrites resolveComponent() inside .vue files, not in composables.
-import { UBadge } from '#components'
+import { UBadge, UIcon } from '#components'
 import TermHint from '~/components/TermHint.vue'
 import type { TableColumn } from '@nuxt/ui'
 import type { GlossaryKey } from '~/composables/useGlossary'
@@ -16,7 +16,19 @@ export const useInvoiceColumns = () => {
 
     const hintHeader = (label: string, term: GlossaryKey) => () => h(TermHint, { term }, () => label)
 
-    const invoiceColumns = (total: (field: TotalField) => number, commissionTerm: GlossaryKey = 'commission'): TableColumn<CommissionLineItem>[] => [
+    // A footer total with a note gets an info icon and explains on hover why it differs from summing the rows by hand.
+    const footerTotal = (value: number, note: string | null | undefined, cls: string) => note
+        ? h('div', { class: cls }, [withTooltip(note, h('span', { tabindex: 0, class: 'inline-flex items-center gap-1 cursor-help' }, [
+            h(UIcon, { name: 'i-lucide-info', class: 'size-3.5 shrink-0 text-gray-400 dark:text-gray-500' }),
+            formatCurrency(value)
+        ]))])
+        : h('div', { class: cls }, formatCurrency(value))
+
+    const invoiceColumns = (
+        total: (field: TotalField) => number,
+        commissionTerm: GlossaryKey = 'commission',
+        totalNote?: (field: TotalField) => string | null
+    ): TableColumn<CommissionLineItem>[] => [
         {
             accessorKey: 'paidDate',
             header: 'Tgl. Bayar',
@@ -59,13 +71,13 @@ export const useInvoiceColumns = () => {
             accessorKey: 'subscription',
             header: hintHeader('Subscription', 'subscription'),
             cell: ({ row }) => h('span', { class: 'font-medium' }, formatCurrency(row.original.subscription)),
-            footer: () => h('div', { class: 'hidden lg:block text-right font-bold' }, formatCurrency(total('subscription')))
+            footer: () => footerTotal(total('subscription'), totalNote?.('subscription'), 'hidden lg:block text-right font-bold')
         },
         {
             accessorKey: 'mrc',
             header: hintHeader('MRC', 'mrc'),
             cell: ({ row }) => h('span', { class: 'font-medium' }, formatCurrency(row.original.mrc)),
-            footer: () => h('div', { class: 'hidden lg:block text-right font-bold' }, formatCurrency(total('mrc')))
+            footer: () => footerTotal(total('mrc'), totalNote?.('mrc'), 'hidden lg:block text-right font-bold')
         },
         { id: 'month', header: hintHeader('Lama Kontrak', 'contractMonths'), cell: ({ row }) => h('span', { class: 'font-medium' }, `${row.original.month} bln`) },
         { id: 'lateMonth', header: hintHeader('Telat Bayar', 'lateMonth'), cell: ({ row }) => h('span', { class: ['font-medium', row.original.lateMonth > 0 ? 'text-red-500 dark:text-red-400' : ''] }, row.original.lateMonth > 0 ? `${row.original.lateMonth} bln` : '–') },
@@ -80,7 +92,7 @@ export const useInvoiceColumns = () => {
                     h('span', { class: 'text-sm font-bold text-gray-900 dark:text-white' }, formatCurrency(row.original.commission))
                 ])
             },
-            footer: () => h('div', { class: 'text-right font-bold text-gray-900 dark:text-white' }, formatCurrency(total('commission')))
+            footer: () => footerTotal(total('commission'), totalNote?.('commission'), 'text-right font-bold text-gray-900 dark:text-white')
         }
     ]
 
