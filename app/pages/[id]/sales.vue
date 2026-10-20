@@ -71,7 +71,18 @@
                         <h3 class="text-base font-semibold text-gray-900 dark:text-white">Daftar Transaksi</h3>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Invoice yang dihitung komisinya pada periode ini, dikelompokkan per kategori.</p>
                     </div>
-                    <UInput v-model="transactionSearch" icon="i-lucide-search" placeholder="Cari pelanggan, layanan, no. invoice..." class="w-full sm:w-80" />
+                    <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                        <USelectMenu
+                            v-model="productFilterModel"
+                            :items="productOptions"
+                            multiple
+                            icon="i-lucide-filter"
+                            placeholder="Semua produk"
+                            :search-input="false"
+                            class="w-full sm:w-56"
+                        />
+                        <UInput v-model="transactionSearch" icon="i-lucide-search" placeholder="Cari pelanggan, layanan, no. invoice..." class="w-full sm:w-80" />
+                    </div>
                 </div>
                 <UTabs :items="tabItems" class="w-full">
                     <template #content="{ item }">
@@ -83,7 +94,7 @@
                             sticky
                             :data="getTabData(item.key)"
                             :columns="getColumns(item.key)"
-                            :empty="transactionSearch.trim() ? `Tidak ada transaksi ${item.name} yang cocok dengan “${transactionSearch.trim()}”.` : `Tidak ada transaksi ${item.name} pada periode ini.`"
+                            :empty="emptyMessage(item.name)"
                             class="flex-1 max-h-[800px] [&_tr:has(.commission-zero)]:bg-yellow-50 dark:[&_tr:has(.commission-zero)]:bg-yellow-950/20"
                         />
                     </template>
@@ -160,11 +171,33 @@ const totalParts = computed(() => {
 
 const { invoiceColumns, churnColumns, matchesSearch } = useInvoiceColumns()
 const transactionSearch = ref('')
+const { getServiceLabel } = useServiceLabel()
+
+// Produk filter: the same label the Produk column shows. Nothing selected = every product.
+const productFilter = ref<string[]>([])
+const productOf = (r: any): string => 'type' in r ? getServiceLabel(r.category, r.serviceGroup).label : r.serviceGroup
+const ALL_PRODUCTS = 'Semua produk'
+const productOptions = computed(() => [ALL_PRODUCTS, ...[...new Set([...invoiceItems.value, ...churnData.value].map(productOf).filter(Boolean))].sort()])
+// "Semua produk" is shown ticked when nothing is filtered; picking it clears the other choices, picking a product unticks it.
+const productFilterModel = computed<string[]>({
+    get: () => productFilter.value.length ? productFilter.value : [ALL_PRODUCTS],
+    set: (value) => {
+        const pickedAll = value.includes(ALL_PRODUCTS) && productFilter.value.length > 0
+        productFilter.value = pickedAll ? [] : value.filter(v => v !== ALL_PRODUCTS)
+    }
+})
 const glossaryTerms: GlossaryKey[] = ['period', 'periodClosed', 'new', 'recurring', 'prorate', 'upgrade', 'alat', 'setup', 'churn', 'churnWaived', 'subscription', 'baseCommission', 'mrc', 'contractMonths', 'lateMonth', 'commission', 'activity', 'achievementStatus', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
 
 const getTabData = (key: string): any[] => {
     const rows: any[] = key === 'churn' ? churnData.value : invoiceItems.value.filter(i => i.type === key)
-    return rows.filter(r => matchesSearch(r, transactionSearch.value))
+    return rows.filter(r => matchesSearch(r, transactionSearch.value) && (!productFilter.value.length || productFilter.value.includes(productOf(r))))
+}
+
+const emptyMessage = (name: string) => {
+    const q = transactionSearch.value.trim()
+    if (!q && !productFilter.value.length) return `Tidak ada transaksi ${name} pada periode ini.`
+    const filters = [productFilter.value.length ? `produk ${productFilter.value.join(', ')}` : '', q ? `“${q}”` : ''].filter(Boolean).join(' dan ')
+    return `Tidak ada transaksi ${name} yang cocok dengan ${filters}.`
 }
 
 // Footer totals sum the rows shown, before churn; the churn deduction is shown in the Churn tab and the Total Komisi card.
