@@ -80,7 +80,7 @@ const { state: authState } = useAuth()
 const employeeCard = ref<{ employeeId: string; name: string; photoProfile: string; position: string; organizationName: string; jobLevel: string; branch: string; to: string }[]>([])
 const searchQuery = ref('')
 
-type RoleFilter = 'all' | 'sm' | 'am'
+type RoleFilter = 'all' | 'sm' | 'am' | 'sdr'
 // Remembered for the session so coming back from someone's dashboard keeps the choice.
 const chosenRole = useState<RoleFilter | null>('home-role-filter', () => null)
 // Until the user picks one: admins start on Sales Managers (if any), everyone else sees their whole team.
@@ -89,13 +89,17 @@ const roleFilter = computed<RoleFilter>({
         ?? (authState.user?.is_admin && cardsInBranch.value.some(c => roleOf(c) === 'sm') ? 'sm' : 'all'),
     set: (value) => { chosenRole.value = value }
 })
-// Same split as the card links (useDashboardRoute): manager dashboards are SM, sales dashboards are AM.
-const roleOf = (card: { to: string }): RoleFilter | null =>
-    card.to.endsWith('/manager') ? 'sm' : card.to.endsWith('/sales') ? 'am' : null
+// Same split as the card links (useDashboardRoute): manager dashboards are SM, sales dashboards are AM or SDR.
+const roleOf = (card: { to: string; position: string }): RoleFilter | null =>
+    card.to.endsWith('/manager') ? 'sm' : card.to.endsWith('/sales') ? (card.position === 'Sales Development Representative' ? 'sdr' : 'am') : null
 const roleTabs = computed(() => [
     { label: `Semua (${cardsInBranch.value.length})`, value: 'all' },
     { label: `Sales Manager (${cardsInBranch.value.filter(c => roleOf(c) === 'sm').length})`, value: 'sm' },
-    { label: `Account Manager (${cardsInBranch.value.filter(c => roleOf(c) === 'am').length})`, value: 'am' }
+    { label: `Account Manager (${cardsInBranch.value.filter(c => roleOf(c) === 'am').length})`, value: 'am' },
+    // Only shown when the team has SDRs, so other teams' filter stays as it was.
+    ...(cardsInBranch.value.some(c => roleOf(c) === 'sdr')
+        ? [{ label: `SDR (${cardsInBranch.value.filter(c => roleOf(c) === 'sdr').length})`, value: 'sdr' }]
+        : [])
 ])
 const { getRoute } = useDashboardRoute()
 
@@ -152,7 +156,8 @@ const fetchEmployeeCard = async () => {
                 name: item.name,
                 employeeId: item.employee_id,
                 position: item.job_position,
-                organizationName: item.organization_name,
+                // Nusawork names SDR teams "Sales Development Representative (SDR) <city>"; the acronym only lengthens the card.
+                organizationName: item.organization_name.replace(/\s*\(SDR\)/, ''),
                 jobLevel: item.job_level,
                 branch: item.branch ?? '',
                 to: getRoute(item),

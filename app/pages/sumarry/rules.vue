@@ -6,7 +6,7 @@
             <HeroBackground />
             <div class="py-4 space-y-4">
                 <div>
-                    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Aturan Komisi</h2>
+                    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Aturan Komisi Home</h2>
                     <p class="text-sm text-gray-500 dark:text-gray-400">
                         Rate, potongan, target, bonus, dan aturan manager yang dipakai menghitung komisi. Setiap perubahan dibuat sebagai versi baru yang
                         <strong>berlaku mulai periode tertentu</strong>, sehingga komisi bulan-bulan sebelumnya tidak ikut berubah.

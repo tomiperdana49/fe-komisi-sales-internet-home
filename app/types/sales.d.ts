@@ -61,6 +61,8 @@ export interface SalesCommissionData {
     /** When an admin closed (froze) this period; null while it is still open. */
     closedAt: string | null;
     employeeId: string;
+    /** Sales Development Representative: SDR rules, NusaSelecta counted 1:1. */
+    isSdr: boolean;
     status: string | null;
     activityCount: number;
     /** New Achievement target used this period: the admin-set one (Target AM page) when present, else the rules' default. */

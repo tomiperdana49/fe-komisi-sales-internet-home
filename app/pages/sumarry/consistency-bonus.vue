@@ -101,7 +101,7 @@ const selectedMonthLabel = computed(() => monthLabel(selectedMonth.value))
 const stats = computed(() => {
     const granted = branchData.value.filter(r => r.amount > 0)
     return [
-        { label: 'Jumlah Account Manager', value: branchData.value.length },
+        { label: 'Jumlah AM & SDR', value: branchData.value.length },
         { label: 'Sudah Diberi Bonus', value: granted.length, class: 'text-violet-600 dark:text-violet-400' },
         { label: 'Total Bonus', value: formatCurrency(granted.reduce((a, r) => a + r.amount, 0)), class: 'text-violet-600 dark:text-violet-400' },
         { label: 'Total Service Dicapai', value: granted.reduce((a, r) => a + (r.serviceCount ?? 0), 0), note: 'Dari sales yang diberi bonus' }
@@ -162,12 +162,12 @@ const revokeBonus = async (row: ConsistencyBonusItem) => {
 const columns: TableColumn<ConsistencyBonusItem>[] = [
     {
         accessorKey: 'name',
-        header: 'Account Manager',
+        header: 'Account Manager / SDR',
         cell: ({ row }) => h(NuxtLink, { to: `/${row.original.employeeId}/sales`, class: 'flex items-center gap-3 group' }, () => [
             h(UAvatar, { src: row.original.photoProfile, alt: row.original.name, size: 'sm' }),
             h('div', { class: 'flex flex-col' }, [
                 h('span', { class: 'font-semibold text-gray-900 dark:text-white group-hover:text-primary-500 transition-colors' }, row.original.name),
-                h('span', { class: 'text-xs text-gray-500' }, row.original.employeeId)
+                h('span', { class: 'text-xs text-gray-500' }, row.original.isSdr ? `${row.original.employeeId} · SDR` : row.original.employeeId)
             ])
         ])
     },

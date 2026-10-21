@@ -83,7 +83,10 @@
                         </span>
                     </div>
                 </div>
-                <p v-if="nusaSelectaUnits > 0" class="text-xs text-gray-500 dark:text-gray-400">
+                <p v-if="nusaSelectaUnits > 0 && data.isSdr" class="text-xs text-gray-500 dark:text-gray-400">
+                    Angka di kanan = pencapaian New. Untuk SDR, setiap unit NusaSelecta dihitung 1 pencapaian.
+                </p>
+                <p v-else-if="nusaSelectaUnits > 0" class="text-xs text-gray-500 dark:text-gray-400">
                     Angka di kanan = pencapaian New. NusaSelecta dihitung berkelompok: 3 unit Basic/Prime atau 2 unit Ultra = 1 pencapaian.
                     Setiap unit tetap mendapat komisi, sehingga jumlah invoice di tab New bisa lebih banyak dari pencapaian.
                 </p>

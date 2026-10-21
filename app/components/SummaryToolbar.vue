@@ -16,6 +16,18 @@
                 >
                     {{ link.label }}
                 </UButton>
+                <UDropdownMenu :items="ruleLinks" :content="{ align: 'start' }">
+                    <UButton
+                        icon="i-heroicons-adjustments-horizontal"
+                        trailing-icon="i-lucide-chevron-down"
+                        :variant="activeRuleLink ? 'soft' : 'ghost'"
+                        :color="activeRuleLink ? 'primary' : 'neutral'"
+                        size="sm"
+                        class="shrink-0"
+                    >
+                        Aturan Komisi
+                    </UButton>
+                </UDropdownMenu>
             </nav>
         </Teleport>
         <Teleport v-if="isMounted" to="#toolbar-right">
@@ -41,9 +53,14 @@ const links = [
     { to: '/sumarry/invoice', icon: 'i-heroicons-document-text', label: 'Invoice' },
     { to: '/sumarry/churn', icon: 'i-heroicons-archive-box-x-mark', label: 'Churn' },
     { to: '/sumarry/consistency-bonus', icon: 'i-heroicons-gift', label: 'Bonus Konsistensi' },
-    { to: '/sumarry/target', icon: 'i-heroicons-flag', label: 'Target AM' },
-    { to: '/sumarry/rules', icon: 'i-heroicons-adjustments-horizontal', label: 'Aturan Komisi' }
+    { to: '/sumarry/target', icon: 'i-heroicons-flag', label: 'Target AM' }
 ]
+// Home and SDR rules share one dropdown so the toolbar doesn't need to scroll.
+const ruleLinks = [
+    { to: '/sumarry/rules', icon: 'i-heroicons-home', label: 'Aturan Komisi Home' },
+    { to: '/sumarry/sdr-rules', icon: 'i-heroicons-user-plus', label: 'Aturan Komisi SDR' }
+]
+const activeRuleLink = computed(() => ruleLinks.find(l => l.to === route.path))
 
 // The #toolbar-* targets live in AppHeader; wait a tick so they exist before teleporting.
 const isMounted = ref(false)

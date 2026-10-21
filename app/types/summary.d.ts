@@ -11,6 +11,8 @@ export interface SalesSummaryItem {
     name: string;
     photoProfile: string;
     branch: string | null;
+    /** Sales Development Representative — commissioned on the SDR rules. */
+    isSdr: boolean;
     status: string | null;
     achievementStatus: string;
     activityCount: number;
@@ -182,6 +184,7 @@ export interface ConsistencyBonusItem {
     name: string;
     photoProfile: string;
     branch: string | null;
+    isSdr: boolean;
     status: string | null;
     amount: number;
     note: string | null;

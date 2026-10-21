@@ -7,12 +7,14 @@
             <div class="py-4 space-y-4">
                 <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
                     <div>
-                        <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Ringkasan Account Manager</h2>
+                        <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Ringkasan {{ roleLabel }}</h2>
                         <p class="text-sm text-gray-500 dark:text-gray-400">
-                            Komisi seluruh Account Manager untuk {{ selectedMonthLabel }} {{ year }}. Klik nama untuk melihat rinciannya.
+                            Komisi seluruh {{ roleLabel }} untuk {{ selectedMonthLabel }} {{ year }}. Klik nama untuk melihat rinciannya.
+                            <span v-if="role === 'sdr'" class="block">SDR memakai aturan komisi sendiri (Aturan Komisi SDR) dan tidak dihitung ke tim Sales Manager.</span>
                             <span v-if="ongoing" class="block text-sky-600 dark:text-sky-400">Periode masih berjalan sampai {{ shortDate(periodEndDate(year, selectedMonth)) }} — status pencapaian & komisi masih sementara.</span>
                         </p>
                     </div>
+                    <UTabs v-model="role" :items="roleTabs" :content="false" size="sm" class="w-full sm:w-auto" />
                 </div>
 
                 <SummaryStats :stats="stats" />
@@ -21,7 +23,7 @@
                     <template #header>
                         <div class="flex flex-col sm:flex-row sm:items-center gap-3">
                             <UInput v-model="search" icon="i-lucide-search" placeholder="Cari nama atau ID karyawan..." class="w-full sm:w-72" />
-                            <BranchFilter :branches="summaryData.map(r => r.branch)" />
+                            <BranchFilter :branches="roleData.map(r => r.branch)" />
                         </div>
                     </template>
                     <UTable
@@ -29,7 +31,7 @@
                         sticky
                         :columns="columns"
                         :data="filteredData"
-                        empty="Tidak ada data Account Manager untuk periode ini."
+                        :empty="`Tidak ada data ${roleLabel} untuk periode ini.`"
                         class="flex-1 max-h-[800px]"
                     />
                 </UCard>
@@ -68,7 +70,17 @@ const summaryData = ref<SalesSummaryItem[]>([])
 const { year, month: selectedMonth } = useSelectedPeriod()
 const search = ref('')
 const { byBranch } = useBranchFilter()
-const branchData = computed(() => byBranch(summaryData.value, r => r.branch))
+
+// Account Managers and SDRs earn on different rules, so they're listed (and totalled) separately.
+type Role = 'am' | 'sdr'
+const role = useState<Role>('sales-summary-role', () => 'am')
+const roleLabel = computed(() => role.value === 'sdr' ? 'SDR' : 'Account Manager')
+const roleData = computed(() => summaryData.value.filter(r => (role.value === 'sdr') === Boolean(r.isSdr)))
+const roleTabs = computed(() => [
+    { label: `Account Manager (${summaryData.value.filter(r => !r.isSdr).length})`, value: 'am' },
+    { label: `SDR (${summaryData.value.filter(r => r.isSdr).length})`, value: 'sdr' }
+])
+const branchData = computed(() => byBranch(roleData.value, r => r.branch))
 const columnPinning = ref({ left: ['name'], right: [] })
 
 const selectedMonthLabel = computed(() => monthLabel(selectedMonth.value))
@@ -94,7 +106,7 @@ const stats = computed(() => {
     const rows = branchData.value
     const onTarget = rows.filter(r => isOnTarget(r.achievementStatus)).length
     return [
-        { label: 'Jumlah Account Manager', value: rows.length },
+        { label: `Jumlah ${roleLabel.value}`, value: rows.length },
         { label: ongoing.value ? 'Sudah Capai Target' : 'Capai Target', value: `${onTarget} / ${rows.length}`, note: ongoing.value ? 'Sementara, periode berjalan' : undefined, class: 'text-green-600 dark:text-green-400' },
         { label: 'Total Layanan Baru', value: rows.reduce((a, r) => a + r.activityCount, 0) },
         { label: 'Total Komisi Dibayar', value: formatCurrency(rows.reduce((a, r) => a + r.totalCommission, 0)), class: 'text-primary-600 dark:text-primary-400' }
@@ -114,7 +126,7 @@ const moneyColumn = (key: MoneyKey, label: string, opts: { hint?: GlossaryKey; c
 const columns: TableColumn<SalesSummaryItem>[] = [
     {
         accessorKey: 'name',
-        header: 'Account Manager',
+        header: () => roleLabel.value,
         cell: ({ row }) => h(NuxtLink, { to: `/${row.original.employeeId}/sales`, class: 'flex items-center gap-3 group' }, () => [
             h(UAvatar, { src: row.original.photoProfile, alt: row.original.name, size: 'sm' }),
             h('div', { class: 'flex flex-col' }, [
