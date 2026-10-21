@@ -11,8 +11,7 @@ export class AuthService {
   public token = ref<string | null>(null)
 
   constructor() {
-    this.restoreSession() // Sync restore
-    this.validateSession() // Async validation in background
+    this.restoreSession() // Sync restore; plugins/session.client.ts then re-validates it
     apiService.setRefreshHandler(this.refreshToken.bind(this))
   }
 
@@ -33,7 +32,9 @@ export class AuthService {
     }
   }
 
-  private async validateSession() {
+  // Refreshes the stored user (e.g. a changed admin role) from /auth/me. Needs the Nuxt app
+  // (useRuntimeConfig), so it runs from a plugin rather than this module-level constructor.
+  async validateSession() {
      if (typeof window === 'undefined') return
      const accessToken = this.token.value
      if (!accessToken) return

@@ -91,6 +91,7 @@ const { monthLabel } = usePeriodOptions()
 const selectedMonthLabel = computed(() => monthLabel(selectedMonth.value))
 
 // Waiving needs a reason, so switching on opens the reason form; switching off reinstates the cut right away.
+const { isSuperAdmin } = useAdminAccess()
 const isApproveModalOpen = ref(false)
 const approvingChurn = ref<ChurnSummaryItem | null>(null)
 const authState = useAuth().state
@@ -232,6 +233,8 @@ const columns: TableColumn<ChurnSummaryItem>[] = [
         cell: ({ row }) => h('div', { class: 'flex justify-center' }, [
             h(USwitch, {
                 modelValue: row.original.is_approved,
+                // Admins only view the waiver; changing it is Super Admin only.
+                disabled: !isSuperAdmin.value,
                 'onUpdate:modelValue': (val: boolean) => {
                     if (val) {
                         approvingChurn.value = row.original

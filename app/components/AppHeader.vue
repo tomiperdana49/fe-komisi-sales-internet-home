@@ -125,6 +125,12 @@
         icon: 'i-lucide-bar-chart-4',
         onSelect: () => navigateTo('/sumarry/sales')
         }] : []),
+        // The ACL behind the Summary pages; Super Admin only.
+        ...(authState.user?.is_super_admin ? [{
+        label: 'Akses Admin',
+        icon: 'i-lucide-shield-check',
+        onSelect: () => navigateTo('/sumarry/admin-access')
+        }] : []),
         {
         label: 'Sign Out',
         icon: 'i-lucide-log-out',

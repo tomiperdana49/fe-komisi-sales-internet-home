@@ -20,7 +20,7 @@
                         <template #header>
                             <div class="flex items-center justify-between gap-2">
                                 <h3 class="font-semibold text-gray-900 dark:text-white">Versi Aturan</h3>
-                                <UButton size="sm" icon="i-lucide-plus" @click="openCreate()">Draft Baru</UButton>
+                                <UButton v-if="isSuperAdmin" size="sm" icon="i-lucide-plus" @click="openCreate()">Draft Baru</UButton>
                             </div>
                         </template>
                         <ul class="space-y-1">
@@ -84,16 +84,16 @@
                                     </template>
                                 </div>
                                 <div class="flex flex-wrap items-center gap-2 md:shrink-0 md:flex-nowrap">
-                                    <template v-if="isDraft">
+                                    <template v-if="canEdit">
                                         <UButton color="neutral" variant="ghost" icon="i-lucide-trash-2" @click="isDeleteOpen = true">Hapus</UButton>
                                         <UButton color="neutral" variant="outline" icon="i-lucide-save" :loading="saving" :disabled="!isDirty" @click="saveDraft">Simpan Draft</UButton>
                                         <UButton icon="i-lucide-send" :disabled="isDirty" @click="isPublishOpen = true">Terbitkan</UButton>
                                     </template>
-                                    <UButton v-else icon="i-lucide-copy" variant="outline" @click="openCreate(selectedSet?.id)">Buat draft dari versi ini</UButton>
+                                    <UButton v-else-if="isSuperAdmin" icon="i-lucide-copy" variant="outline" @click="openCreate(selectedSet?.id)">Buat draft dari versi ini</UButton>
                                 </div>
                             </div>
 
-                            <div v-if="isDraft" class="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-3 mt-4">
+                            <div v-if="canEdit" class="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-3 mt-4">
                                 <UFormField label="Berlaku mulai">
                                     <div class="flex gap-2">
                                         <USelectMenu v-model="draftMonth" :items="monthSelect" value-key="id" class="w-36" />
@@ -156,26 +156,26 @@
                                                 <th class="py-2 pr-2 w-32 min-w-32">Rate 6 bln mulai kontrak ≥</th>
                                                 <th class="py-2 pr-2 w-32 min-w-32">Rate 12 bln mulai kontrak ≥</th>
                                                 <th class="py-2 pr-2 w-28 min-w-28">Setup %</th>
-                                                <th v-if="isDraft" class="py-2 w-10" />
+                                                <th v-if="canEdit" class="py-2 w-10" />
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <tr v-for="(p, i) in form.products" :key="i" class="border-b border-gray-100 dark:border-gray-800/60 align-top">
-                                                <td class="py-2 pr-2"><UInput v-model="p.name" :disabled="!isDraft" class="w-full" /></td>
+                                                <td class="py-2 pr-2"><UInput v-model="p.name" :disabled="!canEdit" class="w-full" /></td>
                                                 <td class="py-2 pr-2">
                                                     <UInput
                                                         :model-value="p.serviceIds.join(', ')"
-                                                        :disabled="!isDraft"
+                                                        :disabled="!canEdit"
                                                         class="w-full"
                                                         @update:model-value="(v: string) => p.serviceIds = String(v).split(',').map(s => s.trim().toUpperCase()).filter(Boolean)"
                                                     />
                                                 </td>
-                                                <td class="py-2 pr-2"><USelect v-model="p.group" :items="productGroups" :disabled="!isDraft" class="w-full" /></td>
-                                                <td class="py-2 pr-2"><UInput v-model.number="p.rate1" type="number" step="0.01" min="0" max="100" :disabled="!isDraft" /></td>
-                                                <td class="py-2 pr-2"><UInput v-model.number="p.rate6" type="number" step="0.01" min="0" max="100" :disabled="!isDraft" /></td>
-                                                <td class="py-2 pr-2"><UInput v-model.number="p.rate12" type="number" step="0.01" min="0" max="100" :disabled="!isDraft" /></td>
-                                                <td class="py-2 pr-2"><UInput v-model.number="p.sixMonthRateFrom" type="number" min="2" :disabled="!isDraft"><template #trailing><span class="text-xs text-gray-400">bln</span></template></UInput></td>
-                                                <td class="py-2 pr-2"><UInput v-model.number="p.twelveMonthRateFrom" type="number" min="3" :disabled="!isDraft"><template #trailing><span class="text-xs text-gray-400">bln</span></template></UInput></td>
+                                                <td class="py-2 pr-2"><USelect v-model="p.group" :items="productGroups" :disabled="!canEdit" class="w-full" /></td>
+                                                <td class="py-2 pr-2"><UInput v-model.number="p.rate1" type="number" step="0.01" min="0" max="100" :disabled="!canEdit" /></td>
+                                                <td class="py-2 pr-2"><UInput v-model.number="p.rate6" type="number" step="0.01" min="0" max="100" :disabled="!canEdit" /></td>
+                                                <td class="py-2 pr-2"><UInput v-model.number="p.rate12" type="number" step="0.01" min="0" max="100" :disabled="!canEdit" /></td>
+                                                <td class="py-2 pr-2"><UInput v-model.number="p.sixMonthRateFrom" type="number" min="2" :disabled="!canEdit"><template #trailing><span class="text-xs text-gray-400">bln</span></template></UInput></td>
+                                                <td class="py-2 pr-2"><UInput v-model.number="p.twelveMonthRateFrom" type="number" min="3" :disabled="!canEdit"><template #trailing><span class="text-xs text-gray-400">bln</span></template></UInput></td>
                                                 <td class="py-2 pr-2">
                                                     <UInput
                                                         :model-value="p.setupRate ?? ''"
@@ -184,18 +184,18 @@
                                                         min="0"
                                                         max="100"
                                                         :placeholder="String(form.rates.setup)"
-                                                        :disabled="!isDraft"
+                                                        :disabled="!canEdit"
                                                         @update:model-value="(v: string | number) => p.setupRate = v === '' || v === null ? null : Number(v)"
                                                     />
                                                 </td>
-                                                <td v-if="isDraft" class="py-2">
+                                                <td v-if="canEdit" class="py-2">
                                                     <UButton icon="i-lucide-x" color="neutral" variant="ghost" aria-label="Hapus produk" @click="form.products.splice(i, 1)" />
                                                 </td>
                                             </tr>
                                         </tbody>
                                     </table>
                                 </div>
-                                <UButton v-if="isDraft" class="mt-3" icon="i-lucide-plus" variant="soft" @click="addProduct">Tambah Produk</UButton>
+                                <UButton v-if="canEdit" class="mt-3" icon="i-lucide-plus" variant="soft" @click="addProduct">Tambah Produk</UButton>
                             </template>
 
                             <!-- Rate umum & potongan -->
@@ -203,20 +203,20 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                                     <section class="space-y-3">
                                         <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Rate Umum (%)</h4>
-                                        <RuleNumber v-model="form.rates.prorate" label="Prorate" hint="Flat untuk semua produk" :disabled="!isDraft" />
-                                        <RuleNumber v-model="form.rates.setup" label="Setup (default)" hint="Dipakai bila produk tidak punya rate setup sendiri" :disabled="!isDraft" />
-                                        <RuleNumber v-model="form.rates.alatWithSetup" label="Alat — bersama setup" :disabled="!isDraft" />
-                                        <RuleNumber v-model="form.rates.alatStandalone" label="Alat — terpisah" :disabled="!isDraft" />
-                                        <RuleNumber v-model="form.rates.recurringOnTarget" label="Recurring — capai target / Probation" :disabled="!isDraft" />
-                                        <RuleNumber v-model="form.rates.recurringMissedTarget" label="Recurring — Permanent tidak capai target" :disabled="!isDraft" />
-                                        <RuleNumber v-model="form.rates.digitalBusinessInternal" label="Digital Business recurring — Internal" :disabled="!isDraft" />
-                                        <RuleNumber v-model="form.rates.digitalBusinessResell" label="Digital Business recurring — Resell" :disabled="!isDraft" />
+                                        <RuleNumber v-model="form.rates.prorate" label="Prorate" hint="Flat untuk semua produk" :disabled="!canEdit" />
+                                        <RuleNumber v-model="form.rates.setup" label="Setup (default)" hint="Dipakai bila produk tidak punya rate setup sendiri" :disabled="!canEdit" />
+                                        <RuleNumber v-model="form.rates.alatWithSetup" label="Alat — bersama setup" :disabled="!canEdit" />
+                                        <RuleNumber v-model="form.rates.alatStandalone" label="Alat — terpisah" :disabled="!canEdit" />
+                                        <RuleNumber v-model="form.rates.recurringOnTarget" label="Recurring — capai target / Probation" :disabled="!canEdit" />
+                                        <RuleNumber v-model="form.rates.recurringMissedTarget" label="Recurring — Permanent tidak capai target" :disabled="!canEdit" />
+                                        <RuleNumber v-model="form.rates.digitalBusinessInternal" label="Digital Business recurring — Internal" :disabled="!canEdit" />
+                                        <RuleNumber v-model="form.rates.digitalBusinessResell" label="Digital Business recurring — Resell" :disabled="!canEdit" />
                                     </section>
                                     <section class="space-y-3">
                                         <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Potongan (%)</h4>
-                                        <RuleNumber v-model="form.penalties.latePerMonth" label="Telat bayar per bulan" :disabled="!isDraft" />
-                                        <RuleNumber v-model="form.penalties.lateMax" label="Telat bayar maksimal" :disabled="!isDraft" />
-                                        <RuleNumber v-model="form.penalties.missedTarget" label="Potongan New saat Permanent tidak capai target" hint="Contoh 70 = SDR hanya dapat komisi dari 30% dasar komisi" :disabled="!isDraft" />
+                                        <RuleNumber v-model="form.penalties.latePerMonth" label="Telat bayar per bulan" :disabled="!canEdit" />
+                                        <RuleNumber v-model="form.penalties.lateMax" label="Telat bayar maksimal" :disabled="!canEdit" />
+                                        <RuleNumber v-model="form.penalties.missedTarget" label="Potongan New saat Permanent tidak capai target" hint="Contoh 70 = SDR hanya dapat komisi dari 30% dasar komisi" :disabled="!canEdit" />
                                     </section>
                                 </div>
                             </template>
@@ -226,17 +226,17 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                                     <section class="space-y-3">
                                         <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Target Default (layanan baru / bulan)</h4>
-                                        <RuleNumber v-model="form.targets.permanent" label="Permanent" hint="Target layanan baru per bulan untuk semua SDR Permanent." :step="1" :disabled="!isDraft" />
-                                        <RuleNumber v-model="form.targets.probation" label="Probation" :step="1" :disabled="!isDraft" />
+                                        <RuleNumber v-model="form.targets.permanent" label="Permanent" hint="Target layanan baru per bulan untuk semua SDR Permanent." :step="1" :disabled="!canEdit" />
+                                        <RuleNumber v-model="form.targets.probation" label="Probation" :step="1" :disabled="!canEdit" />
                                     </section>
                                     <section class="space-y-3">
                                         <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Batas Status Pencapaian</h4>
-                                        <RuleNumber v-model="form.achievement.permanentBonus" label="Permanent — Capai target Bonus (≥)" :step="1" :disabled="!isDraft" />
-                                        <RuleNumber v-model="form.achievement.permanentOnTarget" label="Permanent — Capai target (≥)" :step="1" :disabled="!isDraft" />
-                                        <RuleNumber v-model="form.achievement.permanentSp1Below" label="Permanent — SP1 (di bawah)" :step="1" :disabled="!isDraft" />
-                                        <RuleNumber v-model="form.achievement.probationExcellent" label="Probation — Excellent (≥)" :step="1" :disabled="!isDraft" />
-                                        <RuleNumber v-model="form.achievement.probationVeryGood" label="Probation — Very Good (≥)" :step="1" :disabled="!isDraft" />
-                                        <RuleNumber v-model="form.achievement.probationAverage" label="Probation — Average (≥)" :step="1" :disabled="!isDraft" />
+                                        <RuleNumber v-model="form.achievement.permanentBonus" label="Permanent — Capai target Bonus (≥)" :step="1" :disabled="!canEdit" />
+                                        <RuleNumber v-model="form.achievement.permanentOnTarget" label="Permanent — Capai target (≥)" :step="1" :disabled="!canEdit" />
+                                        <RuleNumber v-model="form.achievement.permanentSp1Below" label="Permanent — SP1 (di bawah)" :step="1" :disabled="!canEdit" />
+                                        <RuleNumber v-model="form.achievement.probationExcellent" label="Probation — Excellent (≥)" :step="1" :disabled="!canEdit" />
+                                        <RuleNumber v-model="form.achievement.probationVeryGood" label="Probation — Very Good (≥)" :step="1" :disabled="!canEdit" />
+                                        <RuleNumber v-model="form.achievement.probationAverage" label="Probation — Average (≥)" :step="1" :disabled="!canEdit" />
                                     </section>
                                 </div>
                             </template>
@@ -249,12 +249,12 @@
                                         Bonus Kelebihan Service per layanan di atasnya (isi 0 bila tidak ada).
                                     </p>
                                     <div v-for="(t, i) in form.bonus.tiers" :key="i" class="flex items-end gap-2">
-                                        <UFormField label="Pencapaian New" class="w-36"><UInput v-model.number="t.at" type="number" min="0" :disabled="!isDraft" /></UFormField>
-                                        <UFormField label="Bonus (Rp)" class="flex-1"><UInput v-model.number="t.amount" type="number" min="0" step="50000" :disabled="!isDraft" /></UFormField>
-                                        <UButton v-if="isDraft && form.bonus.tiers.length > 1" icon="i-lucide-x" color="neutral" variant="ghost" aria-label="Hapus tier" @click="form.bonus.tiers.splice(i, 1)" />
+                                        <UFormField label="Pencapaian New" class="w-36"><UInput v-model.number="t.at" type="number" min="0" :disabled="!canEdit" /></UFormField>
+                                        <UFormField label="Bonus (Rp)" class="flex-1"><UInput v-model.number="t.amount" type="number" min="0" step="50000" :disabled="!canEdit" /></UFormField>
+                                        <UButton v-if="canEdit && form.bonus.tiers.length > 1" icon="i-lucide-x" color="neutral" variant="ghost" aria-label="Hapus tier" @click="form.bonus.tiers.splice(i, 1)" />
                                     </div>
-                                    <UButton v-if="isDraft" icon="i-lucide-plus" variant="soft" size="sm" @click="form.bonus.tiers.push({ at: (form.bonus.tiers.at(-1)?.at ?? 0) + 1, amount: 0 })">Tambah Tier</UButton>
-                                    <RuleNumber v-model="form.bonus.excessPerUnit" label="Bonus Kelebihan Service per layanan di atas tier terakhir (Rp)" :step="10000" :max="null" :disabled="!isDraft" />
+                                    <UButton v-if="canEdit" icon="i-lucide-plus" variant="soft" size="sm" @click="form.bonus.tiers.push({ at: (form.bonus.tiers.at(-1)?.at ?? 0) + 1, amount: 0 })">Tambah Tier</UButton>
+                                    <RuleNumber v-model="form.bonus.excessPerUnit" label="Bonus Kelebihan Service per layanan di atas tier terakhir (Rp)" :step="10000" :max="null" :disabled="!canEdit" />
                                 </div>
                             </template>
 
@@ -357,13 +357,15 @@ const { year, month: selectedMonth } = useSelectedPeriod()
 const previewPeriod = computed(() => toPeriod(year.value, selectedMonth.value))
 
 const productGroups = ['Home', 'Nusafiber', 'NusaSelecta Basic/Prime', 'NusaSelecta Ultra']
-const tabs = [
+const allTabs = [
     { label: 'Produk & Rate', slot: 'products', icon: 'i-lucide-package' },
     { label: 'Rate & Potongan', slot: 'rates', icon: 'i-lucide-percent' },
     { label: 'Target & Status', slot: 'targets', icon: 'i-lucide-flag' },
     { label: 'Bonus', slot: 'bonus', icon: 'i-lucide-gift' },
     { label: 'Simulasi', slot: 'preview', icon: 'i-lucide-calculator' }
 ]
+// Simulasi recomputes every SDR's commission under a draft — Super Admin only.
+const tabs = computed(() => allTabs.filter(t => t.slot !== 'preview' || isSuperAdmin.value))
 
 const ruleSets = ref<SdrRuleSet[]>([])
 const defaultRules = ref<SdrCommissionRules | null>(null)
@@ -373,6 +375,9 @@ const activeId = ref<number | null>(null)
 const selectedKey = ref<number | 'default'>('default')
 const selectedSet = computed(() => typeof selectedKey.value === 'number' ? ruleSets.value.find(s => s.id === selectedKey.value) ?? null : null)
 const isDraft = computed(() => selectedSet.value?.status === 'draft')
+// Drafts are edited, simulated and published by a Super Admin only; other admins just read the rules.
+const { isSuperAdmin } = useAdminAccess()
+const canEdit = computed(() => isDraft.value && isSuperAdmin.value)
 
 const form = ref<SdrCommissionRules | null>(null)
 const draftMonth = ref(1)

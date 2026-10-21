@@ -83,6 +83,7 @@ const { formatCurrency, formatDate } = useFormat()
 const toast = useToast()
 const summaryService = new SummaryService()
 
+const { isSuperAdmin } = useAdminAccess()
 const isAdjustModalOpen = ref(false)
 const selectedAdjustAi = ref<number | null>(null)
 
@@ -285,6 +286,8 @@ const columns: TableColumn<InvoiceSummaryItem>[] = [
             return h('div', { class: 'flex justify-center' }, [
                 h(USwitch, {
                     modelValue: row.original.isApproved,
+                    // Admins only view the approval; changing it is Super Admin only.
+                    disabled: !isSuperAdmin.value,
                     'onUpdate:modelValue': async (val: boolean) => {
                         try {
                             const response = await summaryService.approveInvoice(row.original.aiInvoice, { isApproved: val })
@@ -306,6 +309,7 @@ const columns: TableColumn<InvoiceSummaryItem>[] = [
     {
         id: 'actions',
         cell: ({ row }) => {
+            if (!isSuperAdmin.value) return null
             return h(
                 UDropdownMenu,
                 {

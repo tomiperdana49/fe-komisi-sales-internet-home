@@ -67,6 +67,8 @@ const UAvatar = resolveComponent('UAvatar')
 const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
 const UTooltip = resolveComponent('UTooltip')
+// Admins only view; granting, editing and deleting are Super Admin only.
+const { isSuperAdmin } = useAdminAccess()
 
 const { setLoading } = useLoading()
 const { formatCurrency } = useFormat()
@@ -229,8 +231,8 @@ const columns: TableColumn<ConsistencyBonusItem>[] = [
     },
     {
         id: 'actions',
-        header: () => h('div', { class: 'text-right' }, 'Aksi'),
-        cell: ({ row }) => h('div', { class: 'flex justify-end gap-2' }, [
+        header: () => isSuperAdmin.value ? h('div', { class: 'text-right' }, 'Aksi') : null,
+        cell: ({ row }) => !isSuperAdmin.value ? null : h('div', { class: 'flex justify-end gap-2' }, [
             row.original.amount > 0
                 ? h(UButton, {
                     color: 'error',

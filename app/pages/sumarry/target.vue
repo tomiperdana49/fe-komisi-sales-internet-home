@@ -62,6 +62,8 @@ const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 const UTooltip = resolveComponent('UTooltip')
+// Admins only view; granting, editing and deleting are Super Admin only.
+const { isSuperAdmin } = useAdminAccess()
 
 const { setLoading } = useLoading()
 const toast = useToast()
@@ -212,8 +214,8 @@ const columns: TableColumn<TargetOverrideRosterItem>[] = [
     },
     {
         id: 'actions',
-        header: () => h('div', { class: 'text-right' }, 'Aksi'),
-        cell: ({ row }) => h('div', { class: 'flex justify-end' }, [
+        header: () => isSuperAdmin.value ? h('div', { class: 'text-right' }, 'Aksi') : null,
+        cell: ({ row }) => !isSuperAdmin.value ? null : h('div', { class: 'flex justify-end' }, [
             row.original.active || row.original.upcoming.length
                 ? h(UDropdownMenu, { items: rowActions(row.original), content: { align: 'end' } }, () =>
                     h(UButton, { color: 'neutral', variant: 'outline', trailingIcon: 'i-heroicons-chevron-down' }, () => 'Kelola'))

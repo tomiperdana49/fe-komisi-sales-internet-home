@@ -10,6 +10,7 @@
             Ditutup
         </UBadge>
         <UButton
+            v-if="isSuperAdmin"
             :icon="closing ? 'i-lucide-lock-open' : 'i-lucide-lock'"
             :color="closing ? 'neutral' : 'warning'"
             variant="soft"
@@ -21,6 +22,7 @@
         </UButton>
 
         <UModal
+            v-if="isSuperAdmin"
             v-model:open="isOpen"
             :title="closing ? `Buka kembali periode ${label}?` : `Tutup periode ${label}?`"
             :description="closing
@@ -47,6 +49,7 @@ const props = defineProps<{ month: number, year: number }>()
 
 const summaryService = new SummaryService()
 const toast = useToast()
+const { isSuperAdmin } = useAdminAccess()
 const { monthLabel, shortDate } = usePeriodOptions()
 
 const closings = ref<PeriodClosing[]>([])
