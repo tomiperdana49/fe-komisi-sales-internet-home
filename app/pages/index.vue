@@ -107,10 +107,12 @@ const { getRoute } = useDashboardRoute()
 const branchLabel = (branch: string) => branch.replace(/^PT\.\s*Media Antar Nusa\s*-\s*/i, '').trim() || branch
 const branches = computed(() => [...new Set(employeeCard.value.map(c => c.branch).filter(Boolean))].sort())
 const chosenBranch = useState<string | null>('home-branch-filter', () => null)
-// Until the user picks one: their own branch, or every branch when nobody on the team shares it.
+// Until the user picks one: every branch for an admin who covers them all (Super Admin, head-office
+// Admin); otherwise their own branch, or every branch when nobody on the team shares it.
+const seesAllBranches = computed(() => Boolean(authState.user?.is_admin) && !authState.user?.admin_branch)
 const branchFilter = computed<string>({
     get: () => chosenBranch.value
-        ?? (branches.value.includes(authState.user?.branch ?? '') ? authState.user!.branch : 'all'),
+        ?? (!seesAllBranches.value && branches.value.includes(authState.user?.branch ?? '') ? authState.user!.branch : 'all'),
     set: (value) => { chosenBranch.value = value }
 })
 const cardsInBranch = computed(() => branchFilter.value === 'all'
