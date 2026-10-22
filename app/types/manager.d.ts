@@ -54,6 +54,30 @@ export interface ManagerOverride {
     recurringCommissionRate: number;
     recurringCommission: number;
     teamRecurringSubscriptionNet: number;
+    /** Subscription Recurring Total tim − renewalExcluded − referralDeduction − latePenalty − otherAdjustment = teamRecurringSubscriptionNet. */
+    recurringBasis?: {
+        teamSubscription: number;
+        renewalExcluded: number;
+        referralDeduction: number;
+        latePenalty: number;
+        otherAdjustment: number;
+        renewalItems?: ManagerRecurringBasisItem[];
+        lateItems?: ManagerRecurringBasisItem[];
+    };
+}
+
+/** One invoice behind a recurringBasis adjustment; amount = what it takes off the basis. */
+export interface ManagerRecurringBasisItem {
+    aiInvoice: number;
+    customerId: string;
+    customerName: string | null;
+    serviceId: string | null;
+    sales: string | null;
+    salesName: string | null;
+    subscription: number;
+    lateMonth: number;
+    paidDate: string | null;
+    amount: number;
 }
 
 export interface ManagerCommissionData {

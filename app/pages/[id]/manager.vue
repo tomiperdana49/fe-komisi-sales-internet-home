@@ -136,6 +136,24 @@
                                     <p class="text-xs text-gray-500 dark:text-gray-400">
                                         {{ periodData.override.recurringCommissionRate }}% × subscription recurring tim {{ formatCurrency(periodData.override.teamRecurringSubscriptionNet) }}
                                     </p>
+                                    <ul v-if="recurringBasisLines.length" class="mt-1 space-y-0.5 text-xs text-gray-500 dark:text-gray-400">
+                                        <li v-for="line in recurringBasisLines" :key="line.label" class="flex justify-between gap-3">
+                                            <button
+                                                v-if="line.kind && line.items?.length"
+                                                type="button"
+                                                class="text-left underline decoration-dotted underline-offset-2 hover:text-primary-500 transition-colors"
+                                                @click="openBasisItems(line.kind, line.items)"
+                                            >
+                                                {{ line.label }} ({{ line.items.length }})
+                                            </button>
+                                            <span v-else>{{ line.label }}</span>
+                                            <span class="tabular-nums">{{ line.sign }}{{ formatCurrency(line.value) }}</span>
+                                        </li>
+                                        <li class="flex justify-between gap-3 pt-0.5 border-t border-gray-200 dark:border-gray-700 font-semibold">
+                                            <span>Dasar overriding</span>
+                                            <span class="tabular-nums">{{ formatCurrency(periodData.override.teamRecurringSubscriptionNet) }}</span>
+                                        </li>
+                                    </ul>
                                 </li>
                                 <li class="flex justify-between">
                                     <span class="text-gray-600 dark:text-gray-400"><TermHint term="personalSales">Penjualan Pribadi</TermHint></span>
@@ -289,6 +307,8 @@
         <div class="py-2">
             <GlossaryPanel :terms="glossaryTerms" />
         </div>
+
+        <RecurringBasisItemsModal v-model:open="basisItemsOpen" :kind="basisItemsKind" :items="basisItems" />
     </UContainer>
 </template>
 
@@ -299,7 +319,7 @@ import { EmployeeService } from '~/services/employee-service'
 import type { Employee } from '~/types/employee'
 import type { TableColumn } from '@nuxt/ui'
 import type { GlossaryKey } from '~/composables/useGlossary'
-import type { ManagerChurnRow, ManagerCommissionData, ManagerServiceGroup, ManagerServiceGroupTotal, ManagerTeamMember } from '~/types/manager'
+import type { ManagerChurnRow, ManagerCommissionData, ManagerRecurringBasisItem, ManagerServiceGroup, ManagerServiceGroupTotal, ManagerTeamMember } from '~/types/manager'
 
 const { setLoading } = useLoading()
 const route = useRoute()
@@ -396,6 +416,33 @@ const teamServiceBoxes = computed<TeamServiceBox[]>(() => {
         box('Komisi Recurring Tim', recurringServiceGroupOrder, 'recurringCommission')
     ]
 })
+
+// How the Subscription Recurring "Total tim" card gets down to the
+// Overriding Recurring basis; zero adjustments are left out.
+const recurringBasisLines = computed(() => {
+    const b = periodData.value?.override.recurringBasis
+    if (!b) return []
+    type Line = { label: string, value: number, sign: string, kind?: BasisItemsKind, items?: ManagerRecurringBasisItem[] }
+    const minus = (label: string, value: number, kind?: BasisItemsKind, items?: ManagerRecurringBasisItem[]): Line => ({ label, value, sign: '− ', kind, items })
+    const lines: Line[] = [
+        { label: 'Total tim (Subscription Recurring)', value: b.teamSubscription, sign: '' },
+        minus('Kenaikan harga perpanjangan', b.renewalExcluded, 'renewal', b.renewalItems),
+        minus('Potongan referral', b.referralDeduction),
+        minus('Potongan telat bayar', b.latePenalty, 'late', b.lateItems),
+        minus('Lainnya', b.otherAdjustment)
+    ]
+    return lines.filter((line, i) => i === 0 || Math.round(line.value) !== 0)
+})
+
+type BasisItemsKind = 'renewal' | 'late'
+const basisItemsOpen = ref(false)
+const basisItemsKind = ref<BasisItemsKind>('renewal')
+const basisItems = ref<ManagerRecurringBasisItem[]>([])
+const openBasisItems = (kind: BasisItemsKind, items: ManagerRecurringBasisItem[]) => {
+    basisItemsKind.value = kind
+    basisItems.value = items
+    basisItemsOpen.value = true
+}
 
 const personalItems = computed(() => periodData.value?.personal.items ?? [])
 const croItems = computed(() => periodData.value?.croRecurring ?? [])
