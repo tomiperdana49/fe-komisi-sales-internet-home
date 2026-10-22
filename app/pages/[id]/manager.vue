@@ -173,7 +173,7 @@
                             <UIcon name="i-heroicons-squares-2x2" class="w-4 h-4 sm:w-5 sm:h-5 text-primary-500" />
                             Produksi Tim per Produk
                         </h4>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3 md:mb-4">Total tim adalah gabungan seluruh anggota tim; kotak Recurring juga memuat invoice Customer Relation Officer. Churn hanya mengurangi angka New, tidak Recurring. Total tim pada Pencapaian New sama dengan Capaian Tim; penjualan pribadi manager ditampilkan terpisah dan dijumlahkan ke Total area. NusaSelecta dihitung dalam pencapaian, bukan jumlah unit.</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3 md:mb-4">Total tim adalah gabungan seluruh anggota tim; kotak Recurring juga memuat invoice Customer Relation Officer. Churn hanya mengurangi angka New, tidak Recurring. Total tim pada Pencapaian New sama dengan Capaian Tim; penjualan pribadi manager ditampilkan terpisah dan dijumlahkan ke Total area. NusaSelecta dihitung dalam pencapaian, bukan jumlah unit. Penjualan kategori Alat masuk ke Subscription dan MRC Baru, tetapi tidak menambah Pencapaian New.</p>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                             <div v-for="box in teamServiceBoxes" :key="box.title" class="p-4 rounded-xl border border-gray-200 dark:border-gray-800">
                                 <h5 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 pb-2 border-b border-gray-200 dark:border-gray-700">
@@ -188,19 +188,33 @@
                                         </span>
                                     </li>
                                     <li class="flex justify-between items-center text-sm pt-3 mt-1 border-t border-gray-200 dark:border-gray-700">
-                                        <span class="font-bold text-gray-900 dark:text-white">{{ box.personal ? 'Total tim' : 'Total' }}</span>
+                                        <span class="font-bold text-gray-900 dark:text-white">Total tim</span>
                                         <span class="font-bold text-primary-600 dark:text-primary-400 tabular-nums">{{ box.isCount ? box.total : formatCurrency(box.total) }}</span>
                                     </li>
-                                    <template v-if="box.personal">
-                                        <li class="flex justify-between items-center gap-3 text-sm">
-                                            <span class="text-gray-600 dark:text-gray-400">Pribadi manager</span>
-                                            <span class="font-semibold tabular-nums text-gray-900 dark:text-white">{{ box.isCount ? formatSigned(box.personal) : formatCurrency(box.personal) }}</span>
+                                    <li class="flex justify-between items-center gap-3 text-sm">
+                                        <span class="text-gray-600 dark:text-gray-400">Pribadi manager</span>
+                                        <span :class="['font-semibold tabular-nums', box.personal === 0 ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white']">{{ box.isCount ? formatSigned(box.personal) : formatCurrency(box.personal) }}</span>
+                                    </li>
+                                    <template v-if="box.personalChurn">
+                                        <li class="flex justify-between items-center gap-3 text-xs pl-3">
+                                            <span class="text-gray-500 dark:text-gray-400">Pasang baru</span>
+                                            <span class="tabular-nums text-gray-600 dark:text-gray-300">{{ box.isCount ? box.personal + box.personalChurn : formatCurrency(box.personal + box.personalChurn) }}</span>
                                         </li>
-                                        <li class="flex justify-between items-center text-sm pt-2 border-t border-gray-200 dark:border-gray-700">
-                                            <span class="font-bold text-gray-900 dark:text-white">Total area</span>
-                                            <span class="font-bold text-gray-900 dark:text-white tabular-nums">{{ box.isCount ? box.total + box.personal : formatCurrency(box.total + box.personal) }}</span>
+                                        <li class="flex justify-between items-start gap-3 text-xs pl-3">
+                                            <span class="text-gray-500 dark:text-gray-400">
+                                                <TermHint term="churn">Churn</TermHint>
+                                                <span v-if="personalChurnNames.length" class="block text-gray-400 dark:text-gray-500">{{ personalChurnNames.join(', ') }}</span>
+                                            </span>
+                                            <span class="tabular-nums text-red-600 dark:text-red-400">{{ box.isCount ? -box.personalChurn : formatCurrency(-box.personalChurn) }}</span>
+                                        </li>
+                                        <li v-if="box.isCount" class="text-xs pl-3 text-gray-400 dark:text-gray-500">
+                                            Tidak mengurangi Capaian Tim; hanya memotong komisi Penjualan Pribadi manager.
                                         </li>
                                     </template>
+                                    <li class="flex justify-between items-center text-sm pt-2 border-t border-gray-200 dark:border-gray-700">
+                                        <span class="font-bold text-gray-900 dark:text-white">Total area</span>
+                                        <span class="font-bold text-gray-900 dark:text-white tabular-nums">{{ box.isCount ? box.total + box.personal : formatCurrency(box.total + box.personal) }}</span>
+                                    </li>
                                 </ul>
                             </div>
                         </div>
@@ -381,8 +395,10 @@ interface TeamServiceBox {
     rows: { label: string; value: number }[]
     /** Team members (+ Customer Relation Officer recurring) only — matches Capaian Tim for the count box. */
     total: number
-    /** The manager's own personal sales for the same box; 0 hides the personal/area rows. */
+    /** The manager's own personal sales for the same box, shown even when 0 so every manager page reads the same. */
     personal: number
+    /** Uncancelled churn already netted out of `personal` (New-side boxes only); 0 hides the breakdown. */
+    personalChurn: number
     isCount?: boolean
 }
 
@@ -396,22 +412,24 @@ const teamServiceBoxes = computed<TeamServiceBox[]>(() => {
     if (!periodData.value) return []
     const g = periodData.value.teamTotals.byServiceGroup
     const p = periodData.value.teamTotals.personalByServiceGroup
+    const d = periodData.value.personal.deduction
     const box = (
         title: string,
         groups: readonly ManagerServiceGroup[],
         field: keyof ManagerServiceGroupTotal,
-        opts: { hint?: GlossaryKey; isCount?: boolean } = {}
+        opts: { hint?: GlossaryKey; isCount?: boolean; personalChurn?: number } = {}
     ): TeamServiceBox => ({
         title,
+        personalChurn: 0,
         ...opts,
         rows: groups.map(name => ({ label: name, value: g[name][field] })),
         total: groups.reduce((sum, name) => sum + g[name][field], 0),
         personal: groups.reduce((sum, name) => sum + p[name][field], 0)
     })
     return [
-        box('Pencapaian New', serviceGroupOrder, 'newCount', { hint: 'newAchievement', isCount: true }),
-        box('Subscription Baru', serviceGroupOrder, 'newSubscription', { hint: 'subscription' }),
-        box('MRC Baru', serviceGroupOrder, 'newMrc', { hint: 'mrc' }),
+        box('Pencapaian New', serviceGroupOrder, 'newCount', { hint: 'newAchievement', isCount: true, personalChurn: d.count }),
+        box('Subscription Baru', serviceGroupOrder, 'newSubscription', { hint: 'subscription', personalChurn: d.subscription }),
+        box('MRC Baru', serviceGroupOrder, 'newMrc', { hint: 'mrc', personalChurn: d.mrc }),
         box('Subscription Recurring', recurringServiceGroupOrder, 'recurringSubscription', { hint: 'recurring' }),
         box('Komisi Recurring Tim', recurringServiceGroupOrder, 'recurringCommission')
     ]
@@ -547,6 +565,10 @@ const columns = computed<TableColumn<ManagerTeamMember>[]>(() => [
 const teamChurn = ref<ManagerChurnRow[]>([])
 const churnSearch = ref('')
 const countedChurn = computed(() => teamChurn.value.filter(c => !c.is_approved))
+// The manager's own uncancelled churn — named under "Pribadi manager" in the production boxes.
+const personalChurnNames = computed(() => countedChurn.value
+    .filter(c => c.sales_id === route.params.id)
+    .map(c => c.customer_name ?? c.customer_service_account ?? String(c.customer_service_id)))
 const countedChurnCommission = computed(() => countedChurn.value.reduce((sum, c) => sum + c.commission, 0))
 // Grouped by AM, newest stop date first within each.
 const filteredTeamChurn = computed(() => teamChurn.value
