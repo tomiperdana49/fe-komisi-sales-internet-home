@@ -173,7 +173,7 @@
                             <UIcon name="i-heroicons-squares-2x2" class="w-4 h-4 sm:w-5 sm:h-5 text-primary-500" />
                             Produksi Tim per Produk
                         </h4>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3 md:mb-4">Gabungan seluruh anggota tim dan recurring Customer Relation Officer; sudah dikurangi churn. Total tim sama dengan Capaian Tim; penjualan pribadi manager ditampilkan terpisah. NusaSelecta dihitung dalam pencapaian, bukan jumlah unit.</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3 md:mb-4">Total tim adalah gabungan seluruh anggota tim; kotak Recurring juga memuat invoice Customer Relation Officer. Churn hanya mengurangi angka New, tidak Recurring. Total tim pada Pencapaian New sama dengan Capaian Tim; penjualan pribadi manager ditampilkan terpisah dan dijumlahkan ke Total area. NusaSelecta dihitung dalam pencapaian, bukan jumlah unit.</p>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                             <div v-for="box in teamServiceBoxes" :key="box.title" class="p-4 rounded-xl border border-gray-200 dark:border-gray-800">
                                 <h5 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 pb-2 border-b border-gray-200 dark:border-gray-700">
