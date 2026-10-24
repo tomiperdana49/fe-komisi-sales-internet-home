@@ -20,8 +20,8 @@
                             </p>
                         </div>
                         <TextTooltip v-if="ongoing" :text="`Status final setelah ${shortDate(new Date(data.endDate))}. Sementara: ${data.achievementStatus}`">
-                            <span class="text-xs font-bold uppercase px-2.5 py-1 rounded-md border bg-gray-50 dark:bg-gray-800 text-right text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-800">
-                                Berjalan
+                            <span :class="['text-xs font-bold uppercase px-2.5 py-1 rounded-md border bg-gray-50 dark:bg-gray-800 text-right', ongoingBadge.class]">
+                                {{ ongoingBadge.label }}
                             </span>
                         </TextTooltip>
                         <TermHint v-else term="achievementStatus">
@@ -34,7 +34,7 @@
                         <div class="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                             <div
                                 class="h-full"
-                                :class="data.activityCount >= data.target ? 'bg-green-500' : ongoing ? 'bg-sky-500' : 'bg-red-500'"
+                                :class="data.activityCount >= data.target ? 'bg-green-500' : ongoing ? 'bg-amber-500' : 'bg-red-500'"
                                 :style="{ width: targetProgress + '%' }"
                             />
                         </div>
@@ -52,10 +52,12 @@
                         <span class="font-semibold text-gray-900 dark:text-white">{{ data.status ?? '-' }}</span>
                     </div>
                     <p v-if="ongoing" class="text-xs text-sky-600 dark:text-sky-400">
-                        Periode berjalan sampai {{ shortDate(new Date(data.endDate)) }}. Status pencapaian ditentukan setelah periode berakhir.
+                        Status sementara, periode berjalan sampai {{ shortDate(new Date(data.endDate)) }} ({{ daysLeftLabel }}).
+                        <template v-if="belowTarget">Bila masih kurang dari target saat periode berakhir, status menjadi tidak capai target.</template>
+                        <template v-else>Status final ditentukan setelah periode berakhir.</template>
                     </p>
                     <p class="pt-3 border-t border-gray-100 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-300 italic">
-                        "{{ ongoing ? 'Periode masih berjalan — terus semangat!' : data.motivation }}"
+                        "{{ ongoing ? ongoingMotivation : data.motivation }}"
                     </p>
                 </div>
             </div>
@@ -171,8 +173,31 @@ const targetGapText = computed(() => {
     const gap = props.data.target - props.data.activityCount
     if (gap <= 0) return `Target ${props.data.target} layanan tercapai.`
     return ongoing.value
-        ? `Kurang ${gap} layanan lagi untuk capai target.`
+        ? `Kurang ${gap} layanan lagi untuk capai target — ${daysLeftLabel.value}.`
         : `Kurang ${gap} layanan dari target.`
+})
+// While the period runs, show where the AM stands now (Belum Tercapai / Tercapai) and the days left, as a nudge;
+// the final status still comes once the period has ended.
+const belowTarget = computed(() => props.data.target > 0 && props.data.activityCount < props.data.target)
+const daysLeft = computed(() => {
+    const [y, m, d] = props.data.endDate.slice(0, 10).split('-').map(Number)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return Math.round((new Date(y!, m! - 1, d!).getTime() - today.getTime()) / 86_400_000) + 1
+})
+const daysLeftLabel = computed(() => (daysLeft.value <= 1 ? 'hari terakhir' : `sisa ${daysLeft.value} hari`))
+const ongoingBadge = computed(() => {
+    if (props.data.target <= 0) return { label: 'Berjalan', class: 'text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-800' }
+    return belowTarget.value
+        ? { label: 'Belum Tercapai', class: 'text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800' }
+        : { label: 'Tercapai', class: 'text-green-600 dark:text-green-400 border-green-200 dark:border-green-800' }
+})
+const ongoingMotivation = computed(() => {
+    if (props.data.target <= 0) return 'Periode masih berjalan — terus semangat!'
+    const gap = props.data.target - props.data.activityCount
+    return gap > 0
+        ? `Tinggal ${gap} layanan lagi, ${daysLeftLabel.value} — ayo kejar targetnya!`
+        : 'Target sudah tercapai — terus tambah layanan untuk bonus!'
 })
 // Admin-set target (Target AM page): shown with its range so the AM knows when it reverts to the default.
 const periodShort = (period: string) => `${monthLabel(Number(period.slice(4, 6))).slice(0, 3)} ${period.slice(0, 4)}`
