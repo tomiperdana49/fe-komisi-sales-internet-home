@@ -206,7 +206,9 @@ const columns: TableColumn<InvoiceSummaryItem>[] = [
         }
     },
     {
-        accessorKey: 'customerName',
+        // Searchable by customer number too, not just the name.
+        id: 'customerName',
+        accessorFn: row => `${row.customerName ?? ''} ${row.customerId ?? ''}`,
         header: sortableHeader('Pelanggan'),
         cell: ({ row }) => h('div', { class: 'flex flex-col' }, [
             h('span', { class: 'font-medium' }, row.original.customerName ?? '-'),

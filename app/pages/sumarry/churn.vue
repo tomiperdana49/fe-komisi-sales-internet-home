@@ -175,7 +175,9 @@ const columns: TableColumn<ChurnSummaryItem>[] = [
         }
     },
     {
-        accessorKey: 'customer_name',
+        // Searchable by customer number too, not just the name.
+        id: 'customer_name',
+        accessorFn: row => `${row.customer_name ?? ''} ${row.customer_id ?? ''}`,
         header: sortableHeader('Pelanggan'),
         cell: ({ row }) => h('div', { class: 'flex flex-col' }, [
             h('span', { class: 'font-medium' }, row.original.customer_name ?? '-'),
