@@ -90,8 +90,9 @@ export const diffRules = (before: CommissionRules, after: CommissionRules): Rule
 
     const reasonKey = (r: ChurnCloseReasonRule) => `${r.status} — ${r.reason}`
     const yesNo = (r: ChurnCloseReasonRule) => `${r.churn ? 'Churn' : 'Bukan churn'} · ${r.effectFrom}${r.category ? ` · ${r.category}` : ''}${r.note ? ` · ${r.note}` : ''}`
-    const beforeReasons = new Map(before.churnCloseReasons.map(r => [reasonKey(r), r]))
-    const afterReasons = new Map(after.churnCloseReasons.map(r => [reasonKey(r), r]))
+    // Absent when the BE predates close-reason rules.
+    const beforeReasons = new Map((before.churnCloseReasons ?? []).map(r => [reasonKey(r), r]))
+    const afterReasons = new Map((after.churnCloseReasons ?? []).map(r => [reasonKey(r), r]))
     for (const [key, r] of afterReasons) {
         const old = beforeReasons.get(key)
         if (!old) changes.push({ section: 'Churn', label: `Alasan baru: ${key}`, from: '–', to: yesNo(r) })
