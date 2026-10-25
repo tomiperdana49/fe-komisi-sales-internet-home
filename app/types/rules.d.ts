@@ -17,9 +17,25 @@ export interface CommissionProductRule {
     churn: boolean;
 }
 
+export type ChurnCloseStatus = 'New Installation' | 'Active to NA' | 'Renewal' | 'System'
+
+/** Whether a service closed with this NIS close reason (within its close status) counts as churn. */
+export interface ChurnCloseReasonRule {
+    status: ChurnCloseStatus;
+    /** Kategori Close Reason — shown only. */
+    category: string;
+    /** Reason name as in NIS. */
+    reason: string;
+    note: string;
+    effectFrom: 'Operational' | 'Contract';
+    churn: boolean;
+}
+
 export interface CommissionRules {
     /** Recurring categories that never earn commission — applied when invoices are imported. */
     excludedRecurringCategories: string[];
+    /** Effect of each NIS close reason on churn — applied when churn-crawl pulls a period. */
+    churnCloseReasons: ChurnCloseReasonRule[];
     products: CommissionProductRule[];
     rates: {
         prorate: number;

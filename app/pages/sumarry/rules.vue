@@ -241,6 +241,45 @@
                                 </div>
                             </template>
 
+                            <!-- Churn: effect of each NIS close reason -->
+                            <template #churn>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 my-3">
+                                    Hanya layanan yang ditutup dengan alasan (Close Category NIS) yang <strong>dicentang Churn</strong> yang dihitung sebagai churn — alasan yang tidak dicentang
+                                    atau tidak ada di tabel bukan churn. Dicocokkan dari <strong>Status saat ditutup</strong> dan <strong>Alasan</strong> sesuai nama di NIS (huruf besar/kecil,
+                                    spasi, dan keterangan dalam kurung diabaikan). Layanan lama yang ditutup tanpa Close Category tetap churn.
+                                    Berlaku saat data churn periode tersebut diambil ulang (otomatis tiap jam), sehingga tidak terlihat di tab Simulasi.
+                                </p>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full min-w-[1100px] text-sm">
+                                        <thead>
+                                            <tr class="text-left text-xs uppercase text-gray-500 border-b border-gray-200 dark:border-gray-800">
+                                                <th class="py-2 pr-2 w-44 min-w-44">Status Existing</th>
+                                                <th class="py-2 pr-2 min-w-48">Kategori Close Reason</th>
+                                                <th class="py-2 pr-2 min-w-56">Alasan (nama di NIS)</th>
+                                                <th class="py-2 pr-2 min-w-56">Keterangan</th>
+                                                <th class="py-2 pr-2 w-40 min-w-40">Effect from</th>
+                                                <th class="py-2 pr-2 w-20 min-w-20 text-center">Churn</th>
+                                                <th v-if="canEdit" class="py-2 w-10" />
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="(r, i) in form.churnCloseReasons" :key="i" class="border-b border-gray-100 dark:border-gray-800/60 align-top">
+                                                <td class="py-2 pr-2"><USelect v-model="r.status" :items="closeStatuses" :disabled="!canEdit" class="w-full" /></td>
+                                                <td class="py-2 pr-2"><UInput v-model="r.category" :disabled="!canEdit" class="w-full" /></td>
+                                                <td class="py-2 pr-2"><UInput v-model="r.reason" :disabled="!canEdit" class="w-full" /></td>
+                                                <td class="py-2 pr-2"><UInput v-model="r.note" :disabled="!canEdit" class="w-full" /></td>
+                                                <td class="py-2 pr-2"><USelect v-model="r.effectFrom" :items="effectFromOptions" :disabled="!canEdit" class="w-full" /></td>
+                                                <td class="py-2 pr-2 text-center"><UCheckbox v-model="r.churn" :disabled="!canEdit" class="justify-center pt-2" aria-label="Hitung churn" /></td>
+                                                <td v-if="canEdit" class="py-2">
+                                                    <UButton icon="i-lucide-x" color="neutral" variant="ghost" aria-label="Hapus alasan" @click="form.churnCloseReasons.splice(i, 1)" />
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <UButton v-if="canEdit" class="mt-3" icon="i-lucide-plus" variant="soft" @click="addCloseReason">Tambah Alasan</UButton>
+                            </template>
+
                             <!-- Target & status -->
                             <template #targets>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
@@ -415,6 +454,8 @@ const { year, month: selectedMonth } = useSelectedPeriod()
 const previewPeriod = computed(() => toPeriod(year.value, selectedMonth.value))
 
 const productGroups = ['Home', 'Nusafiber', 'NusaSelecta Basic/Prime', 'NusaSelecta Ultra']
+const closeStatuses = ['New Installation', 'Active to NA', 'Renewal', 'System']
+const effectFromOptions = ['Operational', 'Contract']
 const categorySuggestions = ['IP Public', 'Domain', 'FO', 'FO Prepaid', 'Wireless', 'Starlink', 'CPE Rental', 'Digital Business', 'Cicilan', 'Rental', 'Setup', 'Lain-lain']
 type Section = 'am' | 'sm' | 'preview'
 const section = ref<Section>('am')
@@ -430,11 +471,12 @@ const sectionHints: Record<Section, string> = {
     sm: 'Komisi Sales Manager dari timnya: threshold target tim, overriding komisi customer baru, dan overriding customer lama (recurring).',
     preview: 'Hitung ulang komisi semua AM & SM dengan draft ini sebelum diterbitkan.'
 }
-type RuleTab = { label: string; slot: 'products' | 'rates' | 'targets' | 'bonus' | 'manager' | 'preview'; icon: string }
+type RuleTab = { label: string; slot: 'products' | 'rates' | 'churn' | 'targets' | 'bonus' | 'manager' | 'preview'; icon: string }
 const tabsBySection: Record<Section, RuleTab[]> = {
     am: [
         { label: 'Produk & Rate', slot: 'products', icon: 'i-lucide-package' },
         { label: 'Rate & Potongan', slot: 'rates', icon: 'i-lucide-percent' },
+        { label: 'Churn', slot: 'churn', icon: 'i-lucide-user-minus' },
         { label: 'Target & Status', slot: 'targets', icon: 'i-lucide-flag' },
         { label: 'Bonus', slot: 'bonus', icon: 'i-lucide-gift' }
     ],
@@ -598,6 +640,10 @@ const deleteDraft = async () => {
 
 const addProduct = () => {
     form.value?.products.push({ name: '', serviceIds: [], group: 'Home', rate1: 0, rate6: 0, rate12: 0, sixMonthRateFrom: 2, twelveMonthRateFrom: 12, setupRate: null, churn: true })
+}
+
+const addCloseReason = () => {
+    form.value?.churnCloseReasons.push({ status: 'Active to NA', category: '', reason: '', note: '', effectFrom: 'Operational', churn: true })
 }
 
 // --- Preview ---

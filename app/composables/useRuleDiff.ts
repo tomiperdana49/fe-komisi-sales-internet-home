@@ -1,4 +1,4 @@
-import type { CommissionProductRule, CommissionRules } from '~/types/rules'
+import type { ChurnCloseReasonRule, CommissionProductRule, CommissionRules } from '~/types/rules'
 
 export interface RuleChange {
     section: string
@@ -87,6 +87,19 @@ export const diffRules = (before: CommissionRules, after: CommissionRules): Rule
         }
     }
     list('Kategori recurring tanpa komisi', 'Rate & Potongan', before.excludedRecurringCategories, after.excludedRecurringCategories, String)
+
+    const reasonKey = (r: ChurnCloseReasonRule) => `${r.status} — ${r.reason}`
+    const yesNo = (r: ChurnCloseReasonRule) => `${r.churn ? 'Churn' : 'Bukan churn'} · ${r.effectFrom}${r.category ? ` · ${r.category}` : ''}${r.note ? ` · ${r.note}` : ''}`
+    const beforeReasons = new Map(before.churnCloseReasons.map(r => [reasonKey(r), r]))
+    const afterReasons = new Map(after.churnCloseReasons.map(r => [reasonKey(r), r]))
+    for (const [key, r] of afterReasons) {
+        const old = beforeReasons.get(key)
+        if (!old) changes.push({ section: 'Churn', label: `Alasan baru: ${key}`, from: '–', to: yesNo(r) })
+        else if (yesNo(old) !== yesNo(r)) changes.push({ section: 'Churn', label: key, from: yesNo(old), to: yesNo(r) })
+    }
+    for (const [key, r] of beforeReasons) {
+        if (!afterReasons.has(key)) changes.push({ section: 'Churn', label: `Alasan dihapus: ${key}`, from: yesNo(r), to: '–' })
+    }
     list('Tier bonus bulanan', 'Bonus', before.bonus.tiers, after.bonus.tiers, t => `${t.at} → ${rupiah(t.amount)}`)
     list('Threshold target tim', 'Sales Manager', before.manager.teamThresholds, after.manager.teamThresholds, t => `${t.teamSize} AM: ${t.percent}%`)
     list('Tier overriding New', 'Sales Manager', before.manager.newCommissionTiers, after.manager.newCommissionTiers, t => `≥${t.minAchievement}%: ${t.rate}%`)
