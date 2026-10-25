@@ -13,7 +13,7 @@
                     </p>
                 </div>
 
-                <SummaryStats :stats="stats" />
+                <SummaryStats :stats="stats" :active="statusFilter" @select="statusFilter = $event as StatusFilter" />
 
                 <UCard>
                     <template #header>
@@ -30,7 +30,7 @@
                         v-model:global-filter="globalFilter"
                         v-model:sorting="sorting"
                         :columns="columns"
-                        :data="branchData"
+                        :data="tableData"
                         :pagination-options="{
                             getPaginationRowModel: getPaginationRowModel()
                         }"
@@ -77,6 +77,16 @@ const table = useTemplateRef('table')
 const summaryData = ref<ChurnSummaryItem[]>([])
 const { byBranch } = useBranchFilter()
 const branchData = computed(() => byBranch(summaryData.value, r => r.employee_branch))
+
+// Clicking a stat card narrows the table: all churns, still cutting commission, or waived.
+type StatusFilter = 'all' | 'pending' | 'approved'
+const statusFilter = ref<StatusFilter>('all')
+const tableData = computed(() => {
+    if (statusFilter.value === 'pending') return branchData.value.filter(r => !r.is_approved)
+    if (statusFilter.value === 'approved') return branchData.value.filter(r => r.is_approved)
+    return branchData.value
+})
+watch(statusFilter, () => { pagination.value.pageIndex = 0 })
 const { year, month: selectedMonth } = useSelectedPeriod()
 
 const pagination = ref({
@@ -123,9 +133,9 @@ const stats = computed(() => {
     const rows = branchData.value
     const pending = rows.filter(r => !r.is_approved)
     return [
-        { label: 'Jumlah Churn', value: rows.length },
-        { label: 'Memotong Komisi', value: pending.length, note: 'Belum di-approve', class: pending.length ? 'text-red-600 dark:text-red-400' : undefined },
-        { label: 'Dibebaskan', value: rows.length - pending.length, note: 'Sudah di-approve', class: 'text-green-600 dark:text-green-400' },
+        { label: 'Jumlah Churn', value: rows.length, key: 'all' },
+        { label: 'Memotong Komisi', value: pending.length, note: 'Belum di-approve', key: 'pending', class: pending.length ? 'text-red-600 dark:text-red-400' : undefined },
+        { label: 'Dibebaskan', value: rows.length - pending.length, note: 'Sudah di-approve', key: 'approved', class: 'text-green-600 dark:text-green-400' },
         { label: 'Subscription Hilang', value: formatCurrency(pending.reduce((a, r) => a + Number(r.price ?? 0), 0)), note: 'Dari churn yang memotong komisi' }
     ]
 })
