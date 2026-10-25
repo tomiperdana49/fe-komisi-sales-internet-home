@@ -126,7 +126,7 @@ const stats = computed(() => {
         { label: 'Jumlah Churn', value: rows.length },
         { label: 'Memotong Komisi', value: pending.length, note: 'Belum di-approve', class: pending.length ? 'text-red-600 dark:text-red-400' : undefined },
         { label: 'Dibebaskan', value: rows.length - pending.length, note: 'Sudah di-approve', class: 'text-green-600 dark:text-green-400' },
-        { label: 'Subscription Hilang', value: formatCurrency(pending.reduce((a, r) => a + (r.price ?? 0), 0)), note: 'Dari churn yang memotong komisi' }
+        { label: 'Subscription Hilang', value: formatCurrency(pending.reduce((a, r) => a + Number(r.price ?? 0), 0)), note: 'Dari churn yang memotong komisi' }
     ]
 })
 
