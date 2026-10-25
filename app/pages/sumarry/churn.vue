@@ -88,7 +88,6 @@ const tableData = computed(() => {
     if (statusFilter.value === 'approved') return branchData.value.filter(r => r.is_approved)
     return branchData.value
 })
-watch(statusFilter, () => { pagination.value.pageIndex = 0 })
 const { year, month: selectedMonth } = useSelectedPeriod()
 
 const pagination = ref({
@@ -97,6 +96,7 @@ const pagination = ref({
 })
 const sorting = ref([{ id: 'no', desc: false }])
 const globalFilter = ref('')
+watch([statusFilter, globalFilter], () => { pagination.value.pageIndex = 0 })
 
 const { monthLabel } = usePeriodOptions()
 

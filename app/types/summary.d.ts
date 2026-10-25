@@ -136,6 +136,32 @@ export interface StoppedServiceItem {
     in_churn_list: boolean;
     /** Waived on the Churn list, so it doesn't cut commission. */
     is_approved: boolean;
+    /** Not a service stopped in the period but a Churn list row counted in it (see CarriedChurnItem). */
+    carried?: boolean;
+    deduct_date?: string | null;
+    employee_name: string | null;
+    employee_photo: string | null;
+    employee_branch: string | null;
+}
+
+/** A Churn list row whose service didn't stop in the period (churn susulan, or changed in NIS after closing). */
+export interface CarriedChurnItem {
+    customer_service_id: number;
+    customer_id: string;
+    customer_name: string | null;
+    customer_service_account: string | null;
+    service_id: string | null;
+    service_name: string | null;
+    registration_date: string | null;
+    unregistration_date: string | null;
+    /** Set for a churn susulan: deducted in the period holding this date. */
+    deduct_date: string | null;
+    close_status: string | null;
+    close_reason: string | null;
+    reason: string | null;
+    price: number;
+    sales_id: string | null;
+    is_approved: boolean;
     employee_name: string | null;
     employee_photo: string | null;
     employee_branch: string | null;
@@ -147,7 +173,7 @@ export interface StoppedServicesResponseData {
     data: {
         services: StoppedServiceItem[];
         /** Churn list rows that aren't among these services (churn susulan, or changed in NIS after closing). */
-        carried: { customer_service_account: string | null; employee_branch: string | null }[];
+        carried: CarriedChurnItem[];
         /** The period is closed: its Churn list is frozen and decides what counts. */
         closed: boolean;
     };

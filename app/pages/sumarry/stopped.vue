@@ -80,14 +80,22 @@ const summaryService = new SummaryService()
 
 const table = useTemplateRef('table')
 const summaryData = ref<StoppedServiceItem[]>([])
+// Churn list rows counted in this period whose service didn't stop in it (churn susulan, or
+// changed in NIS after closing): listed too, so both pages add up row for row.
 const carriedData = ref<StoppedServicesResponseData['data']['carried']>([])
-const carriedCount = computed(() => byBranch(carriedData.value, r => r.employee_branch).length)
+const carriedRows = computed<StoppedServiceItem[]>(() => carriedData.value.map(r => ({
+    ...r,
+    customer_branch: null,
+    exclusion: null,
+    in_churn_list: true,
+    carried: true
+})))
 // A closed period's Churn list is frozen, so it — not today's rules — decides what was a churn.
 const closed = ref(false)
 const { selectedClosing, describeClosing } = usePeriodClosings()
-const isChurn = (r: StoppedServiceItem) => closed.value ? r.in_churn_list : r.exclusion === null
+const isChurn = (r: StoppedServiceItem) => r.carried || (closed.value ? r.in_churn_list : r.exclusion === null)
 const { byBranch } = useBranchFilter()
-const branchData = computed(() => byBranch(summaryData.value, r => r.employee_branch))
+const branchData = computed(() => byBranch([...summaryData.value, ...carriedRows.value], r => r.employee_branch))
 const { year, month: selectedMonth } = useSelectedPeriod()
 const { monthLabel } = usePeriodOptions()
 const selectedMonthLabel = computed(() => monthLabel(selectedMonth.value))
@@ -127,22 +135,25 @@ const pagination = ref({
 const sorting = ref([{ id: 'no', desc: false }])
 const globalFilter = ref('')
 
-watch([statusFilter, exclusionFilter], () => { pagination.value.pageIndex = 0 })
+watch([statusFilter, exclusionFilter, globalFilter], () => { pagination.value.pageIndex = 0 })
 
 const stats = computed(() => {
-    const rows = branchData.value
-    const churn = rows.filter(isChurn)
+    const stopped = branchData.value.filter(r => !r.carried)
+    const carriedCount = branchData.value.length - stopped.length
+    const churnCount = branchData.value.filter(isChurn).length
     return [
-        { label: 'Total Layanan NA', value: rows.length, note: 'Semua yang berhenti di NIS', key: 'all' },
+        { label: 'Total Layanan NA', value: stopped.length, note: 'Semua yang berhenti di NIS', key: 'all' },
         {
             label: 'Dihitung Churn',
-            value: churn.length,
-            note: carriedCount.value
-                ? `+${carriedCount.value} di Daftar Churn yang bukan layanan NA periode ini (churn susulan atau berubah di NIS)`
+            value: churnCount,
+            note: carriedCount
+                ? `Termasuk ${carriedCount} churn susulan / di luar layanan NA periode ini. Sama dengan Jumlah Churn di halaman Churn`
                 : closed.value ? 'Sesuai Daftar Churn saat periode ditutup' : 'Memenuhi aturan churn',
-            key: 'churn', class: 'text-red-600 dark:text-red-400' },
-        { label: 'Bukan Churn', value: rows.length - churn.length, note: 'Lihat kolom Status', key: 'not_churn', class: 'text-gray-500 dark:text-gray-400' },
-        { label: 'Subscription Berhenti', value: formatCurrency(rows.reduce((a, r) => a + Number(r.price ?? 0), 0)), note: 'Dari semua layanan NA' }
+            key: 'churn',
+            class: 'text-red-600 dark:text-red-400'
+        },
+        { label: 'Bukan Churn', value: stopped.filter(r => !isChurn(r)).length, note: 'Lihat kolom Status', key: 'not_churn', class: 'text-gray-500 dark:text-gray-400' },
+        { label: 'Subscription Berhenti', value: formatCurrency(stopped.reduce((a, r) => a + Number(r.price ?? 0), 0)), note: 'Dari semua layanan NA' }
     ]
 })
 
@@ -156,11 +167,12 @@ const columns: TableColumn<StoppedServiceItem>[] = [
         id: 'status',
         accessorFn: row => [
             isChurn(row) ? (row.is_approved ? 'Churn Dibebaskan' : 'Churn') : 'Bukan churn',
+            row.carried ? 'Churn susulan' : '',
             row.exclusion ? EXCLUSION_LABELS[row.exclusion] : ''
         ].join(' '),
         header: sortableHeader('Status'),
         cell: ({ row }) => {
-            const { exclusion, in_churn_list, is_approved } = row.original
+            const { exclusion, in_churn_list, is_approved, carried, deduct_date, unregistration_date } = row.original
             const badge = !isChurn(row.original)
                 ? h(UBadge, { color: 'neutral', variant: 'subtle', size: 'sm' }, () => 'Bukan churn')
                 : is_approved
@@ -168,7 +180,11 @@ const columns: TableColumn<StoppedServiceItem>[] = [
                     : h(UBadge, { color: 'error', variant: 'subtle', size: 'sm' }, () => 'Churn')
 
             let detail: string
-            if (closed.value && in_churn_list && exclusion) {
+            if (carried && deduct_date) {
+                detail = `Churn susulan: berhenti ${unregistration_date ? formatDate(unregistration_date) : '-'}, dipotong di periode ini.`
+            } else if (carried) {
+                detail = 'Ada di Daftar Churn, tapi di NIS sekarang tidak berhenti (NA) di periode ini.'
+            } else if (closed.value && in_churn_list && exclusion) {
                 detail = `Menurut aturan sekarang: ${EXCLUSION_LABELS[exclusion]}. Tetap churn karena periode sudah ditutup.`
             } else if (closed.value && !in_churn_list && !exclusion) {
                 detail = 'Memenuhi aturan sekarang, tapi tidak ada di Daftar Churn saat periode ditutup.'
