@@ -14,7 +14,7 @@
 
                 <ClosedPeriodNotice />
 
-                <SummaryStats :stats="stats" />
+                <SummaryStats :stats="stats" :active="statusFilter" @select="statusFilter = $event as StatusFilter" />
 
                 <UCard>
                     <template #header>
@@ -37,7 +37,7 @@
                         v-model:global-filter="globalFilter"
                         v-model:sorting="sorting"
                         :columns="columns"
-                        :data="branchData"
+                        :data="tableData"
                         :pagination-options="{
                             getPaginationRowModel: getPaginationRowModel()
                         }"
@@ -51,6 +51,7 @@
                 </UCard>
             </div>
         </UContainer>
+        <ApproveInvoiceModal v-model:open="isApproveModalOpen" :invoice="approvingInvoice" @success="onApproved" />
         <AdjustInvoiceModal
             v-model:open="isAdjustModalOpen"
             :ai="selectedAdjustAi"
@@ -90,6 +91,34 @@ const { isSelectedClosed } = usePeriodClosings()
 const isAdjustModalOpen = ref(false)
 const selectedAdjustAi = ref<number | null>(null)
 
+// Approving needs a reason, so switching on opens the reason form; switching off reinstates the penalty right away.
+const isApproveModalOpen = ref(false)
+const approvingInvoice = ref<InvoiceSummaryItem | null>(null)
+const authState = useAuth().state
+const onApproved = (note: string) => {
+    const row = approvingInvoice.value
+    if (!row) return
+    row.isApproved = true
+    row.approvalNote = note
+    row.approvedBy = authState.user?.employee_id ?? null
+    row.approvedByName = authState.user?.name ?? null
+    row.approvedAt = new Date().toISOString()
+}
+const revokeApproval = async (row: InvoiceSummaryItem) => {
+    try {
+        const response = await summaryService.approveInvoice(row.aiInvoice, { isApproved: false })
+        if (response && response.success) {
+            row.isApproved = false
+            row.approvalNote = null
+            row.approvedBy = null
+            row.approvedByName = null
+            row.approvedAt = null
+        }
+    } catch (error) {
+        toast.add({ title: 'Gagal', description: 'Status approve gagal diperbarui. Coba lagi.', color: 'error' })
+    }
+}
+
 const openAdjustModal = (row: InvoiceSummaryItem) => {
     selectedAdjustAi.value = row.aiInvoice
     isAdjustModalOpen.value = true
@@ -109,6 +138,16 @@ const table = useTemplateRef('table')
 const summaryData = ref<InvoiceSummaryItem[]>([])
 const { byBranch } = useBranchFilter()
 const branchData = computed(() => byBranch(summaryData.value, r => r.branch))
+
+// Clicking a stat card narrows the table: all invoices, late ones still penalised, or admin-adjusted.
+type StatusFilter = 'all' | 'late_pending' | 'adjusted'
+const statusFilter = ref<StatusFilter>('all')
+const isLatePending = (r: InvoiceSummaryItem) => r.lateMonth > 0 && !r.isApproved
+const tableData = computed(() => {
+    if (statusFilter.value === 'late_pending') return branchData.value.filter(isLatePending)
+    if (statusFilter.value === 'adjusted') return branchData.value.filter(r => r.isAdjusted)
+    return branchData.value
+})
 const { year, month: selectedMonth } = useSelectedPeriod()
 
 const pagination = ref({
@@ -117,6 +156,7 @@ const pagination = ref({
 })
 const sorting = ref([{ id: 'no', desc: false }])
 const globalFilter = ref('')
+watch([statusFilter, globalFilter], () => { pagination.value.pageIndex = 0 })
 
 const { monthLabel } = usePeriodOptions()
 const { rules } = useCommissionRules()
@@ -125,12 +165,12 @@ const selectedMonthLabel = computed(() => monthLabel(selectedMonth.value))
 
 const stats = computed(() => {
     const rows = branchData.value
-    const lateUnapproved = rows.filter(r => r.lateMonth > 0 && !r.isApproved).length
+    const lateUnapproved = rows.filter(isLatePending).length
     return [
-        { label: 'Jumlah Invoice', value: rows.length },
+        { label: 'Jumlah Invoice', value: rows.length, key: 'all' },
         { label: 'Total Komisi', value: formatCurrency(rows.reduce((a, r) => a + r.commission, 0)), class: 'text-primary-600 dark:text-primary-400' },
-        { label: 'Telat Bayar, Belum Di-approve', value: lateUnapproved, note: 'Komisinya masih kena potongan', class: lateUnapproved ? 'text-red-600 dark:text-red-400' : undefined },
-        { label: 'Diubah Manual', value: rows.filter(r => r.isAdjusted).length }
+        { label: 'Telat Bayar, Belum Di-approve', value: lateUnapproved, note: 'Komisinya masih kena potongan', key: 'late_pending', class: lateUnapproved ? 'text-red-600 dark:text-red-400' : undefined },
+        { label: 'Diubah Manual', value: rows.filter(r => r.isAdjusted).length, key: 'adjusted' }
     ]
 })
 
@@ -293,21 +333,34 @@ const columns: TableColumn<InvoiceSummaryItem>[] = [
                     modelValue: row.original.isApproved,
                     // Admins only view the approval; changing it is Super Admin only, and never in a closed period.
                     disabled: !isSuperAdmin.value || isSelectedClosed.value,
-                    'onUpdate:modelValue': async (val: boolean) => {
-                        try {
-                            const response = await summaryService.approveInvoice(row.original.aiInvoice, { isApproved: val })
-                            if (response && response.success) {
-                                row.original.isApproved = val
-                            }
-                        } catch (error) {
-                            toast.add({
-                                title: 'Gagal',
-                                description: 'Status approve gagal diperbarui. Coba lagi.',
-                                color: 'error'
-                            })
+                    'onUpdate:modelValue': (val: boolean) => {
+                        if (val) {
+                            approvingInvoice.value = row.original
+                            isApproveModalOpen.value = true
+                        } else {
+                            revokeApproval(row.original)
                         }
                     }
                 })
+            ])
+        }
+    },
+    {
+        accessorKey: 'approvalNote',
+        header: 'Alasan Approve',
+        cell: ({ row }) => {
+            const r = row.original
+            if (r.lateMonth <= 0 || !r.isApproved) return h('span', { class: 'text-xs text-gray-400 italic' }, '-')
+            return h('div', { class: 'flex flex-col min-w-[180px] max-w-[300px]' }, [
+                r.approvalNote
+                    ? h('span', { class: 'text-xs text-gray-700 dark:text-gray-200 whitespace-normal' }, r.approvalNote)
+                    : h('span', { class: 'text-xs text-gray-400 italic' }, 'Alasan belum dicatat'),
+                r.approvedBy
+                    ? h('span', { class: 'text-[10px] text-gray-400 mt-0.5' }, [
+                        r.approvedByName ?? r.approvedBy,
+                        r.approvedAt ? ` · ${new Date(r.approvedAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}` : ''
+                    ].join(''))
+                    : null
             ])
         }
     },

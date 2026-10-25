@@ -61,6 +61,11 @@ export interface ManagerSummaryResponseData {
 }
 
 export interface InvoiceSummaryItem extends CommissionLineItem {
+    /** Why, by whom and when the late-payment waiver was approved; null while not approved (or approved before notes were recorded). */
+    approvalNote: string | null;
+    approvedBy: string | null;
+    approvedByName: string | null;
+    approvedAt: string | null;
     sales: { employeeId: string; name: string; photoProfile: string } | null;
     managerEmployee: { employeeId: string; name: string; photoProfile: string } | null;
     /** The selling Account Manager's branch. */
@@ -75,6 +80,8 @@ export interface InvoiceSummaryResponseData {
 
 export interface InvoiceApprovalInput {
     isApproved: boolean;
+    /** Required when isApproved: why the late-payment penalty is waived. */
+    note?: string;
 }
 
 export interface ChurnApprovalInput {
