@@ -12,6 +12,8 @@
                     </p>
                 </div>
 
+                <ClosedPeriodNotice />
+
                 <SummaryStats :stats="stats" />
 
                 <UCard>
@@ -84,6 +86,7 @@ const toast = useToast()
 const summaryService = new SummaryService()
 
 const { isSuperAdmin } = useAdminAccess()
+const { isSelectedClosed } = usePeriodClosings()
 const isAdjustModalOpen = ref(false)
 const selectedAdjustAi = ref<number | null>(null)
 
@@ -286,8 +289,8 @@ const columns: TableColumn<InvoiceSummaryItem>[] = [
             return h('div', { class: 'flex justify-center' }, [
                 h(USwitch, {
                     modelValue: row.original.isApproved,
-                    // Admins only view the approval; changing it is Super Admin only.
-                    disabled: !isSuperAdmin.value,
+                    // Admins only view the approval; changing it is Super Admin only, and never in a closed period.
+                    disabled: !isSuperAdmin.value || isSelectedClosed.value,
                     'onUpdate:modelValue': async (val: boolean) => {
                         try {
                             const response = await summaryService.approveInvoice(row.original.aiInvoice, { isApproved: val })
@@ -309,7 +312,7 @@ const columns: TableColumn<InvoiceSummaryItem>[] = [
     {
         id: 'actions',
         cell: ({ row }) => {
-            if (!isSuperAdmin.value) return null
+            if (!isSuperAdmin.value || isSelectedClosed.value) return null
             return h(
                 UDropdownMenu,
                 {

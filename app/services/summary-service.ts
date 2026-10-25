@@ -2,6 +2,7 @@ import { apiService } from "./api-service"
 import type {
     ChurnApprovalInput,
     ChurnSummaryResponseData,
+    StoppedServicesResponseData,
     ConsistencyBonusGrantInput,
     ConsistencyBonusResponseData,
     InvoiceApprovalInput,
@@ -115,6 +116,20 @@ export class SummaryService {
     async churnSummary(params: SummaryQueryParams): Promise<ChurnSummaryResponseData> {
         try {
             const response = await apiService.client.get(`/summary/churn`, {
+                params,
+                headers: {
+                    authorization: `Bearer ${useAuth().state.token}`
+                }
+            })
+            return response.data
+        } catch (error: any) {
+            handleServiceError(error)
+        }
+    }
+
+    async stoppedServices(params: SummaryQueryParams): Promise<StoppedServicesResponseData> {
+        try {
+            const response = await apiService.client.get(`/summary/stopped-services`, {
                 params,
                 headers: {
                     authorization: `Bearer ${useAuth().state.token}`

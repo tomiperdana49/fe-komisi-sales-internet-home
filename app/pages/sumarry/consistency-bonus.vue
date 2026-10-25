@@ -13,6 +13,8 @@
                     </p>
                 </div>
 
+                <ClosedPeriodNotice />
+
                 <SummaryStats :stats="stats" />
 
                 <UCard>
@@ -69,6 +71,9 @@ const UButton = resolveComponent('UButton')
 const UTooltip = resolveComponent('UTooltip')
 // Admins only view; granting, editing and deleting are Super Admin only.
 const { isSuperAdmin } = useAdminAccess()
+const { isSelectedClosed } = usePeriodClosings()
+// Granting or revoking is Super Admin only, and never in a closed period.
+const canEdit = computed(() => isSuperAdmin.value && !isSelectedClosed.value)
 
 const { setLoading } = useLoading()
 const { formatCurrency } = useFormat()
@@ -231,8 +236,8 @@ const columns: TableColumn<ConsistencyBonusItem>[] = [
     },
     {
         id: 'actions',
-        header: () => isSuperAdmin.value ? h('div', { class: 'text-right' }, 'Aksi') : null,
-        cell: ({ row }) => !isSuperAdmin.value ? null : h('div', { class: 'flex justify-end gap-2' }, [
+        header: () => canEdit.value ? h('div', { class: 'text-right' }, 'Aksi') : null,
+        cell: ({ row }) => !canEdit.value ? null : h('div', { class: 'flex justify-end gap-2' }, [
             row.original.amount > 0
                 ? h(UButton, {
                     color: 'error',

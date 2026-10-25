@@ -1,14 +1,10 @@
 <template>
     <div class="flex items-center gap-2">
-        <UBadge
-            v-if="closing"
-            color="neutral"
-            variant="subtle"
-            icon="i-lucide-lock"
-            :title="`Ditutup oleh ${closing.closedBy} pada ${shortDate(new Date(closing.closedAt))}`"
-        >
-            Ditutup
-        </UBadge>
+        <UTooltip v-if="closing" :text="describeClosing(closing)" :delay-duration="0">
+            <UBadge color="neutral" variant="subtle" icon="i-lucide-lock" class="cursor-help">
+                Ditutup
+            </UBadge>
+        </UTooltip>
         <UButton
             v-if="isSuperAdmin"
             :icon="closing ? 'i-lucide-lock-open' : 'i-lucide-lock'"
@@ -26,8 +22,8 @@
             v-model:open="isOpen"
             :title="closing ? `Buka kembali periode ${label}?` : `Tutup periode ${label}?`"
             :description="closing
-                ? 'Data periode ini akan kembali ditarik ulang dari NIS oleh job per jam, sehingga angkanya bisa berubah.'
-                : 'Job per jam tidak akan menarik ulang data periode ini lagi, sehingga angkanya tidak berubah. Lakukan setelah komisi periode ini final.'"
+                ? 'Data periode ini akan kembali ditarik ulang dari NIS oleh job per jam dan bisa diubah lagi, sehingga angkanya bisa berubah.'
+                : 'Job per jam tidak akan menarik ulang data periode ini lagi, dan approve invoice, bebaskan churn, serta Bonus Konsistensi periode ini dikunci, sehingga angkanya tidak berubah. Lakukan setelah komisi periode ini final.'"
         >
             <template #footer>
                 <div class="flex justify-end gap-2 w-full">
@@ -43,27 +39,21 @@
 
 <script setup lang="ts">
 import { SummaryService } from '~/services/summary-service'
-import type { PeriodClosing } from '~/types/summary'
 
 const props = defineProps<{ month: number, year: number }>()
 
 const summaryService = new SummaryService()
 const toast = useToast()
 const { isSuperAdmin } = useAdminAccess()
-const { monthLabel, shortDate } = usePeriodOptions()
+const { monthLabel } = usePeriodOptions()
 
-const closings = ref<PeriodClosing[]>([])
+const { load, closingOf, describeClosing } = usePeriodClosings()
 const loading = ref(false)
 const isOpen = ref(false)
 
 const period = computed(() => `${props.year}${String(props.month).padStart(2, '0')}`)
 const label = computed(() => `${monthLabel(props.month)} ${props.year}`)
-const closing = computed(() => closings.value.find(c => c.period === period.value) ?? null)
-
-async function load() {
-    const response = await summaryService.periodClosings()
-    closings.value = response?.data ?? []
-}
+const closing = computed(() => closingOf(period.value))
 
 async function toggle() {
     loading.value = true

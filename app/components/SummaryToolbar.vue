@@ -52,6 +52,7 @@ const links = [
     { to: '/sumarry/manager', icon: 'i-heroicons-presentation-chart-line', label: 'Sales Manager' },
     { to: '/sumarry/invoice', icon: 'i-heroicons-document-text', label: 'Invoice' },
     { to: '/sumarry/churn', icon: 'i-heroicons-archive-box-x-mark', label: 'Churn' },
+    { to: '/sumarry/stopped', icon: 'i-heroicons-signal-slash', label: 'Layanan NA' },
     { to: '/sumarry/consistency-bonus', icon: 'i-heroicons-gift', label: 'Bonus Konsistensi' },
     { to: '/sumarry/target', icon: 'i-heroicons-flag', label: 'Target AM' }
 ]

@@ -112,6 +112,47 @@ export interface ChurnSummaryItem {
     employee_branch: string | null;
 }
 
+/** Why a stopped service isn't a churn — the first churn condition it fails; null when it is one. */
+export type ChurnExclusion = 'branch' | 'product' | 'over_year' | 'no_invoice' | 'paid_12_months' | 'termination_paid' | 'close_reason'
+
+/** A service stopped (NA) in NIS during the period, straight from billing. */
+export interface StoppedServiceItem {
+    customer_service_id: number;
+    customer_id: string;
+    customer_name: string | null;
+    customer_service_account: string | null;
+    customer_branch: string | null;
+    service_id: string | null;
+    service_name: string | null;
+    registration_date: string | null;
+    unregistration_date: string | null;
+    close_status: string | null;
+    close_reason: string | null;
+    reason: string | null;
+    price: number;
+    sales_id: string | null;
+    exclusion: ChurnExclusion | null;
+    /** Whether it is on the Churn list (cuts commission unless waived). */
+    in_churn_list: boolean;
+    /** Waived on the Churn list, so it doesn't cut commission. */
+    is_approved: boolean;
+    employee_name: string | null;
+    employee_photo: string | null;
+    employee_branch: string | null;
+}
+
+export interface StoppedServicesResponseData {
+    success: boolean;
+    message: string;
+    data: {
+        services: StoppedServiceItem[];
+        /** Churn list rows that aren't among these services (churn susulan, or changed in NIS after closing). */
+        carried: { customer_service_account: string | null; employee_branch: string | null }[];
+        /** The period is closed: its Churn list is frozen and decides what counts. */
+        closed: boolean;
+    };
+}
+
 export interface ChurnSummaryResponseData {
     success: boolean;
     message: string;
@@ -255,6 +296,7 @@ export interface TargetOverrideInput {
 export interface PeriodClosing {
     period: string;
     closedBy: string;
+    closedByName: string | null;
     closedAt: string;
 }
 
