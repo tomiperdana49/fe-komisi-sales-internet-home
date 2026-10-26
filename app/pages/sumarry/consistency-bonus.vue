@@ -15,7 +15,7 @@
 
                 <ClosedPeriodNotice />
 
-                <SummaryStats :stats="stats" />
+                <SummaryStats :stats="stats" :active="statusFilter" @select="statusFilter = $event as StatusFilter" />
 
                 <UCard>
                     <template #header>
@@ -87,6 +87,9 @@ const { byBranch } = useBranchFilter()
 const branchData = computed(() => byBranch(summaryData.value, r => r.branch))
 const { year, month: selectedMonth } = useSelectedPeriod()
 const globalFilter = ref('')
+// Clicking a stat card narrows the table: everyone, or only those already granted a bonus.
+type StatusFilter = 'all' | 'granted'
+const statusFilter = ref<StatusFilter>('all')
 const revokingIds = ref(new Set<string>())
 const isRevokeModalOpen = ref(false)
 const revokeTarget = ref<ConsistencyBonusItem | null>(null)
@@ -108,8 +111,8 @@ const selectedMonthLabel = computed(() => monthLabel(selectedMonth.value))
 const stats = computed(() => {
     const granted = branchData.value.filter(r => r.amount > 0)
     return [
-        { label: 'Jumlah AM & SDR', value: branchData.value.length },
-        { label: 'Sudah Diberi Bonus', value: granted.length, class: 'text-violet-600 dark:text-violet-400' },
+        { label: 'Jumlah AM & SDR', value: branchData.value.length, key: 'all' },
+        { label: 'Sudah Diberi Bonus', value: granted.length, key: 'granted', class: 'text-violet-600 dark:text-violet-400' },
         { label: 'Total Bonus', value: formatCurrency(granted.reduce((a, r) => a + r.amount, 0)), class: 'text-violet-600 dark:text-violet-400' },
         { label: 'Total Service Dicapai', value: granted.reduce((a, r) => a + (r.serviceCount ?? 0), 0), note: 'Dari sales yang diberi bonus' }
     ]
@@ -126,9 +129,10 @@ const confirmRevoke = async () => {
 }
 
 const filteredData = computed(() => {
+    const rows = statusFilter.value === 'granted' ? branchData.value.filter(r => r.amount > 0) : branchData.value
     const query = globalFilter.value.trim().toLowerCase()
-    if (!query) return branchData.value
-    return branchData.value.filter(row =>
+    if (!query) return rows
+    return rows.filter(row =>
         row.name.toLowerCase().includes(query) || row.employeeId.toLowerCase().includes(query)
     )
 })

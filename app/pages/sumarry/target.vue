@@ -14,7 +14,7 @@
                     </p>
                 </div>
 
-                <SummaryStats :stats="stats" />
+                <SummaryStats :stats="stats" :active="statusFilter" @select="statusFilter = $event as StatusFilter" />
 
                 <UCard>
                     <template #header>
@@ -73,6 +73,9 @@ const { monthLabel } = usePeriodOptions()
 const data = ref<TargetOverrideRosterItem[]>([])
 const { year, month: selectedMonth } = useSelectedPeriod()
 const globalFilter = ref('')
+// Clicking a stat card narrows the table: every AM, those on an active manual target, or those with one scheduled.
+type StatusFilter = 'all' | 'active' | 'upcoming'
+const statusFilter = ref<StatusFilter>('all')
 
 const selectedMonthLabel = computed(() => monthLabel(selectedMonth.value))
 
@@ -89,15 +92,18 @@ const rangeLabel = (o: TargetOverride) => o.startPeriod === o.endPeriod ? period
 const isRunning = (o: TargetOverride) => o.startPeriod < currentPeriod
 
 const stats = computed(() => [
-    { label: 'Jumlah Account Manager', value: data.value.length },
-    { label: 'Target Manual Aktif', value: data.value.filter(r => r.active).length, class: 'text-primary-600 dark:text-primary-400' },
-    { label: 'Terjadwal', value: data.value.reduce((a, r) => a + r.upcoming.length, 0), note: 'Target manual yang mulai setelah periode ini' }
+    { label: 'Jumlah Account Manager', value: data.value.length, key: 'all' },
+    { label: 'Target Manual Aktif', value: data.value.filter(r => r.active).length, key: 'active', class: 'text-primary-600 dark:text-primary-400' },
+    { label: 'Terjadwal', value: data.value.reduce((a, r) => a + r.upcoming.length, 0), key: 'upcoming', note: 'Target manual yang mulai setelah periode ini' }
 ])
 
 const filteredData = computed(() => {
+    const rows = statusFilter.value === 'active'
+        ? data.value.filter(r => r.active)
+        : statusFilter.value === 'upcoming' ? data.value.filter(r => r.upcoming.length > 0) : data.value
     const query = globalFilter.value.trim().toLowerCase()
-    if (!query) return data.value
-    return data.value.filter(row => row.name.toLowerCase().includes(query) || row.employeeId.toLowerCase().includes(query))
+    if (!query) return rows
+    return rows.filter(row => row.name.toLowerCase().includes(query) || row.employeeId.toLowerCase().includes(query))
 })
 
 const isModalOpen = ref(false)

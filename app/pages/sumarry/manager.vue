@@ -15,7 +15,7 @@
                     </div>
                 </div>
 
-                <SummaryStats :stats="stats" />
+                <SummaryStats :stats="stats" :active="statusFilter" @select="statusFilter = $event as StatusFilter" />
 
                 <UCard>
                     <template #header>
@@ -74,11 +74,16 @@ const columnPinning = ref({ left: ['name'], right: [] })
 const selectedMonthLabel = computed(() => monthLabel(selectedMonth.value))
 
 // Most team new services first; ties keep the API's alphabetical order (sort is stable).
+// Clicking a stat card narrows the table: every manager, or only those whose team is on target.
+type StatusFilter = 'all' | 'on_target'
+const statusFilter = ref<StatusFilter>('all')
+
 const filteredData = computed(() => {
     const q = search.value.trim().toLowerCase()
+    const byStatus = statusFilter.value === 'on_target' ? branchData.value.filter(r => r.isTargetAchieved) : branchData.value
     const rows = q
-        ? branchData.value.filter(r => r.name.toLowerCase().includes(q) || r.employeeId.toLowerCase().includes(q))
-        : branchData.value
+        ? byStatus.filter(r => r.name.toLowerCase().includes(q) || r.employeeId.toLowerCase().includes(q))
+        : byStatus
     return [...rows].sort((a, b) => b.activityCount - a.activityCount)
 })
 
@@ -88,8 +93,8 @@ const stats = computed(() => {
     const rows = branchData.value
     const onTarget = rows.filter(r => r.isTargetAchieved).length
     return [
-        { label: 'Jumlah Sales Manager', value: rows.length },
-        { label: ongoing.value ? 'Tim Sudah Capai Target' : 'Tim Capai Target', value: `${onTarget} / ${rows.length}`, note: ongoing.value ? 'Sementara, periode berjalan' : undefined, class: 'text-green-600 dark:text-green-400' },
+        { label: 'Jumlah Sales Manager', value: rows.length, key: 'all' },
+        { label: ongoing.value ? 'Tim Sudah Capai Target' : 'Tim Capai Target', value: `${onTarget} / ${rows.length}`, key: 'on_target', note: ongoing.value ? 'Sementara, periode berjalan' : undefined, class: 'text-green-600 dark:text-green-400' },
         { label: 'Total Layanan Baru Tim', value: rows.reduce((a, r) => a + r.activityCount, 0) },
         { label: 'Total Komisi Manager', value: formatCurrency(rows.reduce((a, r) => a + r.managerTotalCommission, 0)), class: 'text-primary-600 dark:text-primary-400' }
     ]

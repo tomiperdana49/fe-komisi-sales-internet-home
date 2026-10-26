@@ -17,7 +17,7 @@
                     <UTabs v-model="role" :items="roleTabs" :content="false" size="sm" class="w-full sm:w-auto" />
                 </div>
 
-                <SummaryStats :stats="stats" />
+                <SummaryStats :stats="stats" :active="statusFilter" @select="statusFilter = $event as StatusFilter" />
 
                 <UCard>
                     <template #header>
@@ -86,11 +86,16 @@ const columnPinning = ref({ left: ['name'], right: [] })
 const selectedMonthLabel = computed(() => monthLabel(selectedMonth.value))
 
 // Most new services first; ties keep the API's alphabetical order (sort is stable).
+// Clicking a stat card narrows the table: everyone, or only those on target.
+type StatusFilter = 'all' | 'on_target'
+const statusFilter = ref<StatusFilter>('all')
+
 const filteredData = computed(() => {
     const q = search.value.trim().toLowerCase()
+    const byStatus = statusFilter.value === 'on_target' ? branchData.value.filter(r => isOnTarget(r.achievementStatus)) : branchData.value
     const rows = q
-        ? branchData.value.filter(r => r.name.toLowerCase().includes(q) || r.employeeId.toLowerCase().includes(q))
-        : branchData.value
+        ? byStatus.filter(r => r.name.toLowerCase().includes(q) || r.employeeId.toLowerCase().includes(q))
+        : byStatus
     return [...rows].sort((a, b) => b.activityCount - a.activityCount)
 })
 
@@ -106,8 +111,8 @@ const stats = computed(() => {
     const rows = branchData.value
     const onTarget = rows.filter(r => isOnTarget(r.achievementStatus)).length
     return [
-        { label: `Jumlah ${roleLabel.value}`, value: rows.length },
-        { label: ongoing.value ? 'Sudah Capai Target' : 'Capai Target', value: `${onTarget} / ${rows.length}`, note: ongoing.value ? 'Sementara, periode berjalan' : undefined, class: 'text-green-600 dark:text-green-400' },
+        { label: `Jumlah ${roleLabel.value}`, value: rows.length, key: 'all' },
+        { label: ongoing.value ? 'Sudah Capai Target' : 'Capai Target', value: `${onTarget} / ${rows.length}`, key: 'on_target', note: ongoing.value ? 'Sementara, periode berjalan' : undefined, class: 'text-green-600 dark:text-green-400' },
         { label: 'Total Layanan Baru', value: rows.reduce((a, r) => a + r.activityCount, 0) },
         { label: 'Total Komisi Dibayar', value: formatCurrency(rows.reduce((a, r) => a + r.totalCommission, 0)), class: 'text-primary-600 dark:text-primary-400' }
     ]

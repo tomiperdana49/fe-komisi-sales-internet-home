@@ -140,12 +140,13 @@ const { byBranch } = useBranchFilter()
 const branchData = computed(() => byBranch(summaryData.value, r => r.branch))
 
 // Clicking a stat card narrows the table: all invoices, late ones still penalised, or admin-adjusted.
-type StatusFilter = 'all' | 'late_pending' | 'adjusted'
+type StatusFilter = 'all' | 'late_pending' | 'adjusted' | 'zero_commission'
 const statusFilter = ref<StatusFilter>('all')
 const isLatePending = (r: InvoiceSummaryItem) => r.lateMonth > 0 && !r.isApproved
 const tableData = computed(() => {
     if (statusFilter.value === 'late_pending') return branchData.value.filter(isLatePending)
     if (statusFilter.value === 'adjusted') return branchData.value.filter(r => r.isAdjusted)
+    if (statusFilter.value === 'zero_commission') return branchData.value.filter(r => r.commission === 0)
     return branchData.value
 })
 const { year, month: selectedMonth } = useSelectedPeriod()
@@ -168,7 +169,13 @@ const stats = computed(() => {
     const lateUnapproved = rows.filter(isLatePending).length
     return [
         { label: 'Jumlah Invoice', value: rows.length, key: 'all' },
-        { label: 'Total Komisi', value: formatCurrency(rows.reduce((a, r) => a + r.commission, 0)), class: 'text-primary-600 dark:text-primary-400' },
+        {
+            label: 'Total Komisi',
+            value: formatCurrency(rows.reduce((a, r) => a + r.commission, 0)),
+            // The card filters to the invoices that earn nothing, for checking why.
+            note: `${rows.filter(r => r.commission === 0).length} invoice komisi Rp0 · klik untuk lihat`,
+            key: 'zero_commission',
+            class: 'text-primary-600 dark:text-primary-400' },
         { label: 'Telat Bayar, Belum Di-approve', value: lateUnapproved, note: 'Komisinya masih kena potongan', key: 'late_pending', class: lateUnapproved ? 'text-red-600 dark:text-red-400' : undefined },
         { label: 'Diubah Manual', value: rows.filter(r => r.isAdjusted).length, key: 'adjusted' }
     ]
