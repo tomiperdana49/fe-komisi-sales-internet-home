@@ -1,23 +1,33 @@
 /** The earliest period the dashboard offers — nothing earlier is ever shown. */
 export const FIRST_PERIOD = { year: 2026, month: 1 }
 
+/**
+ * The commission period running today: from the 26th it is already next
+ * month's (be: currentCommissionPeriod), so 26 Oct is November and 26 Dec is
+ * January of the next year.
+ */
+export const currentPeriod = (now = new Date()) => {
+    const d = now.getDate() > 25 ? new Date(now.getFullYear(), now.getMonth() + 1, 1) : now
+    return { year: d.getFullYear(), month: d.getMonth() + 1 }
+}
+
 const MONTH_NAMES = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
 
 export const usePeriodOptions = () => {
     // Every month — for picking a future period (e.g. when a rule set takes effect).
     const monthSelect = MONTH_NAMES.map((label, i) => ({ label, id: i + 1 }))
     /**
-     * Months that have data to view: from FIRST_PERIOD up to the current month.
-     * The first year starts at FIRST_PERIOD.month; the current year stops at the current month.
+     * Months that have data to view: from FIRST_PERIOD up to the running period.
+     * The first year starts at FIRST_PERIOD.month; the running period's year stops at its month.
      */
     const viewableMonths = (year: number) => {
-        const now = new Date()
+        const running = currentPeriod()
         const from = year === FIRST_PERIOD.year ? FIRST_PERIOD.month : 1
-        const to = year >= now.getFullYear() ? now.getMonth() + 1 : 12
+        const to = year >= running.year ? running.month : 12
         return monthSelect.filter(m => m.id >= from && m.id <= to)
     }
-    // From the first year up to the current one; no point offering years that haven't happened yet.
-    const yearItems = Array.from({ length: Math.max(new Date().getFullYear() - FIRST_PERIOD.year + 1, 1) }, (_, i) => FIRST_PERIOD.year + i)
+    // From the first year up to the running period's; no point offering years that haven't happened yet.
+    const yearItems = Array.from({ length: Math.max(currentPeriod().year - FIRST_PERIOD.year + 1, 1) }, (_, i) => FIRST_PERIOD.year + i)
     const monthLabel = (month: number) => MONTH_NAMES[month - 1] ?? String(month)
 
     // A commission period runs from the 26th of the previous month to the 25th (be: getDateRangeForPeriod).
