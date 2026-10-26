@@ -95,8 +95,8 @@ const GLOSSARY = {
     baseCommission: {
         term: 'Dasar Komisi',
         text: (r: Rules) => r
-            ? `Subscription dikurangi referral fee, lalu dipotong Telat Bayar (${pct(r.penalties.latePerMonth)} per bulan, maks. ${pct(r.penalties.lateMax)}) dan, khusus New untuk sales Permanent yang tidak capai target, potongan ${pct(r.penalties.missedTarget)}. Komisi = Dasar Komisi × persentase.`
-            : 'Subscription dikurangi referral fee, lalu dipotong Telat Bayar dan potongan target (khusus New, sales Permanent). Komisi = Dasar Komisi × persentase.'
+            ? `Subscription dipotong Telat Bayar (${pct(r.penalties.latePerMonth)} per bulan dari subscription, maks. ${pct(r.penalties.lateMax)}), lalu dikurangi referral fee dan, khusus New untuk sales Permanent yang tidak capai target, potongan ${pct(r.penalties.missedTarget)}. Komisi = Dasar Komisi × persentase.`
+            : 'Subscription dipotong Telat Bayar, lalu dikurangi referral fee, lalu potongan target (khusus New, sales Permanent). Komisi = Dasar Komisi × persentase.'
     },
     mrc: {
         term: 'MRC',

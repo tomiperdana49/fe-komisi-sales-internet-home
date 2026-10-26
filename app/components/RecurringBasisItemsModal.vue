@@ -63,7 +63,7 @@ const { formatCurrency, formatDate } = useFormat()
 
 const title = computed(() => props.kind === 'late' ? 'Potongan Telat Bayar' : 'Kenaikan Harga Perpanjangan')
 const description = computed(() => props.kind === 'late' && props.personal
-    ? 'Invoice recurring yang dibayar lewat jatuh tempo. Potongan = persentase telat × (Subscription − Referral); hilang bila invoice di-approve admin di Summary > Invoice.'
+    ? 'Invoice recurring yang dibayar lewat jatuh tempo. Mulai Oktober 2026: Potongan = persentase telat × Subscription, lalu referral dikurangi sesudahnya. Potongan hilang bila invoice di-approve admin di Summary > Invoice.'
     : props.kind === 'late'
     ? 'Invoice recurring tim yang dibayar lewat jatuh tempo. Potongannya sama dengan potongan komisi AM; hilang bila invoice di-approve admin di Summary > Invoice.'
     : 'Kenaikan harga saat perpanjangan kontrak (label Perpanjangan). Dihitung sebagai recurring untuk AM, tapi tidak ikut dasar Overriding Recurring manager.')
