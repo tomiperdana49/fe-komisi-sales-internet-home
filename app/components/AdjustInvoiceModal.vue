@@ -222,11 +222,12 @@ async function loadHistory(ai: number) {
 async function loadDetail(ai: number) {
     loading.value = true
     try {
-        const [detailResponse] = await Promise.all([
+        // The history is extra: if it fails to load, the form still fills from the detail.
+        const [detailResult] = await Promise.allSettled([
             summaryService.invoiceDetail(ai),
             loadHistory(ai)
         ])
-        fillFromDetail(detailResponse?.data ?? null)
+        fillFromDetail(detailResult.status === 'fulfilled' ? detailResult.value?.data ?? null : null)
     } finally {
         loading.value = false
     }
