@@ -208,6 +208,8 @@ export interface AdjustableSnapshotFields {
     subscription?: number | null;
     lineRental?: number | null;
     paidDate?: string | null;
+    /** The service's first activation (Tgl. Aktif); informational only. */
+    activationDate?: string | null;
     month?: number | null;
     lateMonth?: number | null;
     type?: string | null;

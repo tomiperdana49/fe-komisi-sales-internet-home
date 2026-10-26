@@ -88,6 +88,9 @@
                             <UFormField label="Paid Date" name="paidDate">
                                 <UInput v-model="state.paidDate" type="date" class="w-full" />
                             </UFormField>
+                            <UFormField label="Activation Date (Tgl. Aktif)" name="activationDate" description="Informasi saja, tidak mengubah komisi.">
+                                <UInput v-model="state.activationDate" type="date" class="w-full" />
+                            </UFormField>
                         </div>
                     </div>
 
@@ -176,6 +179,7 @@ const emptyState = () => ({
     month: 1,
     lateMonth: 0,
     paidDate: '',
+    activationDate: '',
     referralType: '',
     referralFee: 0,
     referralName: '',
@@ -207,6 +211,7 @@ function fillFromDetail(detail: SnapshotDetailItem | null) {
         month: Number(detail.month ?? 1),
         lateMonth: Number(detail.lateMonth ?? 0),
         paidDate: detail.paidDate ?? '',
+        activationDate: detail.activationDate ?? '',
         referralType: detail.referralType ?? '',
         referralFee: Number(detail.referralFee ?? 0),
         referralName: detail.referralName ?? '',
@@ -273,6 +278,7 @@ async function onSubmit() {
             month: state.month,
             lateMonth: state.lateMonth,
             paidDate: state.paidDate || null,
+            activationDate: state.activationDate || null,
             referralType: state.referralType || null,
             referralFee: state.referralFee,
             referralName: state.referralName || null,
