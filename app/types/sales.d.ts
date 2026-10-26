@@ -45,6 +45,8 @@ export interface CommissionLineItem {
     mrc: number;
     referralFee: number;
     referralType: string | null;
+    /** Reseller the referral fee goes to. */
+    referralName?: string | null;
     baseCommission: number;
     commissionPercentage: number;
     commission: number;
@@ -82,6 +84,12 @@ export interface SalesCommissionData {
     breakdown: CommissionBreakdown;
     byServiceGroup: Record<string, CommissionBreakdown>;
     deduction: CommissionStats;
+    /** Referral fees on recurring invoices (incl. renewals); each already cuts its invoice's commission basis. */
+    recurringReferralFee?: number;
+    /** Late-payment cut on recurring invoices (after referral); approved invoices cut nothing. */
+    recurringLatePenalty?: number;
+    /** The recurring invoices behind recurringLatePenalty, each with its cut. */
+    recurringLateItems?: import('./manager').ManagerRecurringBasisItem[];
 }
 
 export interface SalesCommissionResponseData {

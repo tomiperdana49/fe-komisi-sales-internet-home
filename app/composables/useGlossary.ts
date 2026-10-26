@@ -17,6 +17,10 @@ const GLOSSARY = {
         term: 'Periode Perhitungan',
         text: () => 'Satu periode komisi berjalan dari tanggal 26 bulan sebelumnya sampai tanggal 25. Invoice masuk periode menurut tanggal bayarnya; bila dibayar sampai tanggal 25 tetapi baru diinput finance tanggal 27 atau sesudahnya di bulan yang sama, invoice masuk periode berikutnya. Data diambil otomatis dari billing NIS setiap jam untuk periode berjalan dan periode sebelumnya.'
     },
+    referralFee: {
+        term: 'Biaya Referral',
+        text: () => 'Fee untuk reseller atau perujuk pelanggan, dari spreadsheet reseller per cabang. Untuk tipe Cashback, Monthly, atau tanpa tipe, fee ini mengurangi dasar komisi invoice tersebut; tipe OTC tidak mengurangi dasar komisi.'
+    },
     activationDate: {
         term: 'Tgl. Aktif',
         text: () => 'Tanggal layanan pertama kali diaktivasi di NIS. Mulai periode Oktober 2026, komisi New/Prorate dihitung di periode yang lebih belakang antara tanggal bayar dan tanggal aktif: dibayar Oktober tetapi baru aktif November masuk November, dan layanan yang belum diaktivasi belum dihitung.'

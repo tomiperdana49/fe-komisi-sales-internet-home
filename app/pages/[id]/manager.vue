@@ -488,7 +488,7 @@ const getInvoiceTabData = (key: string) => {
     return rows.filter(r => matchesSearch(r, transactionSearch.value))
 }
 
-const getInvoiceColumns = (key: string) => invoiceColumns(field => getInvoiceTabData(key).reduce((sum, r) => sum + r[field], 0), 'managerCommission', ['new', 'prorate', 'upgrade'].includes(key))
+const getInvoiceColumns = (key: string) => invoiceColumns(field => getInvoiceTabData(key).reduce((sum, r) => sum + r[field], 0), 'managerCommission', ['new', 'prorate', 'upgrade'].includes(key), key === 'recurring')
 
 // Most new services first; ties go to the higher total commission.
 const members = computed(() => [...(periodData.value?.members ?? [])]

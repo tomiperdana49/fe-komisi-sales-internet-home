@@ -78,6 +78,10 @@ export interface ManagerRecurringBasisItem {
     lateMonth: number;
     paidDate: string | null;
     amount: number;
+    /** Late items: the referral cut, the amount the late cut was taken from (subscription − referral) and its percentage. */
+    referral?: number;
+    basis?: number;
+    percentage?: number;
 }
 
 export interface ManagerCommissionData {

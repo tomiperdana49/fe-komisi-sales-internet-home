@@ -132,10 +132,16 @@
                     </h5>
                     <p v-if="box.rows.length === 0" class="text-sm text-gray-400 dark:text-gray-500">{{ box.empty ?? 'Tidak ada data' }}</p>
                     <ul v-else class="space-y-2">
-                        <li v-for="row in box.rows" :key="row.label" class="flex justify-between items-center gap-3 text-sm">
-                            <span class="text-gray-600 dark:text-gray-400">
+                        <li v-for="row in box.rows" :key="row.label" :class="['flex justify-between items-center gap-3 text-sm', row.subtotal ? 'pt-2 mt-1 border-t border-gray-200 dark:border-gray-700 font-semibold' : '']">
+                            <span :class="row.subtotal ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400'">
                                 <TermHint v-if="row.hint" :term="row.hint">{{ row.label }}</TermHint>
                                 <template v-else>{{ row.label }}</template>
+                                <button
+                                    v-if="row.onOpen && row.value"
+                                    type="button"
+                                    class="ml-1.5 text-xs font-medium text-primary-600 dark:text-primary-400 hover:underline"
+                                    @click="row.onOpen"
+                                >Lihat</button>
                             </span>
                             <span :class="['font-semibold tabular-nums', box.negative || (row.negative && row.value) ? 'text-red-500 dark:text-red-400' : row.value === 0 ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white']">
                                 {{ (box.negative || row.negative) && row.value ? '−' : '' }}{{ box.isCount ? `${row.value} layanan` : formatCurrency(row.value) }}
@@ -151,6 +157,7 @@
                 </div>
             </div>
         </div>
+        <RecurringBasisItemsModal v-model:open="lateItemsOpen" kind="late" personal :items="data.recurringLateItems ?? []" />
     </div>
 </template>
 
@@ -208,6 +215,9 @@ const manualRangeLabel = computed(() => {
 })
 // While the period runs the motivation line (tied to the provisional status, e.g. SP1) is swapped for a neutral one in the template.
 // NusaSelecta units sold vs. the grouped achievement shown next to it.
+const recurringReferralFee = computed(() => Number(props.data.recurringReferralFee ?? 0))
+const recurringLatePenalty = computed(() => Number(props.data.recurringLatePenalty ?? 0))
+const lateItemsOpen = ref(false)
 const nusaSelectaUnits = computed(() => (props.data.nusaSelectaNewUnits?.basicPrime ?? 0) + (props.data.nusaSelectaNewUnits?.ultra ?? 0))
 
 const serviceGroupOrder = ['Home', 'NusaSelecta', 'Nusafiber'] as const
@@ -264,7 +274,8 @@ const churnByGroup = computed(() => {
 
 interface FinancialBox {
     title: string
-    rows: { label: string; value: number; hint?: GlossaryKey; negative?: boolean }[]
+    /** `subtotal` draws a rule above the row: a running total before the rows that follow come off it. */
+    rows: { label: string; value: number; hint?: GlossaryKey; negative?: boolean; subtotal?: boolean; onOpen?: () => void }[]
     total?: number
     totalLabel?: string
     negative?: boolean
@@ -324,8 +335,16 @@ const financialBoxes = computed<FinancialBox[]>(() => {
         {
             title: 'Subscription Recurring',
             class: plainBox,
-            rows: recurringServiceGroupOrder.map(name => ({ label: name, value: g[name]?.recurring.subscription ?? 0 })),
-            total: b.recurring.subscription
+            // Subscription per group, then what comes off it before the rate: the result
+            // equals the sum of the recurring invoices' Dasar in the Recurring tab.
+            rows: [
+                ...recurringServiceGroupOrder.map(name => ({ label: name, value: g[name]?.recurring.subscription ?? 0 })),
+                { label: 'Total Subscription', value: b.recurring.subscription, subtotal: true },
+                { label: 'Biaya Referral', hint: 'referralFee' as GlossaryKey, value: recurringReferralFee.value, negative: true },
+                { label: 'Telat Bayar', hint: 'lateMonth' as GlossaryKey, value: recurringLatePenalty.value, negative: true, onOpen: () => { lateItemsOpen.value = true } }
+            ],
+            total: b.recurring.subscription - recurringReferralFee.value - recurringLatePenalty.value,
+            totalLabel: 'Dasar Komisi Recurring'
         },
         {
             title: 'Subscription Alat & Setup',

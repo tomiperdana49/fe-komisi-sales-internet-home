@@ -201,14 +201,14 @@ const emptyMessage = (name: string) => {
 }
 
 // Footer totals sum the rows shown, before churn; the churn deduction is shown in the Churn tab and the Total Komisi card.
-const boxTotal = (key: string, field: 'subscription' | 'mrc' | 'commission') =>
+const boxTotal = (key: string, field: 'subscription' | 'mrc' | 'commission' | 'referralFee') =>
     getTabData(key).reduce((sum, r) => sum + Number(r[field] ?? 0), 0)
 
 const ACTIVATION_TABS = ['new', 'prorate', 'upgrade']
 const getColumns = (key: string): TableColumn<any>[] => {
     if (key === 'churn') return churnColumns()
 
-    return invoiceColumns(field => boxTotal(key, field), 'commission', ACTIVATION_TABS.includes(key))
+    return invoiceColumns(field => boxTotal(key, field), 'commission', ACTIVATION_TABS.includes(key), key === 'recurring')
 }
 
 // --- Data fetching ---

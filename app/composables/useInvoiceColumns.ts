@@ -6,7 +6,7 @@ import type { TableColumn } from '@nuxt/ui'
 import type { GlossaryKey } from '~/composables/useGlossary'
 import type { ChurnRow, CommissionLineItem } from '~/types/sales'
 
-type TotalField = 'subscription' | 'mrc' | 'commission'
+type TotalField = 'subscription' | 'mrc' | 'commission' | 'referralFee'
 
 // Shared by the sales and manager pages so both invoice tables read the same way.
 export const useInvoiceColumns = () => {
@@ -19,7 +19,8 @@ export const useInvoiceColumns = () => {
     const shortDate = (d: string | null | undefined) => d ? new Date(d).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'
 
     // `withActivation` adds the service's activation date — for New/Prorate/Upgrade, which count once the service is active.
-    const invoiceColumns = (total: (field: TotalField) => number, commissionTerm: GlossaryKey = 'commission', withActivation = false): TableColumn<CommissionLineItem>[] => [
+    // `withReferral` adds the referral fee (with its type and reseller) — for the Recurring tab, where old customers' fees cut the commission basis.
+    const invoiceColumns = (total: (field: TotalField) => number, commissionTerm: GlossaryKey = 'commission', withActivation = false, withReferral = false): TableColumn<CommissionLineItem>[] => [
         {
             accessorKey: 'paidDate',
             header: 'Tgl. Bayar',
@@ -78,6 +79,21 @@ export const useInvoiceColumns = () => {
             footer: () => h('div', { class: 'hidden lg:block text-right font-bold' }, formatCurrency(total('mrc')))
         },
         { id: 'month', header: hintHeader('Lama Kontrak', 'contractMonths'), cell: ({ row }) => h('span', { class: 'font-medium' }, `${row.original.month} bln`) },
+        ...(withReferral
+            ? [{
+                id: 'referral',
+                header: hintHeader('Referral', 'referralFee'),
+                cell: ({ row }) => {
+                    const { referralFee, referralType, referralName } = row.original
+                    if (!referralFee) return h('span', { class: 'text-gray-400' }, '–')
+                    return h('div', { class: 'flex flex-col items-end min-w-[110px]' }, [
+                        h('span', { class: 'font-medium text-red-500 dark:text-red-400' }, `−${formatCurrency(referralFee)}`),
+                        h('span', { class: 'text-xs text-gray-500 dark:text-gray-400 whitespace-normal' }, [referralType || 'Tanpa tipe', referralName].filter(Boolean).join(' · '))
+                    ])
+                },
+                footer: () => h('div', { class: 'hidden lg:block text-right font-bold text-red-500 dark:text-red-400' }, formatCurrency(total('referralFee' as TotalField)))
+            } as TableColumn<CommissionLineItem>]
+            : []),
         { id: 'lateMonth', header: hintHeader('Telat Bayar', 'lateMonth'), cell: ({ row }) => h('span', { class: ['font-medium', row.original.lateMonth > 0 ? 'text-red-500 dark:text-red-400' : ''] }, row.original.lateMonth > 0 ? `${row.original.lateMonth} bln` : '–') },
         {
             id: 'commission',
