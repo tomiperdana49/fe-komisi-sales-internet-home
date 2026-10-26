@@ -17,6 +17,10 @@ const GLOSSARY = {
         term: 'Periode Perhitungan',
         text: () => 'Satu periode komisi berjalan dari tanggal 26 bulan sebelumnya sampai tanggal 25. Invoice masuk periode menurut tanggal bayarnya; bila dibayar sampai tanggal 25 tetapi baru diinput finance tanggal 27 atau sesudahnya di bulan yang sama, invoice masuk periode berikutnya. Data diambil otomatis dari billing NIS setiap jam untuk periode berjalan dan periode sebelumnya.'
     },
+    activationDate: {
+        term: 'Tgl. Aktif',
+        text: () => 'Tanggal layanan pertama kali diaktivasi di NIS. Mulai periode Oktober 2026, komisi New/Prorate dihitung di periode yang lebih belakang antara tanggal bayar dan tanggal aktif: dibayar Oktober tetapi baru aktif November masuk November, dan layanan yang belum diaktivasi belum dihitung.'
+    },
     periodClosed: {
         term: 'Periode Ditutup',
         text: () => 'Admin sudah menutup periode ini. Data tidak lagi ditarik ulang dari NIS, jadi angka komisi sudah final: pembayaran, churn, atau log call yang masuk belakangan tidak mengubahnya.'

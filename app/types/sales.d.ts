@@ -39,6 +39,8 @@ export interface CommissionLineItem {
     isApproved: boolean;
     isAdjusted: boolean;
     paidDate: string | null;
+    /** New-customer rows: the service's first activation; null for recurring (or rows pulled before it was recorded). */
+    activationDate?: string | null;
     subscription: number;
     mrc: number;
     referralFee: number;

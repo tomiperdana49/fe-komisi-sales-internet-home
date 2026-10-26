@@ -186,7 +186,7 @@ const productFilterModel = computed<string[]>({
         productFilter.value = pickedAll ? [] : value.filter(v => v !== ALL_PRODUCTS)
     }
 })
-const glossaryTerms: GlossaryKey[] = ['period', 'periodClosed', 'new', 'recurring', 'prorate', 'upgrade', 'alat', 'setup', 'churn', 'churnWaived', 'subscription', 'baseCommission', 'mrc', 'contractMonths', 'lateMonth', 'commission', 'activity', 'achievementStatus', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
+const glossaryTerms: GlossaryKey[] = ['period', 'periodClosed', 'new', 'activationDate', 'recurring', 'prorate', 'upgrade', 'alat', 'setup', 'churn', 'churnWaived', 'subscription', 'baseCommission', 'mrc', 'contractMonths', 'lateMonth', 'commission', 'activity', 'achievementStatus', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
 
 const getTabData = (key: string): any[] => {
     const rows: any[] = key === 'churn' ? churnData.value : invoiceItems.value.filter(i => i.type === key)
@@ -204,10 +204,11 @@ const emptyMessage = (name: string) => {
 const boxTotal = (key: string, field: 'subscription' | 'mrc' | 'commission') =>
     getTabData(key).reduce((sum, r) => sum + Number(r[field] ?? 0), 0)
 
+const ACTIVATION_TABS = ['new', 'prorate', 'upgrade']
 const getColumns = (key: string): TableColumn<any>[] => {
     if (key === 'churn') return churnColumns()
 
-    return invoiceColumns(field => boxTotal(key, field))
+    return invoiceColumns(field => boxTotal(key, field), 'commission', ACTIVATION_TABS.includes(key))
 }
 
 // --- Data fetching ---

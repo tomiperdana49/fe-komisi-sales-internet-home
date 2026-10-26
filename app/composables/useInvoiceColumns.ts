@@ -16,12 +16,22 @@ export const useInvoiceColumns = () => {
 
     const hintHeader = (label: string, term: GlossaryKey) => () => h(TermHint, { term }, () => label)
 
-    const invoiceColumns = (total: (field: TotalField) => number, commissionTerm: GlossaryKey = 'commission'): TableColumn<CommissionLineItem>[] => [
+    const shortDate = (d: string | null | undefined) => d ? new Date(d).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'
+
+    // `withActivation` adds the service's activation date — for New/Prorate/Upgrade, which count once the service is active.
+    const invoiceColumns = (total: (field: TotalField) => number, commissionTerm: GlossaryKey = 'commission', withActivation = false): TableColumn<CommissionLineItem>[] => [
         {
             accessorKey: 'paidDate',
             header: 'Tgl. Bayar',
-            cell: ({ row }) => row.original.paidDate ? new Date(row.original.paidDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'
+            cell: ({ row }) => shortDate(row.original.paidDate)
         },
+        ...(withActivation
+            ? [{
+                accessorKey: 'activationDate',
+                header: hintHeader('Tgl. Aktif', 'activationDate'),
+                cell: ({ row }) => shortDate(row.original.activationDate)
+            } as TableColumn<CommissionLineItem>]
+            : []),
         {
             id: 'label',
             header: 'Produk',

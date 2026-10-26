@@ -345,7 +345,7 @@ const UButton = resolveComponent('UButton')
 const { viewableMonths, yearItems, isOngoingUntil, shortDate } = usePeriodOptions()
 const { hintHeader, invoiceColumns, churnColumns, matchesSearch } = useInvoiceColumns()
 const { withTooltip } = useTextTooltip()
-const glossaryTerms: GlossaryKey[] = ['period', 'periodClosed', 'teamSize', 'baseTarget', 'finalTarget', 'teamAchievement', 'overrideNew', 'overrideRecurring', 'personalSales', 'cro', 'memberTotal', 'achievementStatus', 'churn', 'churnWaived', 'new', 'recurring', 'prorate', 'upgrade', 'alat', 'setup', 'subscription', 'baseCommission', 'mrc', 'contractMonths', 'lateMonth', 'managerCommission', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
+const glossaryTerms: GlossaryKey[] = ['period', 'periodClosed', 'teamSize', 'baseTarget', 'finalTarget', 'teamAchievement', 'overrideNew', 'overrideRecurring', 'personalSales', 'cro', 'memberTotal', 'achievementStatus', 'churn', 'churnWaived', 'new', 'activationDate', 'recurring', 'prorate', 'upgrade', 'alat', 'setup', 'subscription', 'baseCommission', 'mrc', 'contractMonths', 'lateMonth', 'managerCommission', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
 
 const employee = ref<Employee>()
 const { year, month: selectedMonth } = useSelectedPeriod()
@@ -488,7 +488,7 @@ const getInvoiceTabData = (key: string) => {
     return rows.filter(r => matchesSearch(r, transactionSearch.value))
 }
 
-const getInvoiceColumns = (key: string) => invoiceColumns(field => getInvoiceTabData(key).reduce((sum, r) => sum + r[field], 0), 'managerCommission')
+const getInvoiceColumns = (key: string) => invoiceColumns(field => getInvoiceTabData(key).reduce((sum, r) => sum + r[field], 0), 'managerCommission', ['new', 'prorate', 'upgrade'].includes(key))
 
 // Most new services first; ties go to the higher total commission.
 const members = computed(() => [...(periodData.value?.members ?? [])]
