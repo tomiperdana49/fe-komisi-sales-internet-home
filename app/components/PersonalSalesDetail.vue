@@ -77,7 +77,7 @@
                         <span :class="['text-sm font-semibold', groupColor[group]!.text]">
                             {{ group }}
                             <span v-if="group === 'NusaSelecta' && nusaSelectaUnits > 0" class="block text-xs font-normal opacity-80">
-                                {{ nusaSelectaUnits }} unit terjual
+                                {{ nusaSelectaUnits }} unit terjual<template v-if="nusaSelectaPromoUnits > 0"> (termasuk {{ nusaSelectaPromoUnits }} promo)</template>
                             </span>
                         </span>
                         <span :class="['text-lg sm:text-xl font-bold', groupColor[group]!.textStrong]">
@@ -90,6 +90,7 @@
                 </p>
                 <p v-else-if="nusaSelectaUnits > 0" class="text-xs text-gray-500 dark:text-gray-400">
                     Angka di kanan = pencapaian New. NusaSelecta dihitung berkelompok: 3 unit Basic/Prime atau 2 unit Ultra = 1 pencapaian.
+                    <template v-if="nusaSelectaPromoUnits > 0">Prime 100 promo Rp50.000: 3 unit promo = 1 unit Basic/Prime, jadi 9 promo = 1 pencapaian.</template>
                     Setiap unit tetap mendapat komisi, sehingga jumlah invoice di tab New bisa lebih banyak dari pencapaian.
                 </p>
             </div>
@@ -218,7 +219,8 @@ const manualRangeLabel = computed(() => {
 const recurringReferralFee = computed(() => Number(props.data.recurringReferralFee ?? 0))
 const recurringLatePenalty = computed(() => Number(props.data.recurringLatePenalty ?? 0))
 const lateItemsOpen = ref(false)
-const nusaSelectaUnits = computed(() => (props.data.nusaSelectaNewUnits?.basicPrime ?? 0) + (props.data.nusaSelectaNewUnits?.ultra ?? 0))
+const nusaSelectaPromoUnits = computed(() => props.data.nusaSelectaNewUnits?.promo ?? 0)
+const nusaSelectaUnits = computed(() => (props.data.nusaSelectaNewUnits?.basicPrime ?? 0) + (props.data.nusaSelectaNewUnits?.ultra ?? 0) + nusaSelectaPromoUnits.value)
 
 const serviceGroupOrder = ['Home', 'NusaSelecta', 'Nusafiber'] as const
 // Recurring-only: carves Digital Business and Access Business out of Home (KOMISI.md 3) — New-side boxes stay on the 3-way serviceGroupOrder above.
