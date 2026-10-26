@@ -11,7 +11,6 @@
                             <th class="py-2 pr-3 font-medium">Tgl Bayar</th>
                             <th v-if="kind === 'late'" class="py-2 pr-3 font-medium text-center">Telat</th>
                             <th class="py-2 pr-3 font-medium text-right">Subscription</th>
-                            <th v-if="kind === 'late'" class="py-2 pr-3 font-medium text-right">Referral</th>
                             <th class="py-2 font-medium text-right">{{ kind === 'late' ? 'Potongan' : 'Tidak Dihitung' }}</th>
                         </tr>
                     </thead>
@@ -26,7 +25,6 @@
                             <td class="py-2 pr-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">{{ item.paidDate ? formatDate(item.paidDate) : '-' }}</td>
                             <td v-if="kind === 'late'" class="py-2 pr-3 text-center text-red-500 dark:text-red-400 font-medium">{{ item.lateMonth }} bln</td>
                             <td class="py-2 pr-3 text-right tabular-nums">{{ formatCurrency(item.subscription) }}</td>
-                            <td v-if="kind === 'late'" class="py-2 pr-3 text-right tabular-nums text-gray-600 dark:text-gray-300">{{ item.referral ? `−${formatCurrency(item.referral)}` : '–' }}</td>
                             <td class="py-2 text-right tabular-nums">
                                 <div class="font-semibold">{{ formatCurrency(item.amount) }}</div>
                                 <div v-if="kind === 'late' && item.percentage !== undefined" class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
@@ -37,7 +35,7 @@
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td :colspan="(kind === 'late' ? 7 : 5) - (personal ? 1 : 0)" class="pt-3 pr-3 font-bold text-gray-900 dark:text-white">Total</td>
+                            <td :colspan="(kind === 'late' ? 6 : 5) - (personal ? 1 : 0)" class="pt-3 pr-3 font-bold text-gray-900 dark:text-white">Total</td>
                             <td class="pt-3 text-right tabular-nums font-bold text-gray-900 dark:text-white">{{ formatCurrency(total) }}</td>
                         </tr>
                     </tfoot>
@@ -63,7 +61,7 @@ const { formatCurrency, formatDate } = useFormat()
 
 const title = computed(() => props.kind === 'late' ? 'Potongan Telat Bayar' : 'Kenaikan Harga Perpanjangan')
 const description = computed(() => props.kind === 'late' && props.personal
-    ? 'Invoice recurring yang dibayar lewat jatuh tempo. Mulai Oktober 2026: Potongan = persentase telat × Subscription, lalu referral dikurangi sesudahnya. Potongan hilang bila invoice di-approve admin di Summary > Invoice.'
+    ? 'Invoice recurring yang dibayar lewat jatuh tempo. Mulai Oktober 2026: Potongan = persentase telat × Subscription (referral tidak mengurangi dasar potongan; referral dipotong terpisah di Biaya Referral). Potongan hilang bila invoice di-approve admin di Summary > Invoice.'
     : props.kind === 'late'
     ? 'Invoice recurring tim yang dibayar lewat jatuh tempo. Potongannya sama dengan potongan komisi AM; hilang bila invoice di-approve admin di Summary > Invoice.'
     : 'Kenaikan harga saat perpanjangan kontrak (label Perpanjangan). Dihitung sebagai recurring untuk AM, tapi tidak ikut dasar Overriding Recurring manager.')
