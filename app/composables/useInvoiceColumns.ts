@@ -105,7 +105,29 @@ export const useInvoiceColumns = () => {
                 footer: () => h('div', { class: 'hidden lg:block text-right font-bold text-red-500 dark:text-red-400' }, formatCurrency(total('referralFee' as TotalField)))
             } as TableColumn<CommissionLineItem>]
             : []),
-        { id: 'lateMonth', header: hintHeader('Telat Bayar', 'lateMonth'), cell: ({ row }) => h('span', { class: ['font-medium', row.original.lateMonth > 0 ? 'text-red-500 dark:text-red-400' : ''] }, row.original.lateMonth > 0 ? `${row.original.lateMonth} bln` : '–') },
+        {
+            id: 'lateMonth',
+            header: hintHeader('Telat Bayar', 'lateMonth'),
+            // A waived late payment cuts nothing: show the months struck through, with the approver's reason.
+            cell: ({ row }) => {
+                const r = row.original
+                if (r.lateMonth <= 0) return h('span', { class: 'font-medium' }, '–')
+                if (!r.isApproved) return h('span', { class: 'font-medium text-red-500 dark:text-red-400' }, `${r.lateMonth} bln`)
+                return h('div', { class: 'flex flex-col items-start max-w-[220px]' }, [
+                    h(TermHint, { term: 'lateWaived', class: 'mb-1' }, () => h(UBadge, { color: 'success', variant: 'subtle', size: 'sm' }, () => 'Dibebaskan')),
+                    h('span', { class: 'text-sm text-gray-400 line-through' }, `${r.lateMonth} bln`),
+                    r.approvalNote
+                        ? h('span', { class: 'text-[11px] text-gray-500 dark:text-gray-400 whitespace-normal mt-1' }, r.approvalNote)
+                        : null,
+                    r.approvedByName || r.approvedBy
+                        ? h('span', { class: 'text-[10px] text-gray-400' }, [
+                            r.approvedByName ?? r.approvedBy,
+                            r.approvedAt ? ` · ${new Date(r.approvedAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}` : ''
+                        ].join(''))
+                        : null
+                ])
+            }
+        },
         {
             id: 'commission',
             header: hintHeader('Komisi', commissionTerm),

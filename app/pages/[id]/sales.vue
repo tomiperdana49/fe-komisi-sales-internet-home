@@ -103,6 +103,10 @@
         </div>
 
         <div class="py-2">
+            <AdminChangesList :items="invoiceItems" :churn="churnData" />
+        </div>
+
+        <div class="py-2">
             <GlossaryPanel :terms="glossaryTerms" />
         </div>
 
@@ -186,7 +190,7 @@ const productFilterModel = computed<string[]>({
         productFilter.value = pickedAll ? [] : value.filter(v => v !== ALL_PRODUCTS)
     }
 })
-const glossaryTerms: GlossaryKey[] = ['period', 'periodClosed', 'new', 'activationDate', 'recurring', 'prorate', 'upgrade', 'alat', 'setup', 'churn', 'churnWaived', 'subscription', 'baseCommission', 'mrc', 'contractMonths', 'lateMonth', 'commission', 'activity', 'achievementStatus', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
+const glossaryTerms: GlossaryKey[] = ['period', 'periodClosed', 'new', 'activationDate', 'recurring', 'prorate', 'upgrade', 'alat', 'setup', 'churn', 'churnWaived', 'lateWaived', 'subscription', 'baseCommission', 'mrc', 'contractMonths', 'lateMonth', 'commission', 'activity', 'achievementStatus', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
 
 const getTabData = (key: string): any[] => {
     const rows: any[] = key === 'churn' ? churnData.value : invoiceItems.value.filter(i => i.type === key)

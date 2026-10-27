@@ -88,6 +88,10 @@ const GLOSSARY = {
         term: 'Masa Aktif',
         text: () => 'Lama layanan aktif, dari tanggal aktivasi sampai tanggal berhenti. Siklus tagihan (per 1, 6, atau 12 bulan) dipakai untuk menghitung nilai bulanan churn.'
     },
+    lateWaived: {
+        term: 'Dibebaskan',
+        text: () => 'Potongan telat bayar invoice ini dihapus karena sudah disetujui admin di Summary > Invoice. Alasan, nama yang menyetujui, dan waktunya tampil di bawahnya.'
+    },
     churnWaived: {
         term: 'Dibebaskan',
         text: () => 'Churn ini tidak memotong komisi maupun pencapaian. Dibebaskan oleh admin di Summary > Churn, atau otomatis dari log call NIS berisi "Churn = false" oleh approver. Catatan di bawahnya menunjukkan alasannya.'

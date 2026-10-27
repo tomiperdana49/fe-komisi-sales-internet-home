@@ -37,7 +37,16 @@ export interface CommissionLineItem {
     month: number;
     lateMonth: number;
     isApproved: boolean;
+    /** Why, by whom and when the late-payment waiver was approved; null while not approved (or approved before notes were recorded). */
+    approvalNote?: string | null;
+    approvedBy?: string | null;
+    approvedByName?: string | null;
+    approvedAt?: string | null;
     isAdjusted: boolean;
+    /** Latest manual adjustment of an adjusted row: why, by whom and when. */
+    adjustmentNote?: string | null;
+    adjustedByName?: string | null;
+    adjustedAt?: string | null;
     paidDate: string | null;
     /** Payment transaction date — what places the invoice in a period; paidDate is finance's input date. Null on rows pulled before it was recorded. */
     transactionDate?: string | null;
@@ -151,6 +160,9 @@ export interface ChurnRow {
     is_approved: boolean;
     /** Why an admin waived this churn (it then cuts nothing); null when not waived or no reason was recorded. */
     approval_note: string | null;
+    approved_by?: string | null;
+    approved_by_name?: string | null;
+    approved_at?: string | null;
     mrc: number;
     commission: number;
     commissionPercentage: number;
