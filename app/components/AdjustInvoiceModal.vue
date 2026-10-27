@@ -85,7 +85,10 @@
                             <UFormField label="Late Month" name="lateMonth">
                                 <UInput v-model.number="state.lateMonth" type="number" min="0" class="w-full" />
                             </UFormField>
-                            <UFormField label="Paid Date" name="paidDate">
+                            <UFormField label="Tgl. Transaksi Bayar" name="transactionDate" description="Ditampilkan sebagai Tgl. Bayar. Informasi saja, tidak mengubah komisi.">
+                                <UInput v-model="state.transactionDate" type="date" class="w-full" />
+                            </UFormField>
+                            <UFormField label="Tgl. Input Bayar (Paid Date)" name="paidDate">
                                 <UInput v-model="state.paidDate" type="date" class="w-full" />
                             </UFormField>
                             <UFormField label="Activation Date (Tgl. Aktif)" name="activationDate" description="Informasi saja, tidak mengubah komisi.">
@@ -179,6 +182,7 @@ const emptyState = () => ({
     month: 1,
     lateMonth: 0,
     paidDate: '',
+    transactionDate: '',
     activationDate: '',
     referralType: '',
     referralFee: 0,
@@ -211,6 +215,7 @@ function fillFromDetail(detail: SnapshotDetailItem | null) {
         month: Number(detail.month ?? 1),
         lateMonth: Number(detail.lateMonth ?? 0),
         paidDate: detail.paidDate ?? '',
+        transactionDate: detail.transactionDate ?? '',
         activationDate: detail.activationDate ?? '',
         referralType: detail.referralType ?? '',
         referralFee: Number(detail.referralFee ?? 0),
@@ -278,6 +283,7 @@ async function onSubmit() {
             month: state.month,
             lateMonth: state.lateMonth,
             paidDate: state.paidDate || null,
+            transactionDate: state.transactionDate || null,
             activationDate: state.activationDate || null,
             referralType: state.referralType || null,
             referralFee: state.referralFee,

@@ -21,6 +21,10 @@ const GLOSSARY = {
         term: 'Biaya Referral',
         text: () => 'Fee untuk reseller atau perujuk pelanggan, dari spreadsheet reseller per cabang. Untuk tipe Cashback, Monthly, atau tanpa tipe, fee ini mengurangi dasar komisi invoice tersebut; tipe OTC tidak mengurangi dasar komisi.'
     },
+    paidDate: {
+        term: 'Tgl. Bayar',
+        text: () => 'Tanggal transaksi pembayaran, yang menentukan periode komisi. Bila finance baru menginput pembayaran di hari lain, tanggal inputnya tampil di bawahnya. Pengecualian: dibayar sampai tgl 25 tetapi baru diinput tgl 27 ke atas di bulan invoice yang sama masuk periode berikutnya.'
+    },
     activationDate: {
         term: 'Tgl. Aktif',
         text: () => 'Tanggal layanan pertama kali diaktivasi di NIS. Mulai periode Oktober 2026, komisi New/Prorate dihitung di periode yang lebih belakang antara tanggal bayar dan tanggal aktif: dibayar Oktober tetapi baru aktif November masuk November, dan layanan yang belum diaktivasi belum dihitung.'

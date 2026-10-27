@@ -39,6 +39,8 @@ export interface CommissionLineItem {
     isApproved: boolean;
     isAdjusted: boolean;
     paidDate: string | null;
+    /** Payment transaction date — what places the invoice in a period; paidDate is finance's input date. Null on rows pulled before it was recorded. */
+    transactionDate?: string | null;
     /** New-customer rows: the service's first activation; null for recurring (or rows pulled before it was recorded). */
     activationDate?: string | null;
     subscription: number;

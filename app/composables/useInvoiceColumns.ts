@@ -18,13 +18,24 @@ export const useInvoiceColumns = () => {
 
     const shortDate = (d: string | null | undefined) => d ? new Date(d).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'
 
+    // Transaction date (what places the invoice in a period), with finance's input date under it when they differ.
+    const payDateCell = (item: { transactionDate?: string | null; paidDate: string | null }) => {
+        const date = item.transactionDate ?? item.paidDate
+        if (!item.transactionDate || !item.paidDate || item.transactionDate === item.paidDate) return shortDate(date)
+        return h('div', { class: 'flex flex-col' }, [
+            h('span', shortDate(date)),
+            h('span', { class: 'text-xs text-gray-500 dark:text-gray-400' }, `input ${shortDate(item.paidDate)}`)
+        ])
+    }
+
     // `withActivation` adds the service's activation date — for New/Prorate/Upgrade, which count once the service is active.
     // `withReferral` adds the referral fee (with its type and reseller) — for the Recurring tab, where old customers' fees cut the commission basis.
     const invoiceColumns = (total: (field: TotalField) => number, commissionTerm: GlossaryKey = 'commission', withActivation = false, withReferral = false): TableColumn<CommissionLineItem>[] => [
         {
-            accessorKey: 'paidDate',
-            header: 'Tgl. Bayar',
-            cell: ({ row }) => shortDate(row.original.paidDate)
+            id: 'paidDate',
+            accessorFn: (row) => row.transactionDate ?? row.paidDate,
+            header: hintHeader('Tgl. Bayar', 'paidDate'),
+            cell: ({ row }) => payDateCell(row.original)
         },
         ...(withActivation
             ? [{

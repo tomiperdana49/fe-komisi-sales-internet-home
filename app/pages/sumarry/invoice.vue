@@ -289,9 +289,19 @@ const columns: TableColumn<InvoiceSummaryItem>[] = [
         cell: ({ row }) => h('span', { class: 'text-sm text-gray-500 uppercase' }, row.original.category ?? '-')
     },
     {
-        accessorKey: 'paidDate',
+        id: 'paidDate',
+        accessorFn: (row) => row.transactionDate ?? row.paidDate,
         header: sortableHeader('Tgl. Bayar'),
-        cell: ({ row }) => h('div', { class: 'text-xs' }, row.original.paidDate ? formatDate(row.original.paidDate) : '-')
+        cell: ({ row }) => {
+            const { transactionDate, paidDate } = row.original
+            const date = transactionDate ?? paidDate
+            return h('div', { class: 'text-xs flex flex-col' }, [
+                h('span', date ? formatDate(date) : '-'),
+                transactionDate && paidDate && transactionDate !== paidDate
+                    ? h('span', { class: 'text-gray-500 dark:text-gray-400' }, `input ${formatDate(paidDate)}`)
+                    : null
+            ])
+        }
     },
     {
         accessorKey: 'subscription',

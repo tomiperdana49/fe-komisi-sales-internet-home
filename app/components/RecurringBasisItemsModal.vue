@@ -22,7 +22,7 @@
                             </td>
                             <td v-if="!personal" class="py-2 pr-3 text-gray-700 dark:text-gray-300">{{ item.salesName ?? '-' }}</td>
                             <td class="py-2 pr-3 text-gray-700 dark:text-gray-300">{{ item.serviceId ?? '-' }}</td>
-                            <td class="py-2 pr-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">{{ item.paidDate ? formatDate(item.paidDate) : '-' }}</td>
+                            <td class="py-2 pr-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">{{ (item.transactionDate ?? item.paidDate) ? formatDate(item.transactionDate ?? item.paidDate!) : '-' }}</td>
                             <td v-if="kind === 'late'" class="py-2 pr-3 text-center text-red-500 dark:text-red-400 font-medium">{{ item.lateMonth }} bln</td>
                             <td class="py-2 pr-3 text-right tabular-nums">{{ formatCurrency(item.subscription) }}</td>
                             <td class="py-2 text-right tabular-nums">
