@@ -50,7 +50,7 @@ import { computed } from 'vue'
 import type { ManagerRecurringBasisItem } from '~/types/manager'
 
 const props = defineProps<{
-    kind: 'renewal' | 'late'
+    kind: 'renewal' | 'late' | 'cpe'
     items: ManagerRecurringBasisItem[]
     /** One Account Manager's own invoices (AM dashboard): no Sales column, AM wording. */
     personal?: boolean
@@ -59,11 +59,13 @@ const props = defineProps<{
 const isOpen = defineModel<boolean>('open', { default: false })
 const { formatCurrency, formatDate } = useFormat()
 
-const title = computed(() => props.kind === 'late' ? 'Potongan Telat Bayar' : 'Kenaikan Harga Perpanjangan')
+const title = computed(() => props.kind === 'late' ? 'Potongan Telat Bayar' : props.kind === 'cpe' ? 'CPE Rental' : 'Kenaikan Harga Perpanjangan')
 const description = computed(() => props.kind === 'late' && props.personal
     ? 'Invoice recurring yang dibayar lewat jatuh tempo. Mulai Oktober 2026: Potongan = persentase telat × Subscription (referral tidak mengurangi dasar potongan; referral dipotong terpisah di Biaya Referral). Potongan hilang bila invoice di-approve admin di Summary > Invoice.'
     : props.kind === 'late'
     ? 'Invoice recurring tim yang dibayar lewat jatuh tempo. Potongannya sama dengan potongan komisi AM; hilang bila invoice di-approve admin di Summary > Invoice.'
+    : props.kind === 'cpe'
+    ? 'Recurring CPE Rental tim. Mulai Oktober 2026 tetap dihitung untuk AM, tapi tidak ikut dasar Overriding Recurring SM.'
     : 'Kenaikan harga saat perpanjangan kontrak (label Perpanjangan). Dihitung sebagai recurring untuk AM, tapi tidak ikut dasar Overriding Recurring manager.')
 const total = computed(() => props.items.reduce((sum, item) => sum + item.amount, 0))
 </script>

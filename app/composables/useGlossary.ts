@@ -199,12 +199,12 @@ const GLOSSARY = {
     },
     overrideNew: {
         term: 'Overriding New',
-        text: () => 'Bagian manager dari total komisi New, Prorate, dan Alat seluruh anggota tim, sesuai persentase Capaian Tim.'
+        text: () => 'Bagian manager dari total komisi New dan Prorate seluruh anggota tim, sesuai persentase Capaian Tim. Komisi Alat ikut dihitung hanya sebelum Oktober 2026; Upgrade dan Setup tidak ikut.'
     },
     overrideRecurring: {
         term: 'Overriding Recurring',
         text: (r: Rules) => r
-            ? `Persentase dari total subscription recurring tim (setelah dikurangi referral fee dan potongan Telat Bayar; invoice Perpanjangan tidak ikut). Customer lama akses ${pct(r.manager.recurringOnTarget)} bila Capai Target, ${pct(r.manager.recurringMissedTarget)} bila tidak; Digital Business Internal & IP Public ${pct(r.manager.recurringDigitalBusinessInternalOnTarget)} / ${pct(r.manager.recurringDigitalBusinessInternalMissedTarget)}; Digital Business Resell ${pct(r.manager.recurringDigitalBusinessResellOnTarget)} / ${pct(r.manager.recurringDigitalBusinessResellMissedTarget)}.`
+            ? `Persentase dari total subscription recurring tim (setelah dikurangi referral fee dan potongan Telat Bayar; invoice Perpanjangan tidak ikut, dan mulai Oktober 2026 CPE Rental juga tidak ikut). Customer lama akses ${pct(r.manager.recurringOnTarget)} bila Capai Target, ${pct(r.manager.recurringMissedTarget)} bila tidak; Digital Business Internal & IP Public ${pct(r.manager.recurringDigitalBusinessInternalOnTarget)} / ${pct(r.manager.recurringDigitalBusinessInternalMissedTarget)}; Digital Business Resell ${pct(r.manager.recurringDigitalBusinessResellOnTarget)} / ${pct(r.manager.recurringDigitalBusinessResellMissedTarget)}.`
             : 'Persentase dari total subscription recurring tim; lebih tinggi bila tim Capai Target.'
     },
     personalSales: {

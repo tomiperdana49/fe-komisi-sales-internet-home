@@ -125,7 +125,7 @@
                                         <span class="font-semibold text-gray-900 dark:text-white tabular-nums">{{ formatCurrency(periodData.override.newCommission) }}</span>
                                     </div>
                                     <p class="text-xs text-gray-500 dark:text-gray-400">
-                                        {{ periodData.override.newCommissionRate }}% × komisi New, Prorate &amp; Alat tim {{ formatCurrency(periodData.teamTotals.newCommission) }}
+                                        {{ periodData.override.newCommissionRate }}% × komisi {{ alatInOverride ? 'New, Prorate &amp; Alat' : 'New &amp; Prorate' }} tim {{ formatCurrency(periodData.teamTotals.newCommission) }}
                                     </p>
                                 </li>
                                 <li>
@@ -179,7 +179,7 @@
                             <UIcon name="i-heroicons-squares-2x2" class="w-4 h-4 sm:w-5 sm:h-5 text-primary-500" />
                             Produksi Tim per Produk
                         </h4>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3 md:mb-4">Total tim adalah gabungan seluruh anggota tim; kotak Recurring juga memuat invoice Customer Relation Officer. Churn hanya mengurangi angka New, tidak Recurring. Total tim pada Pencapaian New sama dengan Capaian Tim; penjualan pribadi manager ditampilkan terpisah dan dijumlahkan ke Total area. NusaSelecta dihitung dalam pencapaian, bukan jumlah unit. Subscription Baru = New, Prorate &amp; Upgrade (sama dengan halaman AM); MRC Baru hanya New &amp; Upgrade. Penjualan Alat dan Setup ada di kolom Alat &amp; Setup dan tidak menambah Pencapaian New. Di tabel Anggota Tim, Komisi New = New, Prorate &amp; Upgrade dan komisi Alat ada di Komisi Alat &amp; Setup; dasar Overriding New tetap komisi New, Prorate &amp; Alat (lihat Rincian Komisi Manager).</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3 md:mb-4">Total tim adalah gabungan seluruh anggota tim; kotak Recurring juga memuat invoice Customer Relation Officer. Churn hanya mengurangi angka New, tidak Recurring. Total tim pada Pencapaian New sama dengan Capaian Tim; penjualan pribadi manager ditampilkan terpisah dan dijumlahkan ke Total area. NusaSelecta dihitung dalam pencapaian, bukan jumlah unit. Subscription Baru = New, Prorate &amp; Upgrade (sama dengan halaman AM); MRC Baru hanya New &amp; Upgrade. Penjualan Alat dan Setup ada di kolom Alat &amp; Setup dan tidak menambah Pencapaian New. Di tabel Anggota Tim, Komisi New = New, Prorate &amp; Upgrade dan komisi Alat ada di Komisi Alat &amp; Setup; dasar Overriding New lihat Rincian Komisi Manager. Mulai Oktober 2026 komisi Alat, Setup &amp; CPE Rental tim tidak dibawa ke SM (tidak ikut Overriding New maupun Overriding Recurring).</p>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                             <div v-for="box in teamServiceBoxes" :key="box.title" class="p-4 rounded-xl border border-gray-200 dark:border-gray-800">
                                 <h5 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 pb-2 border-b border-gray-200 dark:border-gray-700">
@@ -475,6 +475,9 @@ const teamServiceBoxes = computed<TeamServiceBox[]>(() => {
     ]
 })
 
+// KOMISI.md 6.C: team Alat commission feeds the Overriding New only before October 2026.
+const alatInOverride = computed(() => (periodData.value?.period ?? '') < '202610')
+
 // How the Subscription Recurring "Total tim" card gets down to the
 // Overriding Recurring basis; zero adjustments are left out.
 const recurringBasisLines = computed(() => {
@@ -485,6 +488,7 @@ const recurringBasisLines = computed(() => {
     const lines: Line[] = [
         { label: 'Total tim (Subscription Recurring)', value: b.teamSubscription, sign: '' },
         minus('Kenaikan harga perpanjangan', b.renewalExcluded, 'renewal', b.renewalItems),
+        minus('CPE Rental (tidak dihitung SM)', b.cpeExcluded ?? 0, 'cpe', b.cpeItems),
         minus('Potongan referral', b.referralDeduction),
         minus('Potongan telat bayar', b.latePenalty, 'late', b.lateItems),
         minus('Lainnya', b.otherAdjustment)
@@ -492,7 +496,7 @@ const recurringBasisLines = computed(() => {
     return lines.filter((line, i) => i === 0 || Math.round(line.value) !== 0)
 })
 
-type BasisItemsKind = 'renewal' | 'late'
+type BasisItemsKind = 'renewal' | 'late' | 'cpe'
 const basisItemsOpen = ref(false)
 const basisItemsKind = ref<BasisItemsKind>('renewal')
 const basisItems = ref<ManagerRecurringBasisItem[]>([])
