@@ -67,6 +67,8 @@ export interface CommissionRules {
         recurringDigitalBusinessInternalMissedTarget: number;
         recurringDigitalBusinessResellOnTarget: number;
         recurringDigitalBusinessResellMissedTarget: number;
+        /** The manager's own Digital Business Internal & IP Public recurring, from October 2026. */
+        personalDigitalBusinessInternal: number;
     };
 }
 
