@@ -32,8 +32,12 @@ const SCALARS: { section: string; path: [keyof CommissionRules, string]; label: 
     { section: 'Target & Status', path: ['achievement', 'probationVeryGood'], label: 'Probation — Very Good', fmt: num },
     { section: 'Target & Status', path: ['achievement', 'probationAverage'], label: 'Probation — Average', fmt: num },
     { section: 'Bonus', path: ['bonus', 'excessPerUnit'], label: 'Bonus Kelebihan Service per layanan', fmt: rupiah },
-    { section: 'Sales Manager', path: ['manager', 'recurringOnTarget'], label: 'Overriding Recurring — capai target', fmt: pct },
-    { section: 'Sales Manager', path: ['manager', 'recurringMissedTarget'], label: 'Overriding Recurring — tidak capai target', fmt: pct }
+    { section: 'Sales Manager', path: ['manager', 'recurringOnTarget'], label: 'Overriding Recurring akses — capai target', fmt: pct },
+    { section: 'Sales Manager', path: ['manager', 'recurringMissedTarget'], label: 'Overriding Recurring akses — tidak capai target', fmt: pct },
+    { section: 'Sales Manager', path: ['manager', 'recurringDigitalBusinessInternalOnTarget'], label: 'Overriding Recurring DB Internal & IP Public — capai target', fmt: pct },
+    { section: 'Sales Manager', path: ['manager', 'recurringDigitalBusinessInternalMissedTarget'], label: 'Overriding Recurring DB Internal & IP Public — tidak capai target', fmt: pct },
+    { section: 'Sales Manager', path: ['manager', 'recurringDigitalBusinessResellOnTarget'], label: 'Overriding Recurring DB Resell — capai target', fmt: pct },
+    { section: 'Sales Manager', path: ['manager', 'recurringDigitalBusinessResellMissedTarget'], label: 'Overriding Recurring DB Resell — tidak capai target', fmt: pct }
 ]
 
 const PRODUCT_FIELDS: { key: keyof CommissionProductRule; label: string; fmt: (v: any) => string }[] = [

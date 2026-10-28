@@ -348,8 +348,12 @@
                                         <UButton v-if="canEdit" icon="i-lucide-plus" variant="soft" size="sm" @click="form.manager.newCommissionTiers.push({ minAchievement: 0, rate: 0 })">Tambah Tier</UButton>
 
                                         <h4 class="text-sm font-semibold text-gray-900 dark:text-white pt-4">Overriding Recurring (%)</h4>
-                                        <RuleNumber v-model="form.manager.recurringOnTarget" label="Tim capai target" :disabled="!canEdit" />
-                                        <RuleNumber v-model="form.manager.recurringMissedTarget" label="Tim tidak capai target" :disabled="!canEdit" />
+                                        <RuleNumber v-model="form.manager.recurringOnTarget" label="Customer lama akses — tim capai target" :disabled="!canEdit" />
+                                        <RuleNumber v-model="form.manager.recurringMissedTarget" label="Customer lama akses — tim tidak capai target" :disabled="!canEdit" />
+                                        <RuleNumber v-model="form.manager.recurringDigitalBusinessInternalOnTarget" label="DB Internal & IP Public — tim capai target" :disabled="!canEdit" />
+                                        <RuleNumber v-model="form.manager.recurringDigitalBusinessInternalMissedTarget" label="DB Internal & IP Public — tim tidak capai target" :disabled="!canEdit" />
+                                        <RuleNumber v-model="form.manager.recurringDigitalBusinessResellOnTarget" label="DB Resell — tim capai target" :disabled="!canEdit" />
+                                        <RuleNumber v-model="form.manager.recurringDigitalBusinessResellMissedTarget" label="DB Resell — tim tidak capai target" :disabled="!canEdit" />
                                     </section>
                                 </div>
                             </template>

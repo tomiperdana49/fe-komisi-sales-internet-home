@@ -133,9 +133,15 @@
                                         <span class="text-gray-600 dark:text-gray-400"><TermHint term="overrideRecurring">Overriding Recurring</TermHint></span>
                                         <span class="font-semibold text-gray-900 dark:text-white tabular-nums">{{ formatCurrency(periodData.override.recurringCommission) }}</span>
                                     </div>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                                    <p v-if="recurringRateLines.length <= 1" class="text-xs text-gray-500 dark:text-gray-400">
                                         {{ periodData.override.recurringCommissionRate }}% × subscription recurring tim {{ formatCurrency(periodData.override.teamRecurringSubscriptionNet) }}
                                     </p>
+                                    <ul v-else class="text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
+                                        <li v-for="line in recurringRateLines" :key="line.label" class="flex justify-between gap-3">
+                                            <span>{{ line.rate }}% × {{ line.label }} {{ formatCurrency(line.basis) }}</span>
+                                            <span class="tabular-nums">{{ formatCurrency(line.basis * line.rate / 100) }}</span>
+                                        </li>
+                                    </ul>
                                     <ul v-if="recurringBasisLines.length" class="mt-1 space-y-0.5 text-xs text-gray-500 dark:text-gray-400">
                                         <li v-for="line in recurringBasisLines" :key="line.label" class="flex justify-between gap-3">
                                             <button
@@ -370,8 +376,19 @@ const totalParts = computed<{ label: string; hint: GlossaryKey; value: number }[
     return [
         { label: 'Penjualan Pribadi', hint: 'personalSales', value: personalTotal.value },
         { label: `Overriding New (${d.override.newCommissionRate}%)`, hint: 'overrideNew', value: d.override.newCommission },
-        { label: `Overriding Recurring (${d.override.recurringCommissionRate}%)`, hint: 'overrideRecurring', value: d.override.recurringCommission }
+        { label: recurringRateLines.value.length > 1 ? 'Overriding Recurring' : `Overriding Recurring (${d.override.recurringCommissionRate}%)`, hint: 'overrideRecurring', value: d.override.recurringCommission }
     ]
+})
+
+// Overriding Recurring per rate (access / Digital Business Internal & IP Public / Resell); only the parts the team has.
+const recurringRateLines = computed(() => {
+    const k = periodData.value?.override.recurringByKind
+    if (!k) return []
+    return [
+        { label: 'cust lama akses', ...k.access },
+        { label: 'DB Internal & IP Public', ...k.digitalBusinessInternal },
+        { label: 'DB Resell', ...k.digitalBusinessResell }
+    ].filter(line => line.basis !== 0)
 })
 
 const targetProgress = computed(() => {

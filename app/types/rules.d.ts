@@ -63,6 +63,10 @@ export interface CommissionRules {
         newCommissionTiers: { minAchievement: number; rate: number }[];
         recurringOnTarget: number;
         recurringMissedTarget: number;
+        recurringDigitalBusinessInternalOnTarget: number;
+        recurringDigitalBusinessInternalMissedTarget: number;
+        recurringDigitalBusinessResellOnTarget: number;
+        recurringDigitalBusinessResellMissedTarget: number;
     };
 }
 

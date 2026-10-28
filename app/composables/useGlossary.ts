@@ -204,7 +204,7 @@ const GLOSSARY = {
     overrideRecurring: {
         term: 'Overriding Recurring',
         text: (r: Rules) => r
-            ? `Persentase dari total subscription recurring tim (setelah dikurangi referral fee dan potongan Telat Bayar; invoice Perpanjangan tidak ikut): ${pct(r.manager.recurringOnTarget)} bila Capai Target, ${pct(r.manager.recurringMissedTarget)} bila tidak.`
+            ? `Persentase dari total subscription recurring tim (setelah dikurangi referral fee dan potongan Telat Bayar; invoice Perpanjangan tidak ikut). Customer lama akses ${pct(r.manager.recurringOnTarget)} bila Capai Target, ${pct(r.manager.recurringMissedTarget)} bila tidak; Digital Business Internal & IP Public ${pct(r.manager.recurringDigitalBusinessInternalOnTarget)} / ${pct(r.manager.recurringDigitalBusinessInternalMissedTarget)}; Digital Business Resell ${pct(r.manager.recurringDigitalBusinessResellOnTarget)} / ${pct(r.manager.recurringDigitalBusinessResellMissedTarget)}.`
             : 'Persentase dari total subscription recurring tim; lebih tinggi bila tim Capai Target.'
     },
     personalSales: {

@@ -54,6 +54,8 @@ export interface ManagerOverride {
     recurringCommissionRate: number;
     recurringCommission: number;
     teamRecurringSubscriptionNet: number;
+    /** teamRecurringSubscriptionNet split by overriding rate: access, Digital Business Internal (incl. IP Public), Digital Business Resell. */
+    recurringByKind?: Record<'access' | 'digitalBusinessInternal' | 'digitalBusinessResell', { basis: number; rate: number }>;
     /** Subscription Recurring Total tim − renewalExcluded − referralDeduction − latePenalty − otherAdjustment = teamRecurringSubscriptionNet. */
     recurringBasis?: {
         teamSubscription: number;
