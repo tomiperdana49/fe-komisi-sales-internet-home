@@ -101,6 +101,9 @@ export interface ManagerCommissionData {
         recurringCommission: number;
         newSubscription: number;
         newMrc: number;
+        /** Members' recurring referral and late-payment cuts (the Subscription Recurring column is net of them). */
+        recurringReferralFee?: number;
+        recurringLatePenalty?: number;
         byServiceGroup: Record<ManagerServiceGroup, ManagerServiceGroupTotal>;
         /** The manager's own personal sales, kept apart so byServiceGroup's new count matches team activity. */
         personalByServiceGroup: Record<ManagerServiceGroup, ManagerServiceGroupTotal>;
