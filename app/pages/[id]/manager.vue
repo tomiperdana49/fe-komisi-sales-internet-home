@@ -161,9 +161,18 @@
                                         </li>
                                     </ul>
                                 </li>
-                                <li class="flex justify-between">
-                                    <span class="text-gray-600 dark:text-gray-400"><TermHint term="personalSales">Penjualan Pribadi</TermHint></span>
-                                    <span class="font-semibold text-gray-900 dark:text-white tabular-nums">{{ formatCurrency(personalTotal) }}</span>
+                                <li>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-400"><TermHint term="personalSales">Penjualan Pribadi</TermHint></span>
+                                        <span class="font-semibold text-gray-900 dark:text-white tabular-nums">{{ formatCurrency(personalTotal) }}</span>
+                                    </div>
+                                    <ul v-if="personalLines.length" class="mt-1 space-y-0.5 text-xs text-gray-500 dark:text-gray-400">
+                                        <li v-for="line in personalLines" :key="line.label" class="flex justify-between gap-3">
+                                            <span>{{ line.label }}</span>
+                                            <span class="tabular-nums whitespace-nowrap">{{ line.sign }}{{ formatCurrency(line.value) }}</span>
+                                        </li>
+                                        <li v-if="personalRecurringBasisNote" class="pt-0.5 border-t border-gray-200 dark:border-gray-700">{{ personalRecurringBasisNote }}</li>
+                                    </ul>
                                 </li>
                                 <li class="flex justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
                                     <span class="font-bold text-gray-900 dark:text-white">Total Diterima</span>
@@ -378,6 +387,52 @@ const personalTotal = computed(() => {
     const p = periodData.value?.personal
     if (!p) return 0
     return p.total.commission + p.bonusBulanan + p.bonusKelebihanService + p.consistencyBonus
+})
+
+// Where Penjualan Pribadi comes from: the manager's own invoices per type and
+// commission rate, then churn and bonuses (sums to personalTotal).
+const PERSONAL_TYPE_LABEL: Record<string, string> = { new: 'New', prorate: 'Prorate', upgrade: 'Upgrade', recurring: 'Recurring', alat: 'Alat', setup: 'Setup' }
+const PERSONAL_TYPE_ORDER = ['new', 'prorate', 'upgrade', 'recurring', 'setup', 'alat']
+const personalLines = computed(() => {
+    const p = periodData.value?.personal
+    if (!p) return []
+    const groups = new Map<string, { type: string; rate: number; count: number; basis: number; value: number }>()
+    for (const item of p.items) {
+        if (!item.commission) continue
+        const key = `${item.type}|${item.commissionPercentage}`
+        const g = groups.get(key) ?? { type: item.type, rate: item.commissionPercentage, count: 0, basis: 0, value: 0 }
+        g.count++
+        g.basis += item.baseCommission
+        g.value += item.commission
+        groups.set(key, g)
+    }
+    const lines: { label: string; value: number; sign: string }[] = [...groups.values()]
+        .sort((a, b) => PERSONAL_TYPE_ORDER.indexOf(a.type) - PERSONAL_TYPE_ORDER.indexOf(b.type) || b.rate - a.rate)
+        .map(g => ({
+            label: `${PERSONAL_TYPE_LABEL[g.type] ?? g.type} (${g.count}): ${Number(g.rate.toFixed(2))}% × ${formatCurrency(g.basis)}`,
+            value: g.value,
+            sign: ''
+        }))
+    const extra = [
+        { label: `Potongan churn (${p.deduction.count})`, value: p.deduction.commission, sign: '− ' },
+        { label: 'Bonus Bulanan', value: p.bonusBulanan, sign: '+ ' },
+        { label: 'Bonus Kelebihan Service', value: p.bonusKelebihanService, sign: '+ ' },
+        { label: 'Bonus Konsistensi', value: p.consistencyBonus, sign: '+ ' }
+    ]
+    return [...lines, ...extra.filter(line => Math.round(line.value) !== 0)]
+})
+
+// The recurring rows above are rate × Dasar; say how Dasar came from the subscription when cuts applied.
+const personalRecurringBasisNote = computed(() => {
+    const p = periodData.value?.personal
+    if (!p) return ''
+    const referral = p.recurringReferralFee ?? 0
+    const late = p.recurringLatePenalty ?? 0
+    if (!Math.round(referral) && !Math.round(late)) return ''
+    const parts = [`Dasar recurring = subscription ${formatCurrency(p.breakdown.recurring.subscription)}`]
+    if (Math.round(referral)) parts.push(`− referral ${formatCurrency(referral)}`)
+    if (Math.round(late)) parts.push(`− telat bayar ${formatCurrency(late)}`)
+    return parts.join(' ')
 })
 
 const totalParts = computed<{ label: string; hint: GlossaryKey; value: number }[]>(() => {
