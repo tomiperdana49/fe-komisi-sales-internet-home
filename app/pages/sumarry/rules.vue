@@ -354,9 +354,6 @@
                                         <RuleNumber v-model="form.manager.recurringDigitalBusinessInternalMissedTarget" label="DB Internal & IP Public — tim tidak capai target" :disabled="!canEdit" />
                                         <RuleNumber v-model="form.manager.recurringDigitalBusinessResellOnTarget" label="DB Resell — tim capai target" :disabled="!canEdit" />
                                         <RuleNumber v-model="form.manager.recurringDigitalBusinessResellMissedTarget" label="DB Resell — tim tidak capai target" :disabled="!canEdit" />
-
-                                        <h4 class="text-sm font-semibold text-gray-900 dark:text-white pt-4">Penjualan Pribadi SM (%)</h4>
-                                        <RuleNumber v-model="form.manager.personalDigitalBusinessInternal" label="Recurring DB Internal & IP Public milik SM sendiri (mulai Oktober 2026)" :disabled="!canEdit" />
                                     </section>
                                 </div>
                             </template>

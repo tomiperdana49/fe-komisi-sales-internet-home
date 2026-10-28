@@ -37,8 +37,7 @@ const SCALARS: { section: string; path: [keyof CommissionRules, string]; label: 
     { section: 'Sales Manager', path: ['manager', 'recurringDigitalBusinessInternalOnTarget'], label: 'Overriding Recurring DB Internal & IP Public — capai target', fmt: pct },
     { section: 'Sales Manager', path: ['manager', 'recurringDigitalBusinessInternalMissedTarget'], label: 'Overriding Recurring DB Internal & IP Public — tidak capai target', fmt: pct },
     { section: 'Sales Manager', path: ['manager', 'recurringDigitalBusinessResellOnTarget'], label: 'Overriding Recurring DB Resell — capai target', fmt: pct },
-    { section: 'Sales Manager', path: ['manager', 'recurringDigitalBusinessResellMissedTarget'], label: 'Overriding Recurring DB Resell — tidak capai target', fmt: pct },
-    { section: 'Sales Manager', path: ['manager', 'personalDigitalBusinessInternal'], label: 'Recurring DB Internal & IP Public pribadi SM', fmt: pct }
+    { section: 'Sales Manager', path: ['manager', 'recurringDigitalBusinessResellMissedTarget'], label: 'Overriding Recurring DB Resell — tidak capai target', fmt: pct }
 ]
 
 const PRODUCT_FIELDS: { key: keyof CommissionProductRule; label: string; fmt: (v: any) => string }[] = [
