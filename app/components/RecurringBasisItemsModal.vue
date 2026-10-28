@@ -11,7 +11,7 @@
                             <th class="py-2 pr-3 font-medium">Tgl Bayar</th>
                             <th v-if="kind === 'late'" class="py-2 pr-3 font-medium text-center">Telat</th>
                             <th class="py-2 pr-3 font-medium text-right">Subscription</th>
-                            <th class="py-2 font-medium text-right">{{ kind === 'late' ? 'Potongan' : 'Tidak Dihitung' }}</th>
+                            <th class="py-2 font-medium text-right">{{ kind === 'late' ? 'Potongan' : kind === 'db' ? 'Dasar' : 'Tidak Dihitung' }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -21,7 +21,7 @@
                                 <div class="text-xs text-gray-500">{{ item.customerId }}</div>
                             </td>
                             <td v-if="!personal" class="py-2 pr-3 text-gray-700 dark:text-gray-300">{{ item.salesName ?? '-' }}</td>
-                            <td class="py-2 pr-3 text-gray-700 dark:text-gray-300">{{ item.serviceId ?? '-' }}</td>
+                            <td class="py-2 pr-3 text-gray-700 dark:text-gray-300">{{ item.serviceName ?? item.serviceId ?? '-' }}</td>
                             <td class="py-2 pr-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">{{ (item.transactionDate ?? item.paidDate) ? formatDate(item.transactionDate ?? item.paidDate!) : '-' }}</td>
                             <td v-if="kind === 'late'" class="py-2 pr-3 text-center text-red-500 dark:text-red-400 font-medium">{{ item.lateMonth }} bln</td>
                             <td class="py-2 pr-3 text-right tabular-nums">{{ formatCurrency(item.subscription) }}</td>
@@ -50,7 +50,7 @@ import { computed } from 'vue'
 import type { ManagerRecurringBasisItem } from '~/types/manager'
 
 const props = defineProps<{
-    kind: 'renewal' | 'late'
+    kind: 'renewal' | 'late' | 'db'
     items: ManagerRecurringBasisItem[]
     /** One Account Manager's own invoices (AM dashboard): no Sales column, AM wording. */
     personal?: boolean
@@ -59,9 +59,11 @@ const props = defineProps<{
 const isOpen = defineModel<boolean>('open', { default: false })
 const { formatCurrency, formatDate } = useFormat()
 
-const title = computed(() => props.kind === 'late' ? 'Potongan Telat Bayar' : 'Kenaikan Harga Perpanjangan')
+const title = computed(() => props.kind === 'late' ? 'Potongan Telat Bayar' : props.kind === 'db' ? 'Digital Business Pribadi Manager' : 'Kenaikan Harga Perpanjangan')
 const description = computed(() => props.kind === 'late' && props.personal
     ? 'Invoice recurring yang dibayar lewat jatuh tempo. Mulai Oktober 2026: Potongan = persentase telat × Subscription (referral tidak mengurangi dasar potongan; referral dipotong terpisah di Biaya Referral). Potongan hilang bila invoice di-approve admin di Summary > Invoice.'
+    : props.kind === 'db'
+    ? 'Recurring Digital Business (termasuk IP Public) atas nama manager sendiri. Dasar = subscription setelah referral dan potongan telat bayar; komisinya ikut Penjualan Pribadi dengan rate Digital Business.'
     : props.kind === 'late'
     ? 'Invoice recurring tim yang dibayar lewat jatuh tempo. Potongannya sama dengan potongan komisi AM; hilang bila invoice di-approve admin di Summary > Invoice.'
     : 'Kenaikan harga saat perpanjangan kontrak (label Perpanjangan). Dihitung sebagai recurring untuk AM, tapi tidak ikut dasar Overriding Recurring manager.')

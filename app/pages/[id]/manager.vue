@@ -246,13 +246,24 @@
                                             Tidak mengurangi Capaian Tim; hanya memotong komisi Penjualan Pribadi manager.
                                         </li>
                                     </template>
-                                    <li v-if="box.personalDigitalBusiness" class="flex justify-between items-center gap-3 text-sm">
+                                    <li class="flex justify-between items-center text-sm pt-2 border-t border-gray-200 dark:border-gray-700">
+                                        <span class="font-bold text-gray-900 dark:text-white">Total area</span>
+                                        <span class="font-bold text-gray-900 dark:text-white tabular-nums">{{ box.isCount ? box.total + box.personal : formatCurrency(box.total + box.personal) }}</span>
+                                    </li>
+                                    <!-- Kept outside Total area, as the team sheet totals Cust lama Akses apart from Data Center & Resell. -->
+                                    <li v-if="box.personalDigitalBusiness" class="flex justify-between items-center gap-3 text-sm pt-2 border-t border-dashed border-gray-200 dark:border-gray-700">
                                         <span class="text-gray-600 dark:text-gray-400">Pribadi manager (Digital Business)</span>
                                         <span class="font-semibold tabular-nums text-gray-900 dark:text-white">{{ formatCurrency(box.personalDigitalBusiness) }}</span>
                                     </li>
-                                    <li class="flex justify-between items-center text-sm pt-2 border-t border-gray-200 dark:border-gray-700">
-                                        <span class="font-bold text-gray-900 dark:text-white">Total area</span>
-                                        <span class="font-bold text-gray-900 dark:text-white tabular-nums">{{ box.isCount ? box.total + box.personal : formatCurrency(box.total + box.personal + box.personalDigitalBusiness) }}</span>
+                                    <li v-for="part in box.personalDigitalBusinessParts" :key="part.label" class="flex justify-between items-center gap-3 text-xs pl-3">
+                                        <button
+                                            type="button"
+                                            class="text-left text-gray-500 dark:text-gray-400 underline decoration-dotted underline-offset-2 hover:text-primary-500 transition-colors"
+                                            @click="openBasisItems('db', part.items)"
+                                        >
+                                            {{ part.label }} ({{ part.items.length }})
+                                        </button>
+                                        <span class="tabular-nums text-gray-600 dark:text-gray-300">{{ formatCurrency(part.value) }}</span>
                                     </li>
                                 </ul>
                             </div>
@@ -361,7 +372,7 @@
             <GlossaryPanel :terms="glossaryTerms" />
         </div>
 
-        <RecurringBasisItemsModal v-model:open="basisItemsOpen" :kind="basisItemsKind" :items="basisItems" />
+        <RecurringBasisItemsModal v-model:open="basisItemsOpen" :kind="basisItemsKind" :items="basisItems" :personal="basisItemsKind === 'db'" />
     </UContainer>
 </template>
 
@@ -373,6 +384,7 @@ import type { Employee } from '~/types/employee'
 import type { TableColumn } from '@nuxt/ui'
 import type { GlossaryKey } from '~/composables/useGlossary'
 import type { ManagerChurnRow, ManagerCommissionData, ManagerRecurringBasisItem, ManagerServiceGroup, ManagerServiceGroupTotal, ManagerTeamMember } from '~/types/manager'
+import type { CommissionLineItem } from '~/types/sales'
 
 const { setLoading } = useLoading()
 const route = useRoute()
@@ -500,8 +512,10 @@ interface TeamServiceBox {
     personalChurn: number
     /** Referral and late-payment cuts already netted out of `personal` (Subscription Recurring only), as on the AM page's Dasar Komisi Recurring. */
     personalCuts: { label: string; value: number }[]
-    /** The manager's own Digital Business recurring (incl. IP Public), kept out of `personal` and shown on its own row, as the team sheet lists Cust lama Akses apart from Data Center & Resell. */
+    /** The manager's own Digital Business recurring (incl. IP Public), kept out of `personal` and Total area and shown on its own row, as the team sheet lists Cust lama Akses apart from Data Center & Resell. */
     personalDigitalBusiness: number
+    /** personalDigitalBusiness per rate group (DB Internal & IP Public / DB Resell), each with its invoices for the list modal. */
+    personalDigitalBusinessParts: { label: string; value: number; items: ManagerRecurringBasisItem[] }[]
     /** Same cuts for the team members (Subscription Recurring only), so Total tim matches the Anggota Tim column. */
     teamCuts: { label: string; value: number }[]
     isCount?: boolean
@@ -522,7 +536,7 @@ const teamServiceBoxes = computed<TeamServiceBox[]>(() => {
         title: string,
         groups: readonly ManagerServiceGroup[],
         field: keyof ManagerServiceGroupTotal,
-        opts: { hint?: GlossaryKey; isCount?: boolean; personalChurn?: number; personalCuts?: { label: string; value: number }[]; personalDigitalBusiness?: number; personalDigitalBusinessGross?: number; teamCuts?: { label: string; value: number }[] } = {}
+        opts: { hint?: GlossaryKey; isCount?: boolean; personalChurn?: number; personalCuts?: { label: string; value: number }[]; personalDigitalBusiness?: number; personalDigitalBusinessGross?: number; personalDigitalBusinessParts?: TeamServiceBox['personalDigitalBusinessParts']; teamCuts?: { label: string; value: number }[] } = {}
     ): TeamServiceBox => {
         const personalCuts = (opts.personalCuts ?? []).filter(cut => Math.round(cut.value) !== 0)
         const teamCuts = (opts.teamCuts ?? []).filter(cut => Math.round(cut.value) !== 0)
@@ -530,6 +544,7 @@ const teamServiceBoxes = computed<TeamServiceBox[]>(() => {
             title,
             personalChurn: 0,
             personalDigitalBusiness: 0,
+            personalDigitalBusinessParts: [],
             ...opts,
             personalCuts,
             teamCuts,
@@ -550,6 +565,32 @@ const teamServiceBoxes = computed<TeamServiceBox[]>(() => {
             commission: t.commission + i.commission
         }), { gross: 0, net: 0, referral: 0, commission: 0 })
     const dbLate = db.gross - db.net - db.referral
+    // Same split as the Digital Business rates (KOMISI.md 2.D): Internal incl. IP Public, and Resell.
+    const dbItems = personal.items.filter(i => i.type === 'recurring' && i.serviceGroup === 'Digital Business')
+    const isDbInternal = (i: CommissionLineItem) => i.category === 'IP Public' || (i.businessOperation ?? '').toLowerCase() === 'internal'
+    const dbParts = (pick: (i: CommissionLineItem) => number) => [
+        { label: 'DB Internal & IP Public', rows: dbItems.filter(isDbInternal) },
+        { label: 'DB Resell', rows: dbItems.filter(i => !isDbInternal(i)) }
+    ]
+        .filter(part => part.rows.length)
+        .map(part => ({
+            label: part.label,
+            value: part.rows.reduce((sum, i) => sum + pick(i), 0),
+            items: part.rows.map((i): ManagerRecurringBasisItem => ({
+                aiInvoice: i.aiInvoice,
+                customerId: i.customerId,
+                customerName: i.customerName,
+                serviceId: i.serviceId,
+                serviceName: i.serviceName,
+                sales: null,
+                salesName: null,
+                subscription: i.subscription,
+                lateMonth: i.lateMonth,
+                paidDate: i.paidDate,
+                transactionDate: i.transactionDate,
+                amount: i.baseCommission
+            }))
+        }))
     return [
         box('Pencapaian New', serviceGroupOrder, 'newCount', { hint: 'newAchievement', isCount: true, personalChurn: d.count }),
         box('Subscription Baru', serviceGroupOrder, 'newSubscription', { hint: 'subscription', personalChurn: d.subscription }),
@@ -563,12 +604,13 @@ const teamServiceBoxes = computed<TeamServiceBox[]>(() => {
             ],
             personalDigitalBusiness: db.net,
             personalDigitalBusinessGross: db.gross,
+            personalDigitalBusinessParts: dbParts(i => i.baseCommission),
             teamCuts: [
                 { label: 'Biaya referral', value: periodData.value.teamTotals.recurringReferralFee ?? 0 },
                 { label: 'Telat bayar', value: periodData.value.teamTotals.recurringLatePenalty ?? 0 }
             ]
         }),
-        box('Komisi Recurring Tim', recurringServiceGroupOrder, 'recurringCommission', { personalDigitalBusiness: db.commission })
+        box('Komisi Recurring Tim', recurringServiceGroupOrder, 'recurringCommission', { personalDigitalBusiness: db.commission, personalDigitalBusinessParts: dbParts(i => i.commission) })
     ]
 })
 
@@ -589,7 +631,7 @@ const recurringBasisLines = computed(() => {
     return lines.filter((line, i) => i === 0 || Math.round(line.value) !== 0)
 })
 
-type BasisItemsKind = 'renewal' | 'late'
+type BasisItemsKind = 'renewal' | 'late' | 'db'
 const basisItemsOpen = ref(false)
 const basisItemsKind = ref<BasisItemsKind>('renewal')
 const basisItems = ref<ManagerRecurringBasisItem[]>([])

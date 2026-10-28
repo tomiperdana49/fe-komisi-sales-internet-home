@@ -74,6 +74,8 @@ export interface ManagerRecurringBasisItem {
     customerId: string;
     customerName: string | null;
     serviceId: string | null;
+    /** Shown instead of serviceId when present. */
+    serviceName?: string | null;
     sales: string | null;
     salesName: string | null;
     subscription: number;
