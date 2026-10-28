@@ -188,7 +188,7 @@
                             <UIcon name="i-heroicons-squares-2x2" class="w-4 h-4 sm:w-5 sm:h-5 text-primary-500" />
                             Produksi Tim per Produk
                         </h4>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3 md:mb-4">Total tim adalah gabungan seluruh anggota tim; kotak Recurring juga memuat invoice Customer Relation Officer. Churn hanya mengurangi angka New, tidak Recurring. Total tim pada Pencapaian New sama dengan Capaian Tim; penjualan pribadi manager ditampilkan terpisah dan dijumlahkan ke Total area. NusaSelecta dihitung dalam pencapaian, bukan jumlah unit. Subscription Baru = New, Prorate &amp; Upgrade (sama dengan halaman AM); MRC Baru hanya New &amp; Upgrade. Penjualan Alat dan Setup ada di kolom Alat &amp; Setup dan tidak menambah Pencapaian New. Komisi Alat tetap dihitung: di tabel Anggota Tim, Komisi New = New, Prorate, Upgrade &amp; Alat dan Komisi Alat &amp; Setup hanya Setup. Mulai Oktober 2026 dasar Overriding New juga komisi New, Prorate, Upgrade &amp; Alat (lihat Rincian Komisi Manager).</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3 md:mb-4">Total tim adalah gabungan seluruh anggota tim; kotak Recurring juga memuat invoice Customer Relation Officer. Churn hanya mengurangi angka New, tidak Recurring. Total tim pada Pencapaian New sama dengan Capaian Tim; penjualan pribadi manager ditampilkan terpisah dan dijumlahkan ke Total area. NusaSelecta dihitung dalam pencapaian, bukan jumlah unit. Subscription Baru = New, Prorate &amp; Upgrade (sama dengan halaman AM); MRC Baru hanya New &amp; Upgrade. Penjualan Alat dan Setup ada di kolom Alat &amp; Setup dan tidak menambah Pencapaian New. Komisi Alat tetap dihitung: di tabel Anggota Tim, Komisi New = New, Prorate, Upgrade &amp; Alat dan Komisi Alat &amp; Setup hanya Setup. Mulai Oktober 2026 dasar Overriding New juga komisi New, Prorate, Upgrade &amp; Alat (lihat Rincian Komisi Manager). Di kotak Recurring, Total tim dan Pribadi manager (Akses) sudah dikurangi biaya referral &amp; telat bayar; Total area = Total tim + Pribadi manager (Akses), sedangkan Digital Business pribadi manager ditampilkan terpisah di bawahnya.</p>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                             <div v-for="box in teamServiceBoxes" :key="box.title" class="p-4 rounded-xl border border-gray-200 dark:border-gray-800">
                                 <h5 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 pb-2 border-b border-gray-200 dark:border-gray-700">
@@ -264,6 +264,9 @@
                                             {{ part.label }} ({{ part.items.length }})
                                         </button>
                                         <span class="tabular-nums text-gray-600 dark:text-gray-300">{{ formatCurrency(part.value) }}</span>
+                                    </li>
+                                    <li v-if="box.personalDigitalBusiness" class="text-xs pl-3 text-gray-400 dark:text-gray-500">
+                                        Tidak ikut Total area, sama seperti sheet (Cust lama Akses terpisah dari Data Center &amp; Resell). Komisinya tetap dihitung di Penjualan Pribadi dengan rate Digital Business. Klik jenisnya untuk melihat invoice.
                                     </li>
                                 </ul>
                             </div>
