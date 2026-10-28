@@ -217,12 +217,8 @@
                                         </li>
                                     </template>
                                     <li class="flex justify-between items-center gap-3 text-sm">
-                                        <span class="text-gray-600 dark:text-gray-400">Pribadi manager</span>
+                                        <span class="text-gray-600 dark:text-gray-400">{{ box.personalDigitalBusiness ? 'Pribadi manager (Akses)' : 'Pribadi manager' }}</span>
                                         <span :class="['font-semibold tabular-nums', box.personal === 0 ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white']">{{ box.isCount ? formatSigned(box.personal) : formatCurrency(box.personal) }}</span>
-                                    </li>
-                                    <li v-for="part in box.personalSplit" :key="part.label" class="flex justify-between items-center gap-3 text-xs pl-3">
-                                        <span class="text-gray-500 dark:text-gray-400">{{ part.label }}</span>
-                                        <span class="tabular-nums text-gray-600 dark:text-gray-300">{{ formatCurrency(part.value) }}</span>
                                     </li>
                                     <template v-if="box.personalCuts.length">
                                         <li class="flex justify-between items-center gap-3 text-xs pl-3">
@@ -250,9 +246,13 @@
                                             Tidak mengurangi Capaian Tim; hanya memotong komisi Penjualan Pribadi manager.
                                         </li>
                                     </template>
+                                    <li v-if="box.personalDigitalBusiness" class="flex justify-between items-center gap-3 text-sm">
+                                        <span class="text-gray-600 dark:text-gray-400">Pribadi manager (Digital Business)</span>
+                                        <span class="font-semibold tabular-nums text-gray-900 dark:text-white">{{ formatCurrency(box.personalDigitalBusiness) }}</span>
+                                    </li>
                                     <li class="flex justify-between items-center text-sm pt-2 border-t border-gray-200 dark:border-gray-700">
                                         <span class="font-bold text-gray-900 dark:text-white">Total area</span>
-                                        <span class="font-bold text-gray-900 dark:text-white tabular-nums">{{ box.isCount ? box.total + box.personal : formatCurrency(box.total + box.personal) }}</span>
+                                        <span class="font-bold text-gray-900 dark:text-white tabular-nums">{{ box.isCount ? box.total + box.personal : formatCurrency(box.total + box.personal + box.personalDigitalBusiness) }}</span>
                                     </li>
                                 </ul>
                             </div>
@@ -500,8 +500,8 @@ interface TeamServiceBox {
     personalChurn: number
     /** Referral and late-payment cuts already netted out of `personal` (Subscription Recurring only), as on the AM page's Dasar Komisi Recurring. */
     personalCuts: { label: string; value: number }[]
-    /** How `personal` splits into access and Digital Business recurring (Subscription Recurring only), as the team sheet lists them. */
-    personalSplit: { label: string; value: number }[]
+    /** The manager's own Digital Business recurring (incl. IP Public), kept out of `personal` and shown on its own row, as the team sheet lists Cust lama Akses apart from Data Center & Resell. */
+    personalDigitalBusiness: number
     /** Same cuts for the team members (Subscription Recurring only), so Total tim matches the Anggota Tim column. */
     teamCuts: { label: string; value: number }[]
     isCount?: boolean
@@ -522,50 +522,53 @@ const teamServiceBoxes = computed<TeamServiceBox[]>(() => {
         title: string,
         groups: readonly ManagerServiceGroup[],
         field: keyof ManagerServiceGroupTotal,
-        opts: { hint?: GlossaryKey; isCount?: boolean; personalChurn?: number; personalCuts?: { label: string; value: number }[]; personalSplit?: { label: string; value: number }[]; teamCuts?: { label: string; value: number }[] } = {}
+        opts: { hint?: GlossaryKey; isCount?: boolean; personalChurn?: number; personalCuts?: { label: string; value: number }[]; personalDigitalBusiness?: number; personalDigitalBusinessGross?: number; teamCuts?: { label: string; value: number }[] } = {}
     ): TeamServiceBox => {
         const personalCuts = (opts.personalCuts ?? []).filter(cut => Math.round(cut.value) !== 0)
         const teamCuts = (opts.teamCuts ?? []).filter(cut => Math.round(cut.value) !== 0)
         return {
             title,
             personalChurn: 0,
-            personalSplit: [],
+            personalDigitalBusiness: 0,
             ...opts,
             personalCuts,
             teamCuts,
             rows: groups.map(name => ({ label: name, value: g[name][field] })),
             total: groups.reduce((sum, name) => sum + g[name][field], 0) - teamCuts.reduce((sum, cut) => sum + cut.value, 0),
             personal: groups.reduce((sum, name) => sum + p[name][field], 0) - personalCuts.reduce((sum, cut) => sum + cut.value, 0)
+                - (opts.personalDigitalBusinessGross ?? opts.personalDigitalBusiness ?? 0)
         }
     }
     const personal = periodData.value.personal
-    // Digital Business (incl. IP Public) part of the manager's own recurring, after its own cuts (Dasar).
-    const personalRecurringDb = personal.items
+    // The manager's own Digital Business (incl. IP Public) recurring: Dasar, subscription, its cuts and commission.
+    const db = personal.items
         .filter(i => i.type === 'recurring' && i.serviceGroup === 'Digital Business')
-        .reduce((sum, i) => sum + i.baseCommission, 0)
-    const personalRecurringNet = personal.breakdown.recurring.subscription - (personal.recurringReferralFee ?? 0) - (personal.recurringLatePenalty ?? 0)
+        .reduce((t, i) => ({
+            gross: t.gross + i.subscription,
+            net: t.net + i.baseCommission,
+            referral: t.referral + Math.min(i.referralFee ?? 0, i.subscription - i.baseCommission),
+            commission: t.commission + i.commission
+        }), { gross: 0, net: 0, referral: 0, commission: 0 })
+    const dbLate = db.gross - db.net - db.referral
     return [
         box('Pencapaian New', serviceGroupOrder, 'newCount', { hint: 'newAchievement', isCount: true, personalChurn: d.count }),
         box('Subscription Baru', serviceGroupOrder, 'newSubscription', { hint: 'subscription', personalChurn: d.subscription }),
         box('MRC Baru', serviceGroupOrder, 'newMrc', { hint: 'mrc', personalChurn: d.mrc }),
         box('Subscription Recurring', recurringServiceGroupOrder, 'recurringSubscription', {
             hint: 'recurring',
+            // Cuts listed under the access row only; the Digital Business row is already its Dasar.
             personalCuts: [
-                { label: 'Biaya referral', value: personal.recurringReferralFee ?? 0 },
-                { label: 'Telat bayar', value: personal.recurringLatePenalty ?? 0 }
+                { label: 'Biaya referral', value: (personal.recurringReferralFee ?? 0) - db.referral },
+                { label: 'Telat bayar', value: (personal.recurringLatePenalty ?? 0) - dbLate }
             ],
-            personalSplit: Math.round(personalRecurringDb) !== 0
-                ? [
-                    { label: 'Akses', value: personalRecurringNet - personalRecurringDb },
-                    { label: 'Digital Business', value: personalRecurringDb }
-                ]
-                : [],
+            personalDigitalBusiness: db.net,
+            personalDigitalBusinessGross: db.gross,
             teamCuts: [
                 { label: 'Biaya referral', value: periodData.value.teamTotals.recurringReferralFee ?? 0 },
                 { label: 'Telat bayar', value: periodData.value.teamTotals.recurringLatePenalty ?? 0 }
             ]
         }),
-        box('Komisi Recurring Tim', recurringServiceGroupOrder, 'recurringCommission')
+        box('Komisi Recurring Tim', recurringServiceGroupOrder, 'recurringCommission', { personalDigitalBusiness: db.commission })
     ]
 })
 
