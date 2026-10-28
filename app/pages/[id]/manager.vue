@@ -201,6 +201,16 @@
                                         <span class="text-gray-600 dark:text-gray-400">Pribadi manager</span>
                                         <span :class="['font-semibold tabular-nums', box.personal === 0 ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white']">{{ box.isCount ? formatSigned(box.personal) : formatCurrency(box.personal) }}</span>
                                     </li>
+                                    <template v-if="box.personalCuts.length">
+                                        <li class="flex justify-between items-center gap-3 text-xs pl-3">
+                                            <span class="text-gray-500 dark:text-gray-400">Subscription</span>
+                                            <span class="tabular-nums text-gray-600 dark:text-gray-300">{{ formatCurrency(box.personal + box.personalCuts.reduce((sum, cut) => sum + cut.value, 0)) }}</span>
+                                        </li>
+                                        <li v-for="cut in box.personalCuts" :key="cut.label" class="flex justify-between items-center gap-3 text-xs pl-3">
+                                            <span class="text-gray-500 dark:text-gray-400">{{ cut.label }}</span>
+                                            <span class="tabular-nums text-red-600 dark:text-red-400">{{ formatCurrency(-cut.value) }}</span>
+                                        </li>
+                                    </template>
                                     <template v-if="box.personalChurn">
                                         <li class="flex justify-between items-center gap-3 text-xs pl-3">
                                             <span class="text-gray-500 dark:text-gray-400">Pasang baru</span>
@@ -416,6 +426,8 @@ interface TeamServiceBox {
     personal: number
     /** Uncancelled churn already netted out of `personal` (New-side boxes only); 0 hides the breakdown. */
     personalChurn: number
+    /** Referral and late-payment cuts already netted out of `personal` (Subscription Recurring only), as on the AM page's Dasar Komisi Recurring. */
+    personalCuts: { label: string; value: number }[]
     isCount?: boolean
 }
 
@@ -434,20 +446,31 @@ const teamServiceBoxes = computed<TeamServiceBox[]>(() => {
         title: string,
         groups: readonly ManagerServiceGroup[],
         field: keyof ManagerServiceGroupTotal,
-        opts: { hint?: GlossaryKey; isCount?: boolean; personalChurn?: number } = {}
-    ): TeamServiceBox => ({
-        title,
-        personalChurn: 0,
-        ...opts,
-        rows: groups.map(name => ({ label: name, value: g[name][field] })),
-        total: groups.reduce((sum, name) => sum + g[name][field], 0),
-        personal: groups.reduce((sum, name) => sum + p[name][field], 0)
-    })
+        opts: { hint?: GlossaryKey; isCount?: boolean; personalChurn?: number; personalCuts?: { label: string; value: number }[] } = {}
+    ): TeamServiceBox => {
+        const personalCuts = (opts.personalCuts ?? []).filter(cut => Math.round(cut.value) !== 0)
+        return {
+            title,
+            personalChurn: 0,
+            ...opts,
+            personalCuts,
+            rows: groups.map(name => ({ label: name, value: g[name][field] })),
+            total: groups.reduce((sum, name) => sum + g[name][field], 0),
+            personal: groups.reduce((sum, name) => sum + p[name][field], 0) - personalCuts.reduce((sum, cut) => sum + cut.value, 0)
+        }
+    }
+    const personal = periodData.value.personal
     return [
         box('Pencapaian New', serviceGroupOrder, 'newCount', { hint: 'newAchievement', isCount: true, personalChurn: d.count }),
         box('Subscription Baru', serviceGroupOrder, 'newSubscription', { hint: 'subscription', personalChurn: d.subscription }),
         box('MRC Baru', serviceGroupOrder, 'newMrc', { hint: 'mrc', personalChurn: d.mrc }),
-        box('Subscription Recurring', recurringServiceGroupOrder, 'recurringSubscription', { hint: 'recurring' }),
+        box('Subscription Recurring', recurringServiceGroupOrder, 'recurringSubscription', {
+            hint: 'recurring',
+            personalCuts: [
+                { label: 'Biaya referral', value: personal.recurringReferralFee ?? 0 },
+                { label: 'Telat bayar', value: personal.recurringLatePenalty ?? 0 }
+            ]
+        }),
         box('Komisi Recurring Tim', recurringServiceGroupOrder, 'recurringCommission')
     ]
 })
