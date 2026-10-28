@@ -56,17 +56,14 @@ export interface ManagerOverride {
     teamRecurringSubscriptionNet: number;
     /** teamRecurringSubscriptionNet split by overriding rate: access, Digital Business Internal (incl. IP Public), Digital Business Resell. */
     recurringByKind?: Record<'access' | 'digitalBusinessInternal' | 'digitalBusinessResell', { basis: number; rate: number }>;
-    /** Subscription Recurring Total tim − renewalExcluded − cpeExcluded − referralDeduction − latePenalty − otherAdjustment = teamRecurringSubscriptionNet. */
+    /** Subscription Recurring Total tim − renewalExcluded − referralDeduction − latePenalty − otherAdjustment = teamRecurringSubscriptionNet. */
     recurringBasis?: {
         teamSubscription: number;
         renewalExcluded: number;
-        /** CPE Rental recurring left out of the Overriding Recurring (from October 2026). */
-        cpeExcluded?: number;
         referralDeduction: number;
         latePenalty: number;
         otherAdjustment: number;
         renewalItems?: ManagerRecurringBasisItem[];
-        cpeItems?: ManagerRecurringBasisItem[];
         lateItems?: ManagerRecurringBasisItem[];
     };
 }
