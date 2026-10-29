@@ -32,6 +32,8 @@ const SCALARS: { section: string; path: [keyof CommissionRules, string]; label: 
     { section: 'Target & Status', path: ['achievement', 'probationVeryGood'], label: 'Probation — Very Good', fmt: num },
     { section: 'Target & Status', path: ['achievement', 'probationAverage'], label: 'Probation — Average', fmt: num },
     { section: 'Bonus', path: ['bonus', 'excessPerUnit'], label: 'Bonus Kelebihan Service per layanan', fmt: rupiah },
+    { section: 'Bonus', path: ['consistency', 'months'], label: 'Bonus Konsistensi — jumlah bulan berturut-turut', fmt: num },
+    { section: 'Bonus', path: ['consistency', 'minPerMonth'], label: 'Bonus Konsistensi — pencapaian minimal per bulan', fmt: num },
     { section: 'Sales Manager', path: ['manager', 'recurringOnTarget'], label: 'Overriding Recurring akses — capai target', fmt: pct },
     { section: 'Sales Manager', path: ['manager', 'recurringMissedTarget'], label: 'Overriding Recurring akses — tidak capai target', fmt: pct },
     { section: 'Sales Manager', path: ['manager', 'recurringDigitalBusinessInternalOnTarget'], label: 'Overriding Recurring DB Internal & IP Public — capai target', fmt: pct },
@@ -80,8 +82,10 @@ export const diffRules = (before: CommissionRules, after: CommissionRules): Rule
 
     for (const s of SCALARS) {
         const [group, key] = s.path
-        const a = (before[group] as Record<string, number>)[key]!
-        const b = (after[group] as Record<string, number>)[key]!
+        // Optional: absent when the BE predates the setting.
+        const a = (before[group] as Record<string, number> | undefined)?.[key]
+        const b = (after[group] as Record<string, number> | undefined)?.[key]
+        if (a === undefined || b === undefined) continue
         if (a !== b) changes.push({ section: s.section, label: s.label, from: s.fmt(a), to: s.fmt(b) })
     }
 
@@ -106,6 +110,13 @@ export const diffRules = (before: CommissionRules, after: CommissionRules): Rule
         if (!afterReasons.has(key)) changes.push({ section: 'Churn', label: `Alasan dihapus: ${key}`, from: yesNo(r), to: '–' })
     }
     list('Tier bonus bulanan', 'Bonus', before.bonus.tiers, after.bonus.tiers, t => `${t.at} → ${rupiah(t.amount)}`)
+    if (before.consistency && after.consistency) {
+        const onOff = (v: boolean) => v ? 'Aktif' : 'Tidak aktif'
+        if (before.consistency.enabled !== after.consistency.enabled) {
+            changes.push({ section: 'Bonus', label: 'Bonus Konsistensi otomatis', from: onOff(before.consistency.enabled), to: onOff(after.consistency.enabled) })
+        }
+        list('Tier Bonus Konsistensi', 'Bonus', before.consistency.tiers, after.consistency.tiers, t => `${t.at} → ${rupiah(t.amount)}`)
+    }
     list('Threshold target tim', 'Sales Manager', before.manager.teamThresholds, after.manager.teamThresholds, t => `${t.teamSize} AM: ${t.percent}%`)
     list('Tier overriding New', 'Sales Manager', before.manager.newCommissionTiers, after.manager.newCommissionTiers, t => `≥${t.minAchievement}%: ${t.rate}%`)
 

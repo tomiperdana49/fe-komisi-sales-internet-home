@@ -167,7 +167,12 @@ const GLOSSARY = {
     },
     consistencyBonus: {
         term: 'Bonus Konsistensi',
-        text: () => 'Bonus yang diberikan manual oleh admin untuk periode ini, nominalnya ditentukan admin. Tidak otomatis berulang ke bulan berikutnya.'
+        text: (r: Rules) => {
+            const c = r?.consistency
+            return c?.enabled
+                ? `Otomatis bila Pencapaian New minimal ${c.minPerMonth} selama ${c.months} bulan berturut-turut: ${c.tiers.map(t => `total ≥${t.at} = ${rp(t.amount)}`).join(', ')}. Hitungan mulai lagi setelah bonus dibayar atau ada bulan yang tidak capai. Bonus yang diberikan manual oleh admin menggantikan bonus otomatis di bulan itu.`
+                : 'Bonus yang diberikan manual oleh admin untuk periode ini, nominalnya ditentukan admin. Tidak otomatis berulang ke bulan berikutnya.'
+        }
     },
     memberTotal: {
         term: 'Total Komisi Sales',

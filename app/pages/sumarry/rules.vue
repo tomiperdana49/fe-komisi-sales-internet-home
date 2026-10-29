@@ -313,7 +313,9 @@
                                         <UButton v-if="canEdit && form.bonus.tiers.length > 1" icon="i-lucide-x" color="neutral" variant="ghost" aria-label="Hapus tier" @click="form.bonus.tiers.splice(i, 1)" />
                                     </div>
                                     <UButton v-if="canEdit" icon="i-lucide-plus" variant="soft" size="sm" @click="form.bonus.tiers.push({ at: (form.bonus.tiers.at(-1)?.at ?? 0) + 1, amount: 0 })">Tambah Tier</UButton>
-                                    <RuleNumber v-model="form.bonus.excessPerUnit" label="Bonus Kelebihan Service per layanan di atas tier terakhir (Rp)" :step="10000" :max="null" :disabled="!canEdit" />
+                                    <RuleNumber v-model="form.bonus.excessPerUnit" :label="`Bonus Kelebihan Service per layanan di atas tier terakhir >${form.bonus.tiers.at(-1)?.at ?? 0} (Rp)`" :step="10000" :max="null" :disabled="!canEdit" />
+
+                                    <RuleConsistency v-model="form.consistency" role="AM" :disabled="!canEdit" />
                                 </div>
                             </template>
 

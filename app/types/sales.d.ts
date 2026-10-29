@@ -90,7 +90,10 @@ export interface SalesCommissionData {
     motivation: string;
     bonusBulanan: number;
     bonusKelebihanService: number;
+    /** Manual + automatic Bonus Konsistensi. */
     consistencyBonus: number;
+    /** The automatic part of consistencyBonus; null when the rules don't pay it this period. */
+    consistencyBonusAuto?: { amount: number; months: { period: string; activityCount: number }[]; total: number } | null;
     total: CommissionStats;
     breakdown: CommissionBreakdown;
     byServiceGroup: Record<string, CommissionBreakdown>;

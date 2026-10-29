@@ -8,8 +8,8 @@
                 <div>
                     <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Bonus Konsistensi</h2>
                     <p class="text-sm text-gray-500 dark:text-gray-400">
-                        Bonus manual untuk {{ selectedMonthLabel }} {{ year }}. Nominal ditentukan admin dan langsung ditambahkan ke Total Komisi sales periode ini.
-                        Bonus tidak berulang otomatis — berikan lagi di bulan berikutnya bila masih berlaku.
+                        Bonus Konsistensi {{ selectedMonthLabel }} {{ year }}. Kolom Otomatis dihitung dari Aturan Komisi (bila diaktifkan); bonus manual ditentukan admin dan menggantikan bonus otomatis di bulan itu.
+                        Keduanya langsung ditambahkan ke Total Komisi sales periode ini.
                     </p>
                 </div>
 
@@ -110,10 +110,11 @@ const selectedMonthLabel = computed(() => monthLabel(selectedMonth.value))
 
 const stats = computed(() => {
     const granted = branchData.value.filter(r => r.amount > 0)
+    const auto = branchData.value.filter(r => r.autoAmount > 0)
     return [
         { label: 'Jumlah AM & SDR', value: branchData.value.length, key: 'all' },
         { label: 'Sudah Diberi Bonus', value: granted.length, key: 'granted', class: 'text-violet-600 dark:text-violet-400' },
-        { label: 'Total Bonus', value: formatCurrency(granted.reduce((a, r) => a + r.amount, 0)), class: 'text-violet-600 dark:text-violet-400' },
+        { label: 'Total Bonus', value: formatCurrency(branchData.value.reduce((a, r) => a + r.amount + r.autoAmount, 0)), class: 'text-violet-600 dark:text-violet-400', note: auto.length ? `Termasuk ${auto.length} bonus otomatis` : undefined },
         { label: 'Total Service Dicapai', value: granted.reduce((a, r) => a + (r.serviceCount ?? 0), 0), note: 'Dari sales yang diberi bonus' }
     ]
 })
@@ -129,7 +130,7 @@ const confirmRevoke = async () => {
 }
 
 const filteredData = computed(() => {
-    const rows = statusFilter.value === 'granted' ? branchData.value.filter(r => r.amount > 0) : branchData.value
+    const rows = statusFilter.value === 'granted' ? branchData.value.filter(r => r.amount > 0 || r.autoAmount > 0) : branchData.value
     const query = globalFilter.value.trim().toLowerCase()
     if (!query) return rows
     return rows.filter(row =>
@@ -191,10 +192,23 @@ const columns: TableColumn<ConsistencyBonusItem>[] = [
     },
     {
         accessorKey: 'amount',
-        header: () => h('div', { class: 'text-right' }, 'Nominal Bonus'),
+        header: () => h('div', { class: 'text-right' }, 'Manual'),
         cell: ({ row }) => row.original.amount > 0
             ? h('div', { class: 'text-right font-bold text-violet-600 dark:text-violet-400' }, formatCurrency(row.original.amount))
             : h('div', { class: 'text-right text-xs text-gray-400 italic' }, 'Belum diberikan')
+    },
+    {
+        accessorKey: 'autoAmount',
+        header: () => h('div', { class: 'text-right' }, 'Otomatis'),
+        cell: ({ row }) => {
+            const { autoAmount, autoMonths } = row.original
+            if (!autoMonths.length) return h('div', { class: 'text-right text-xs text-gray-400 italic' }, '-')
+            const detail = autoMonths.map(m => `${monthShortLabel(Number(m.period.slice(4)))} ${m.activityCount}`).join(' · ')
+            return h('div', { class: 'flex flex-col items-end' }, [
+                h('span', { class: 'font-bold text-violet-600 dark:text-violet-400' }, formatCurrency(autoAmount)),
+                h('span', { class: 'text-[10px] text-gray-500' }, `${detail} = ${autoMonths.reduce((a, m) => a + m.activityCount, 0)}`)
+            ])
+        }
     },
     {
         accessorKey: 'note',

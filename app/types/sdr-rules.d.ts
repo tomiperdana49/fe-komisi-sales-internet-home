@@ -24,6 +24,8 @@ export interface SdrCommissionRules {
         probationAverage: number;
     };
     bonus: { tiers: { at: number; amount: number }[]; excessPerUnit: number };
+    /** Bonus Konsistensi otomatis SDR — sama seperti Home, dengan angka SDR. */
+    consistency: { enabled: boolean; months: number; minPerMonth: number; tiers: { at: number; amount: number }[] };
 }
 
 export interface SdrRuleSet {

@@ -265,6 +265,10 @@ export interface ConsistencyBonusItem {
     isSdr: boolean;
     status: string | null;
     amount: number;
+    /** Bonus Konsistensi otomatis periode ini (0 bila tidak aktif, tidak capai, atau sudah diberikan manual). */
+    autoAmount: number;
+    /** Bulan-bulan yang dibayar bonus otomatis, terlama dulu. */
+    autoMonths: { period: string; activityCount: number }[];
     note: string | null;
     /** Comma-separated month numbers (1-12) the admin cites as the consistency record — informational only. */
     months: string | null;

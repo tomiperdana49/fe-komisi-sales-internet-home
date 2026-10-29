@@ -58,6 +58,8 @@ export interface CommissionRules {
         probationAverage: number;
     };
     bonus: { tiers: { at: number; amount: number }[]; excessPerUnit: number };
+    /** Bonus Konsistensi otomatis: `months` bulan berturut-turut dengan New Achievement ≥ `minPerMonth`, nominal dari tier total bulan-bulan itu. */
+    consistency: { enabled: boolean; months: number; minPerMonth: number; tiers: { at: number; amount: number }[] };
     manager: {
         teamThresholds: { teamSize: number; percent: number }[];
         newCommissionTiers: { minAchievement: number; rate: number }[];

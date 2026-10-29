@@ -26,7 +26,9 @@ const SCALARS: { section: string; path: [keyof SdrCommissionRules, string]; labe
     { section: 'Target & Status', path: ['achievement', 'probationExcellent'], label: 'Probation — Excellent', fmt: num },
     { section: 'Target & Status', path: ['achievement', 'probationVeryGood'], label: 'Probation — Very Good', fmt: num },
     { section: 'Target & Status', path: ['achievement', 'probationAverage'], label: 'Probation — Average', fmt: num },
-    { section: 'Bonus', path: ['bonus', 'excessPerUnit'], label: 'Bonus Kelebihan Service per layanan', fmt: rupiah }
+    { section: 'Bonus', path: ['bonus', 'excessPerUnit'], label: 'Bonus Kelebihan Service per layanan', fmt: rupiah },
+    { section: 'Bonus', path: ['consistency', 'months'], label: 'Bonus Konsistensi — jumlah bulan berturut-turut', fmt: num },
+    { section: 'Bonus', path: ['consistency', 'minPerMonth'], label: 'Bonus Konsistensi — pencapaian minimal per bulan', fmt: num }
 ]
 
 const PRODUCT_FIELDS: { key: keyof CommissionProductRule; label: string; fmt: (v: any) => string }[] = [
@@ -69,8 +71,10 @@ export const diffSdrRules = (before: SdrCommissionRules, after: SdrCommissionRul
 
     for (const s of SCALARS) {
         const [group, key] = s.path
-        const a = (before[group] as Record<string, number>)[key]!
-        const b = (after[group] as Record<string, number>)[key]!
+        // Optional: absent when the BE predates the setting.
+        const a = (before[group] as Record<string, number> | undefined)?.[key]
+        const b = (after[group] as Record<string, number> | undefined)?.[key]
+        if (a === undefined || b === undefined) continue
         if (a !== b) changes.push({ section: s.section, label: s.label, from: s.fmt(a), to: s.fmt(b) })
     }
 
@@ -80,6 +84,13 @@ export const diffSdrRules = (before: SdrCommissionRules, after: SdrCommissionRul
         }
     }
     list('Tier bonus bulanan', 'Bonus', before.bonus.tiers, after.bonus.tiers, t => `${t.at} → ${rupiah(t.amount)}`)
+    if (before.consistency && after.consistency) {
+        const onOff = (v: boolean) => v ? 'Aktif' : 'Tidak aktif'
+        if (before.consistency.enabled !== after.consistency.enabled) {
+            changes.push({ section: 'Bonus', label: 'Bonus Konsistensi otomatis', from: onOff(before.consistency.enabled), to: onOff(after.consistency.enabled) })
+        }
+        list('Tier Bonus Konsistensi', 'Bonus', before.consistency.tiers, after.consistency.tiers, t => `${t.at} → ${rupiah(t.amount)}`)
+    }
 
     return changes
 }
