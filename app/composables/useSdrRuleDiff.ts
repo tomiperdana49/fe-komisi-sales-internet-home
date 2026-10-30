@@ -27,7 +27,9 @@ const SCALARS: { section: string; path: [keyof SdrCommissionRules, string]; labe
     { section: 'Target & Status', path: ['achievement', 'probationVeryGood'], label: 'Probation — Very Good', fmt: num },
     { section: 'Target & Status', path: ['achievement', 'probationAverage'], label: 'Probation — Average', fmt: num },
     { section: 'Bonus', path: ['bonus', 'excessPerUnit'], label: 'Bonus Kelebihan Service per layanan', fmt: rupiah },
-    { section: 'Bonus', path: ['consistency', 'months'], label: 'Bonus Konsistensi — jumlah bulan berturut-turut', fmt: num },
+    { section: 'Bonus', path: ['consistency', 'months'], label: 'Bonus Konsistensi — jumlah bulan per blok', fmt: num },
+    { section: 'Bonus', path: ['consistency', 'startPeriod'], label: 'Bonus Konsistensi — bulan mulai blok', fmt: (v: string) => `${v.slice(4)}/${v.slice(0, 4)}` },
+    { section: 'Bonus', path: ['consistency', 'minTestimonials'], label: 'Bonus Konsistensi — testimoni minimal per blok', fmt: num },
     { section: 'Bonus', path: ['consistency', 'minPerMonth'], label: 'Bonus Konsistensi — pencapaian minimal per bulan', fmt: num }
 ]
 

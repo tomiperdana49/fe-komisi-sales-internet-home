@@ -103,6 +103,10 @@
         </div>
 
         <div class="py-2">
+            <TestimonialPanel :employee-id="route.params.id as string" :employee-name="employee?.name" :customers="knownCustomers" />
+        </div>
+
+        <div class="py-2">
             <AdminChangesList :items="invoiceItems" :churn="churnData" />
         </div>
 
@@ -138,6 +142,9 @@ const invoiceItems = ref<CommissionLineItem[]>([])
 const churnData = ref<ChurnRow[]>([])
 
 const { formatCurrency, formatDate } = useFormat()
+
+// Customers in this period's transactions, so the testimonial form can fill the name in from the ID.
+const knownCustomers = computed(() => new Map(invoiceItems.value.filter(i => i.customerName).map(i => [i.customerId, i.customerName as string])))
 
 const tabItems = computed(() => {
     const byType = (key: string) => getTabData(key).length

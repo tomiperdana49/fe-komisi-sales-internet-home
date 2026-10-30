@@ -54,6 +54,7 @@ const links = [
     { to: '/sumarry/churn', icon: 'i-heroicons-archive-box-x-mark', label: 'Churn' },
     { to: '/sumarry/stopped', icon: 'i-heroicons-signal-slash', label: 'Layanan NA' },
     { to: '/sumarry/consistency-bonus', icon: 'i-heroicons-gift', label: 'Bonus Konsistensi' },
+    { to: '/sumarry/testimonial', icon: 'i-heroicons-chat-bubble-left-ellipsis', label: 'Testimoni' },
     { to: '/sumarry/target', icon: 'i-heroicons-flag', label: 'Target AM' }
 ]
 // Home and SDR rules share one dropdown so the toolbar doesn't need to scroll.

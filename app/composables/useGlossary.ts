@@ -170,7 +170,7 @@ const GLOSSARY = {
         text: (r: Rules) => {
             const c = r?.consistency
             return c?.enabled
-                ? `Otomatis bila Pencapaian New minimal ${c.minPerMonth} selama ${c.months} bulan berturut-turut: ${c.tiers.map(t => `total ≥${t.at} = ${rp(t.amount)}`).join(', ')}. Hitungan mulai lagi setelah bonus dibayar atau ada bulan yang tidak capai. Bonus yang diberikan manual oleh admin menggantikan bonus otomatis di bulan itu.`
+                ? `Dinilai per blok ${c.months} bulan (blok pertama mulai ${c.startPeriod.slice(4)}/${c.startPeriod.slice(0, 4)}, atau bulan pertama sales bila masuk sesudahnya; setelah bonus manual, blok mulai lagi bulan berikutnya). Bila setiap bulan dalam blok Pencapaian New-nya minimal ${c.minPerMonth}${c.minTestimonials > 0 ? ` dan ada minimal ${c.minTestimonials} testimoni pelanggan bertanggal di dalam blok` : ''}, bonus dibayar di bulan terakhir blok: ${c.tiers.map(t => `total ≥${t.at} = ${rp(t.amount)}`).join(', ')}. Satu bulan tidak capai membuat blok itu tidak dapat bonus; hitungan mulai lagi di blok berikutnya. Bonus yang diberikan manual oleh admin menggantikan bonus otomatis di bulan itu.`
                 : 'Bonus yang diberikan manual oleh admin untuk periode ini, nominalnya ditentukan admin. Tidak otomatis berulang ke bulan berikutnya.'
         }
     },
