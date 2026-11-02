@@ -173,6 +173,40 @@ export interface ChurnRow {
     serviceGroup: ManagerServiceGroup;
 }
 
+/** Where an Account Manager stands in their Bonus Konsistensi block (be: ConsistencyProgress). */
+export interface ConsistencyProgress {
+    blockStart: string;
+    blockEnd: string;
+    /** activityCount is null for months still to come. */
+    months: { period: string; activityCount: number | null }[];
+    minPerMonth: number;
+    minTestimonials: number;
+    tiers: { at: number; amount: number }[];
+    testimonials: number;
+    status: 'running' | 'failed' | 'manual' | 'notStarted';
+}
+
+/** One Sales Manager team member's Bonus Konsistensi progress. */
+export interface TeamConsistencyRow {
+    employeeId: string;
+    name: string;
+    progress: ConsistencyProgress;
+}
+
+export interface TeamConsistencyResponseData {
+    success: boolean;
+    message: string;
+    /** Empty when the automatic Bonus Konsistensi is off for the period. */
+    data: TeamConsistencyRow[];
+}
+
+export interface ConsistencyProgressResponseData {
+    success: boolean;
+    message: string;
+    /** null when the automatic Bonus Konsistensi is off for the period. */
+    data: ConsistencyProgress | null;
+}
+
 export interface SalesChurnResponseData {
     success: boolean;
     message: string;

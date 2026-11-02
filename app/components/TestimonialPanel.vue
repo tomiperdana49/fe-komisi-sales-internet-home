@@ -18,7 +18,7 @@
             :employee-name="employeeName"
             :customers="customers"
             :testimonial="editTarget"
-            @success="fetchRows"
+            @success="onSaved"
         />
 
         <ConfirmModal
@@ -42,6 +42,9 @@ const props = defineProps<{
     /** Customers known for this Account Manager (ID → name), to fill the form's name in. */
     customers?: Map<string, string>
 }>()
+
+/** `changed`: a testimonial was added, edited or deleted (the Bonus Konsistensi card recounts). */
+const emit = defineEmits(['changed'])
 
 const testimonialService = new TestimonialService()
 const toast = useToast()
@@ -80,6 +83,11 @@ const fetchRows = async () => {
     rows.value = response?.data ?? []
 }
 
+const onSaved = async () => {
+    await fetchRows()
+    emit('changed')
+}
+
 const confirmDelete = async () => {
     const row = deleteTarget.value
     isDeleteModalOpen.value = false
@@ -89,6 +97,7 @@ const confirmDelete = async () => {
         const response = await testimonialService.remove(props.employeeId, row.id)
         if (response && response.success) {
             rows.value = rows.value.filter(r => r.id !== row.id)
+            emit('changed')
             toast.add({ title: 'Testimoni dihapus', description: `Testimoni ${row.customerName} dihapus`, color: 'success' })
         }
     } catch (error) {

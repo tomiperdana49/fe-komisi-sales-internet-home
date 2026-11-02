@@ -1,5 +1,7 @@
 import { apiService } from "./api-service"
 import type {
+    ConsistencyProgressResponseData,
+    TeamConsistencyResponseData,
     SalesChurnResponseData,
     SalesCommissionQueryParams,
     SalesCommissionResponseData,
@@ -15,6 +17,34 @@ import type {
 } from "~/types/manager"
 
 export class CommissionService {
+    async managerConsistency(managerId: string, params: ManagerCommissionQueryParams): Promise<TeamConsistencyResponseData> {
+        try {
+            const response = await apiService.client.get(`/manager/${managerId}/consistency`, {
+                params,
+                headers: {
+                    authorization: `Bearer ${useAuth().state.token}`
+                }
+            })
+            return response.data
+        } catch (error: any) {
+            handleServiceError(error)
+        }
+    }
+
+    async salesConsistency(employeeId: string, params: SalesCommissionQueryParams): Promise<ConsistencyProgressResponseData> {
+        try {
+            const response = await apiService.client.get(`/sales/${employeeId}/consistency`, {
+                params,
+                headers: {
+                    authorization: `Bearer ${useAuth().state.token}`
+                }
+            })
+            return response.data
+        } catch (error: any) {
+            handleServiceError(error)
+        }
+    }
+
     async salesCommission(employeeId: string, params: SalesCommissionQueryParams): Promise<SalesCommissionResponseData> {
         try {
             const response = await apiService.client.get(`/sales/${employeeId}/commission`, {

@@ -64,6 +64,10 @@
             </UPageCard>
         </div>
 
+        <div v-if="consistency" class="py-2">
+            <ConsistencyProgressCard :progress="consistency" :period="currentPeriod" />
+        </div>
+
         <div class="py-2">
             <UCard>
                 <div class="mb-3 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
@@ -103,7 +107,7 @@
         </div>
 
         <div class="py-2">
-            <TestimonialPanel :employee-id="route.params.id as string" :employee-name="employee?.name" :customers="knownCustomers" />
+            <TestimonialPanel :employee-id="route.params.id as string" :employee-name="employee?.name" :customers="knownCustomers" @changed="fetchConsistency" />
         </div>
 
         <div class="py-2">
@@ -124,7 +128,7 @@ import { InvoiceService } from '~/services/invoice-service'
 import type { Employee } from '~/types/employee'
 import type { TableColumn } from '@nuxt/ui'
 import type { GlossaryKey } from '~/composables/useGlossary'
-import type { ChurnRow, CommissionLineItem, SalesCommissionData } from '~/types/sales'
+import type { ChurnRow, CommissionLineItem, ConsistencyProgress, SalesCommissionData } from '~/types/sales'
 
 const { setLoading } = useLoading()
 const route = useRoute()
@@ -238,7 +242,14 @@ const fetchChurnData = async () => {
     churnData.value = response.data
 }
 
-const fetchMonthData = () => Promise.all([fetchPeriodData(), fetchInvoiceData(), fetchChurnData()])
+const consistency = ref<ConsistencyProgress | null>(null)
+const currentPeriod = computed(() => `${year.value}${String(selectedMonth.value).padStart(2, '0')}`)
+const fetchConsistency = async () => {
+    const response = await commissionService.salesConsistency(route.params.id as string, { month: selectedMonth.value, year: year.value })
+    consistency.value = response?.data ?? null
+}
+
+const fetchMonthData = () => Promise.all([fetchPeriodData(), fetchInvoiceData(), fetchChurnData(), fetchConsistency()])
 
 const initData = async () => {
     setLoading(true)
