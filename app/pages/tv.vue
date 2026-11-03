@@ -174,6 +174,9 @@ const slideElapsed = ref(0)
 
 const monthName = (p: string) => MONTHS[Number(p.slice(4, 6)) - 1]!
 const monthShort = (p: string) => monthName(p).slice(0, 3).toUpperCase()
+/** The lounge is semi-public: rupiah amounts stay off the screen; the subscription ranking still orders by them. */
+const SHOW_AMOUNTS = false
+
 const compactRupiah = (v: number) => Math.abs(v) >= 1_000_000
     ? `Rp ${(v / 1_000_000).toLocaleString('id-ID', { maximumFractionDigits: 1 })} jt`
     : `Rp ${Math.round(v / 1000).toLocaleString('id-ID')} rb`
@@ -229,7 +232,7 @@ const slides = computed(() => {
     if (!previous.value || !current.value) return []
     const metrics = [
         { title: 'BEST NEW SERVICE OF THE MONTH', value: services, tiebreak: subscription, format: (v: number) => String(v), gapLabel: (gap: number) => `+${gap + 1}`, winnerLabel: (v: number) => `${v} NEW SERVICES`, rating: (v: number) => ({ value: String(v), unit: 'SVC' }) },
-        { title: 'BEST NEW SUBSCRIPTION BILLING PAID OF THE MONTH', value: subscription, tiebreak: services, format: compactRupiah, gapLabel: (gap: number) => `+${compactRupiah(Math.max(gap, 1000))}`, winnerLabel: (v: number) => compactRupiah(v).toUpperCase(), rating: (v: number) => ({ value: (v / 1_000_000).toLocaleString('id-ID', { maximumFractionDigits: 1 }), unit: 'JUTA' }) }
+        { title: 'BEST NEW SUBSCRIPTION BILLING PAID OF THE MONTH', value: subscription, tiebreak: services, format: (v: number) => (SHOW_AMOUNTS ? compactRupiah(v) : ''), gapLabel: (gap: number) => (SHOW_AMOUNTS ? `+${compactRupiah(Math.max(gap, 1000))}` : ''), winnerLabel: (v: number) => (SHOW_AMOUNTS ? compactRupiah(v).toUpperCase() : 'BILLING PAID CHAMPION'), rating: (v: number) => (SHOW_AMOUNTS ? { value: (v / 1_000_000).toLocaleString('id-ID', { maximumFractionDigits: 1 }), unit: 'JUTA' } : { value: '#1', unit: 'PAID' }) }
     ]
     return screenBranches.value.flatMap(b => metrics.map((m) => {
         const prev = previous.value!.rows.filter(r => isBranch(r, b))
@@ -246,7 +249,7 @@ const slides = computed(() => {
             const was = startOfDay.get(r.row.name)
             return {
                 ...r,
-                chase: target ? `${m.gapLabel(gap)} lagi ${goal}` : '',
+                chase: target ? (m.gapLabel(gap) ? `${m.gapLabel(gap)} lagi ${goal}` : `Ayo ${goal}!`) : '',
                 // Positive = climbed since the day started.
                 move: was ? was - r.rank : 0
             }
@@ -339,10 +342,10 @@ const makeGoal = (row: TvSalesRow, kind: Goal['kind'], delta: number, rows: TvSa
         id: ++goalId,
         kind,
         row,
-        headline: kind === 'service' ? `+${delta} NEW SERVICE` : `+${compactRupiah(delta).toUpperCase()} BILLING PAID`,
+        headline: kind === 'service' ? `+${delta} NEW SERVICE` : SHOW_AMOUNTS ? `+${compactRupiah(delta).toUpperCase()} BILLING PAID` : 'NEW BILLING PAID',
         detail: kind === 'service'
             ? `${row.activityCount} layanan baru bulan ini${rank ? ` · peringkat #${rank}` : ''}`
-            : `${compactRupiah(row.newSubscription)} bulan ini${rank ? ` · peringkat #${rank}` : ''}`,
+            : `${SHOW_AMOUNTS ? `${compactRupiah(row.newSubscription)} bulan ini` : 'Subscription new'}${rank ? ` · peringkat #${rank}` : ''}`,
         confetti: confetti()
     }
 }
