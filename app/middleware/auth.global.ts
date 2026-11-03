@@ -1,6 +1,9 @@
 export default defineNuxtRouteMiddleware((to, from) => {
     if (process.server) return
 
+    // The TV lounge screen has no login; its display key is checked by the BE.
+    if (to.path === '/tv') return
+
     const { state } = useAuth()
 
     if (!state.token && to.path !== '/sign-in') {
