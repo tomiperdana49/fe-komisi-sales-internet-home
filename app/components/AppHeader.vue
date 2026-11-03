@@ -49,7 +49,7 @@
                 />
             </UTooltip>
 
-            <NotificationsSlideover />
+            <!-- NotificationsSlideover (Approval bell) hidden until the BE /adjustment endpoint exists; it only 404'd. -->
 
             <UColorModeButton size="sm" />
             <ClientOnly>
