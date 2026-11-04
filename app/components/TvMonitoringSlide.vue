@@ -33,7 +33,7 @@
                     <UAvatar :src="m.photoProfile" :alt="m.name" class="size-14 shrink-0 text-xl ring-2 ring-white" />
                     <div class="min-w-0">
                         <p class="truncate text-[28px] font-extrabold leading-tight text-[#24205f]">{{ m.name }}</p>
-                        <p class="truncate text-lg text-slate-500">{{ branchLabel(m.branch) }} · {{ m.teamSize }} AM</p>
+                        <p class="truncate text-lg text-slate-500">{{ branchLabel(m.branch) }} · {{ m.teamSize }} AM<template v-if="m.role !== 'Sales Manager'"> · {{ m.role }}</template></p>
                     </div>
                 </div>
                 <div class="relative h-8 flex-1 rounded-full bg-slate-200">
@@ -155,7 +155,7 @@ const periodLabel = computed(() => `${MONTHS[Number(props.report.period.slice(4,
 const statusOf = (m: TvMonitoringManager) => STATUS[m.status]
 const subtitle = computed(() => {
     const s = props.slide
-    if (s.kind === 'manager') return `SALES MANAGER · ${branchLabel(s.manager.branch).toUpperCase()}`
+    if (s.kind === 'manager') return `${s.manager.role.toUpperCase()} · ${branchLabel(s.manager.branch).toUpperCase()}`
     if (s.kind === 'am') return `ACCOUNT MANAGER · ${s.branch.toUpperCase()}${s.pages > 1 ? ` · ${s.page}/${s.pages}` : ''}`
     return 'SALES MANAGER HOME'
 })

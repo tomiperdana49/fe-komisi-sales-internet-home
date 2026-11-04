@@ -45,6 +45,8 @@ export interface TvMonitoringMember {
 /** One Sales Manager's team, day by day. */
 export interface TvMonitoringManager {
   name: string
+  /** "Branch Manager": standing in on the board for a branch with no Sales Manager. */
+  role: 'Sales Manager' | 'Branch Manager'
   photoProfile: string
   branch: string | null
   teamSize: number
