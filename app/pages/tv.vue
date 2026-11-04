@@ -6,9 +6,11 @@
             <img src="/logo.png" alt="Nusanet" class="absolute right-24 top-16 h-16" />
 
             <div v-if="error" class="flex h-full items-center justify-center text-4xl text-slate-500">{{ error }}</div>
-            <div v-else-if="!slide" class="flex h-full items-center justify-center text-4xl text-slate-500">Memuat data…</div>
+            <div v-else-if="!tourItem" class="flex h-full items-center justify-center text-4xl text-slate-500">Memuat data…</div>
 
             <template v-else>
+                <TvMonitoringSlide v-if="monitorSlide && report" :key="monitorSlide.key" :slide="monitorSlide" :report="report" :days-left="daysLeftLabel" />
+                <template v-else-if="slide">
                 <header class="px-20 pt-16">
                     <p class="text-[28px] font-extrabold tracking-[0.18em] text-navy">{{ monthName(current!.period).toUpperCase() }} {{ current!.period.slice(0, 4) }} · {{ daysLeftLabel }}</p>
                     <h1 class="mt-2 max-w-[1440px] font-black leading-[0.98] tracking-tight" :class="slide.title.length > 35 ? 'text-[64px]' : 'text-[84px]'">
@@ -106,10 +108,11 @@
                         <p v-if="!slide.ranking.length" class="py-10 text-2xl text-slate-400">Belum ada data bulan ini.</p>
                     </section>
                 </main>
+                </template>
 
                 <footer class="absolute bottom-6 left-20 right-44 flex items-center justify-between text-lg text-slate-500">
                     <div class="flex items-center gap-2">
-                        <span v-for="(s, i) in slides" :key="s.key" class="h-2.5 rounded-full transition-all" :class="i === slideIndex ? 'w-10 bg-brand' : 'w-2.5 bg-slate-300'" />
+                        <span v-for="(s, i) in tour" :key="s.key" class="h-2.5 rounded-full transition-all" :class="i === slideIndex ? 'w-10 bg-brand' : 'w-2.5 bg-slate-300'" />
                     </div>
                     <span class="flex items-center gap-2">
                         <span class="inline-flex size-3 rounded-full" :class="stale ? 'bg-amber-400' : 'bg-red-500 animate-pulse'" />
@@ -140,7 +143,8 @@
 
 <script setup lang="ts">
 import { branchLabel } from '~/composables/useBranchFilter'
-import { tvService, type TvSalesData, type TvSalesRow } from '~/services/tv-service'
+import { tvService, type TvMonitoringData, type TvMonitoringMember, type TvSalesData, type TvSalesRow } from '~/services/tv-service'
+import type { TvMonitoringSlideData } from '~/components/TvMonitoringSlide.vue'
 
 // A lounge TV: no header, no login (the BE checks ?key=), sized for 1920x1080 and scaled to fit.
 definePageMeta({ layout: false })
@@ -150,6 +154,11 @@ const route = useRoute()
 const key = computed(() => String(route.query.key ?? ''))
 // ?branch=Medan narrows the screen to one branch (same names as the summary branch filter).
 const branch = computed(() => (route.query.branch ? String(route.query.branch) : ''))
+const screen = computed(() => String(route.query.screen ?? ''))
+/** Sales Managers per board slide. */
+const BOARD_SIZE = 8
+/** Account Managers per slide of ?screen=am. */
+const AM_PAGE_SIZE = 10
 
 const REFRESH_MS = 60 * 1000
 /** The leaders stay put; the rest of the ranking (PAGE_SIZE rows visible) glides up so the bottom shows too. */
@@ -166,6 +175,7 @@ const HOLD_MS = 2500
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
 const data = ref<TvSalesData | null>(null)
+const report = ref<TvMonitoringData | null>(null)
 const error = ref('')
 const stale = ref(false)
 const scale = ref(1)
@@ -264,7 +274,62 @@ const nameSize = (name: string) => name.length <= 14 ? 46 : name.length <= 22 ? 
 const MEDALS = ['gold', 'silver', 'bronze'] as const
 const medal = (rank: number) => MEDALS[rank - 1] ?? null
 
-const slide = computed(() => slides.value[slideIndex.value % Math.max(1, slides.value.length)])
+/** Daily monitoring: one board of every Sales Manager, then each team in turn. */
+const monitorSlides = computed<TvMonitoringSlideData[]>(() => {
+    const managers = [...(report.value?.managers ?? [])]
+        .filter(m => !branch.value || branchLabel(m.branch).toLowerCase() === branch.value.toLowerCase())
+        .sort((a, b) => b.achievementPercentage - a.achievementPercentage || a.name.localeCompare(b.name))
+    const boards: TvMonitoringSlideData[] = []
+    for (let i = 0; i < managers.length; i += BOARD_SIZE) {
+        boards.push({ key: `board-${i}`, kind: 'board', firstRank: i + 1, managers: managers.slice(i, i + BOARD_SIZE) })
+    }
+    return [...boards, ...managers.map(manager => ({ key: `team-${manager.name}`, kind: 'manager' as const, manager }))]
+})
+
+/** ?screen=am: every Account Manager, ranked within their branch (biggest branch first), a page at a time. */
+const amSlides = computed<TvMonitoringSlideData[]>(() => {
+    const everyone = [
+        ...(report.value?.managers ?? []).flatMap(m => m.members.map(member => ({ ...member, team: m.name }))),
+        ...(report.value?.otherAccountManagers ?? []).map(am => ({ ...am, team: am.team ?? '–' }))
+    ]
+    const byBranch = new Map<string, (TvMonitoringMember & { team: string })[]>()
+    for (const am of everyone) {
+        const label = branchLabel(am.branch)
+        if (branch.value && label.toLowerCase() !== branch.value.toLowerCase()) continue
+        byBranch.set(label, [...(byBranch.get(label) ?? []), am])
+    }
+    return [...byBranch.entries()]
+        .sort(([a, x], [b, y]) => y.length - x.length || a.localeCompare(b))
+        .flatMap(([label, members]) => {
+            const ranked = members.sort((a, b) => b.activityCount - a.activityCount || a.name.localeCompare(b.name))
+            const pages = Math.ceil(ranked.length / AM_PAGE_SIZE)
+            return Array.from({ length: pages }, (_, p) => ({
+                key: `am-${label}-${p}`,
+                kind: 'am' as const,
+                branch: label,
+                page: p + 1,
+                pages,
+                firstRank: p * AM_PAGE_SIZE + 1,
+                rows: ranked.slice(p * AM_PAGE_SIZE, (p + 1) * AM_PAGE_SIZE)
+            }))
+        })
+})
+
+/** Each link shows one thing: ?screen=monitoring the Sales Managers, ?screen=am the Account Managers, otherwise the rankings. */
+const tour = computed(() => {
+    if (screen.value === 'am') return amSlides.value
+    if (screen.value === 'monitoring') return monitorSlides.value
+    return slides.value
+})
+const tourItem = computed(() => tour.value[slideIndex.value % Math.max(1, tour.value.length)])
+const slide = computed(() => {
+    const item = tourItem.value
+    return item && 'ranking' in item ? item : undefined
+})
+const monitorSlide = computed(() => {
+    const item = tourItem.value
+    return item && 'kind' in item ? item : undefined
+})
 const rankingGroups = computed(() => {
     const ranking = slide.value?.ranking ?? []
     return [
@@ -290,7 +355,7 @@ const animate = (t: number) => {
         // Reached the bottom: start from the top next time; otherwise continue from here.
         resumeAt.value[slideIndex.value] = scrollOffset.value >= maxOffset.value ? 0 : scrollOffset.value
         slideElapsed.value = 0
-        slideIndex.value = (slideIndex.value + 1) % Math.max(1, slides.value.length)
+        slideIndex.value = (slideIndex.value + 1) % Math.max(1, tour.value.length)
     }
     frame = requestAnimationFrame(animate)
 }
@@ -299,6 +364,9 @@ const load = async () => {
     if (!key.value) {
         error.value = 'Alamat tampilan TV belum lengkap (key tidak ada).'
         return
+    }
+    if (screen.value === 'am' || screen.value === 'monitoring') {
+        tvService.monitoring(key.value).then((next) => { report.value = next }).catch(() => { stale.value = true })
     }
     try {
         const next = await tvService.sales(key.value)

@@ -32,10 +32,57 @@ export interface TvSalesData {
   generatedAt: string
 }
 
+export interface TvMonitoringMember {
+  name: string
+  photoProfile: string
+  branch: string | null
+  activityCount: number
+  target: number
+  /** Activity gained on the last day with data. */
+  lastDayDelta: number
+}
+
+/** One Sales Manager's team, day by day. */
+export interface TvMonitoringManager {
+  name: string
+  photoProfile: string
+  branch: string | null
+  teamSize: number
+  activityCount: number
+  finalTarget: number
+  achievementPercentage: number
+  /** Activity an even pace to finalTarget would have reached by the last day with data. */
+  expected: number
+  neededPerDay: number
+  status: 'on_track' | 'slightly_behind' | 'behind' | 'no_target'
+  churnCount: number
+  lastDayDelta: number
+  /** Team activity at the end of each day from the period start to dataUntil. */
+  cumulative: number[]
+  members: TvMonitoringMember[]
+}
+
+export interface TvMonitoringData {
+  period: string
+  startDate: string
+  endDate: string
+  dataUntil: string | null
+  daysElapsed: number
+  daysTotal: number
+  managers: TvMonitoringManager[]
+  /** Account Managers outside every listed Sales Manager's team; `team` is whoever they report to. */
+  otherAccountManagers: (TvMonitoringMember & { team: string | null })[]
+}
+
 export const tvService = {
   /** No login: the TV passes the shared display key from its URL. */
   async sales(key: string): Promise<TvSalesData> {
     const response = await apiService.client.get('/tv/sales', { params: { key } })
+    return response.data.data
+  },
+
+  async monitoring(key: string): Promise<TvMonitoringData> {
+    const response = await apiService.client.get('/tv/monitoring', { params: { key } })
     return response.data.data
   }
 }
