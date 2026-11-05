@@ -53,10 +53,16 @@ export const useAchievementColor = () => {
     const getAchievementBadgeClass = (status: string, ongoing = false): string => badgeClasses[achievementDisplay(status, ongoing).color]
     const getAchievementTextClass = (status: string, ongoing = false): string => textClasses[achievementDisplay(status, ongoing).color]
     const getAchievementLabel = (status: string, ongoing = false): string => achievementDisplay(status, ongoing).label
+    /** A Sales Manager's team has one bar, its final target; while the period runs, missing it isn't a verdict yet. */
+    const getTeamAchievement = (isTargetAchieved: boolean, ongoing = false) => {
+        if (isTargetAchieved) return { label: 'Capai Target', color: 'success' as const }
+        return ongoing ? { label: 'Belum Capai', color: 'warning' as const } : { label: 'Tidak Capai Target', color: 'error' as const }
+    }
 
     return {
         getAchievementBadgeClass,
         getAchievementTextClass,
-        getAchievementLabel
+        getAchievementLabel,
+        getTeamAchievement
     }
 }

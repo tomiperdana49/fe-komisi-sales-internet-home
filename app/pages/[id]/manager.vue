@@ -59,9 +59,8 @@
                         <div class="p-4 rounded-xl border border-gray-200 dark:border-gray-800">
                             <div class="flex justify-between items-center mb-4">
                                 <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Capaian Tim</h4>
-                                <UBadge v-if="ongoing" color="info" variant="subtle">Periode Berjalan</UBadge>
-                                <UBadge v-else :color="periodData.team.isTargetAchieved ? 'success' : 'error'" variant="subtle">
-                                    {{ periodData.team.isTargetAchieved ? 'Capai Target' : 'Tidak Capai Target' }}
+                                <UBadge :color="getTeamAchievement(periodData.team.isTargetAchieved, ongoing).color" variant="subtle">
+                                    {{ getTeamAchievement(periodData.team.isTargetAchieved, ongoing).label }}
                                 </UBadge>
                             </div>
                             <p class="text-3xl font-bold text-gray-900 dark:text-white tabular-nums">
@@ -414,7 +413,7 @@ const expanded = ref({})
 const columnPinning = ref({ left: ['employee'], right: [] })
 
 const { formatCurrency, formatDate } = useFormat()
-const { getAchievementTextClass, getAchievementLabel } = useAchievementColor()
+const { getAchievementTextClass, getAchievementLabel, getTeamAchievement } = useAchievementColor()
 
 const personalTotal = computed(() => {
     const p = periodData.value?.personal

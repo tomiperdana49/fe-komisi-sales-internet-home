@@ -57,6 +57,7 @@ const UBadge = resolveComponent('UBadge')
 
 const { setLoading } = useLoading()
 const { formatCurrency } = useFormat()
+const { getTeamAchievement } = useAchievementColor()
 const { hintHeader } = useInvoiceColumns()
 const summaryService = new SummaryService()
 
@@ -126,9 +127,10 @@ const columns: TableColumn<ManagerSummaryItem>[] = [
     {
         accessorKey: 'isTargetAchieved',
         header: 'Status Tim',
-        cell: ({ row }) => ongoing.value
-            ? h(UBadge, { color: 'info', variant: 'subtle', title: `Sementara: ${row.original.isTargetAchieved ? 'Capai Target' : 'Belum Capai Target'}` }, () => 'Berjalan')
-            : h(UBadge, { color: row.original.isTargetAchieved ? 'success' : 'error', variant: 'subtle' }, () => row.original.isTargetAchieved ? 'Capai Target' : 'Tidak Capai Target')
+        cell: ({ row }) => {
+            const { label, color } = getTeamAchievement(row.original.isTargetAchieved, ongoing.value)
+            return h(UBadge, { color, variant: 'subtle', title: ongoing.value ? 'Status sementara. Final setelah periode berakhir.' : undefined }, () => label)
+        }
     },
     {
         accessorKey: 'totalCount',
