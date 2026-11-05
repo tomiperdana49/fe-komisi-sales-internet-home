@@ -19,14 +19,14 @@
                                 <span class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ data.target > 0 ? `/ ${data.target} layanan` : 'layanan' }}</span>
                             </p>
                         </div>
-                        <TextTooltip v-if="ongoing" :text="`Status final setelah ${shortDate(new Date(data.endDate))}. Sementara: ${data.achievementStatus}`">
+                        <TextTooltip v-if="ongoing" :text="`Status sementara. Final setelah ${shortDate(new Date(data.endDate))}.`">
                             <span :class="['text-xs font-bold uppercase px-2.5 py-1 rounded-md border bg-gray-50 dark:bg-gray-800 text-right', ongoingBadge.class]">
                                 {{ ongoingBadge.label }}
                             </span>
                         </TextTooltip>
                         <TermHint v-else term="achievementStatus">
                             <span :class="['text-xs font-bold uppercase px-2.5 py-1 rounded-md border bg-gray-50 dark:bg-gray-800 text-right', getAchievementBadgeClass(data.achievementStatus)]">
-                                {{ data.achievementStatus }}
+                                {{ getAchievementLabel(data.achievementStatus) }}
                             </span>
                         </TermHint>
                     </div>
@@ -172,7 +172,7 @@ const props = defineProps<{
 }>()
 
 const { formatCurrency } = useFormat()
-const { getAchievementBadgeClass } = useAchievementColor()
+const { getAchievementBadgeClass, getAchievementLabel } = useAchievementColor()
 const { isOngoingUntil, shortDate, monthLabel } = usePeriodOptions()
 const ongoing = computed(() => isOngoingUntil(props.data.endDate))
 
@@ -184,7 +184,7 @@ const targetGapText = computed(() => {
         ? `Kurang ${gap} layanan lagi untuk capai target — ${daysLeftLabel.value}.`
         : `Kurang ${gap} layanan dari target.`
 })
-// While the period runs, show where the AM stands now (Belum Tercapai / Tercapai) and the days left, as a nudge;
+// While the period runs, show where the AM stands now and the days left, as a nudge;
 // the final status still comes once the period has ended.
 const belowTarget = computed(() => props.data.target > 0 && props.data.activityCount < props.data.target)
 const daysLeft = computed(() => {
@@ -194,12 +194,10 @@ const daysLeft = computed(() => {
     return Math.round((new Date(y!, m! - 1, d!).getTime() - today.getTime()) / 86_400_000) + 1
 })
 const daysLeftLabel = computed(() => (daysLeft.value <= 1 ? 'hari terakhir' : `sisa ${daysLeft.value} hari`))
-const ongoingBadge = computed(() => {
-    if (props.data.target <= 0) return { label: 'Berjalan', class: 'text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-800' }
-    return belowTarget.value
-        ? { label: 'Belum Tercapai', class: 'text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800' }
-        : { label: 'Tercapai', class: 'text-green-600 dark:text-green-400 border-green-200 dark:border-green-800' }
-})
+const ongoingBadge = computed(() => ({
+    label: getAchievementLabel(props.data.achievementStatus, true),
+    class: getAchievementBadgeClass(props.data.achievementStatus, true)
+}))
 const ongoingMotivation = computed(() => {
     if (props.data.target <= 0) return 'Periode masih berjalan — terus semangat!'
     const gap = props.data.target - props.data.activityCount

@@ -145,9 +145,9 @@ const GLOSSARY = {
     achievementStatus: {
         term: 'Status Pencapaian',
         text: (r: Rules) => {
-            if (!r) return 'Ditentukan dari Pencapaian New setelah periode berakhir, dengan batas berbeda untuk Permanent dan Probation/Contract.'
+            if (!r) return 'Ditentukan dari Pencapaian New, dengan batas berbeda untuk Permanent dan Probation/Contract. Selama periode berjalan statusnya masih sementara.'
             const a = r.achievement
-            return `Ditentukan dari Pencapaian New setelah periode berakhir. Permanent: ≥${a.permanentBonus} Capai target Bonus, ≥${a.permanentOnTarget} Capai target, di bawah ${a.permanentSp1Below} SP1, selebihnya Tidak Capai target (batas Capai target bergeser bila AM punya target khusus). Probation/Contract: ≥${a.probationExcellent} Excellent, ≥${a.probationVeryGood} Very Good, ≥${a.probationAverage} Average, selebihnya Below Average.`
+            return `Ditentukan dari Pencapaian New. Permanent: ≥${a.permanentBonus} Capai Bonus, ≥${a.permanentOnTarget} Capai Standard; di bawah itu Belum Capai selama periode berjalan, lalu Tidak Capai setelah periode berakhir (SP1 bila di bawah ${a.permanentSp1Below}). Batas Capai bergeser bila AM punya target khusus. Probation/Contract: ≥${a.probationExcellent} Excellent, ≥${a.probationVeryGood} Very Good, ≥${a.probationAverage} Average, selebihnya Below Average.`
         }
     },
     bonusBulanan: {

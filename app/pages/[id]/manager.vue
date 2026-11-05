@@ -414,7 +414,7 @@ const expanded = ref({})
 const columnPinning = ref({ left: ['employee'], right: [] })
 
 const { formatCurrency, formatDate } = useFormat()
-const { getAchievementTextClass } = useAchievementColor()
+const { getAchievementTextClass, getAchievementLabel } = useAchievementColor()
 
 const personalTotal = computed(() => {
     const p = periodData.value?.personal
@@ -722,9 +722,11 @@ const columns = computed<TableColumn<ManagerTeamMember>[]>(() => [
     {
         id: 'achievement',
         header: hintHeader('Status Pencapaian', 'achievementStatus'),
-        cell: ({ row }) => ongoing.value
-            ? withTooltip(`Status final setelah periode berakhir. Sementara: ${row.original.achievementStatus}`, h('div', { class: 'text-xs uppercase font-semibold text-sky-600 dark:text-sky-400' }, 'Berjalan'))
-            : h('div', { class: ['text-xs uppercase font-semibold', getAchievementTextClass(row.original.achievementStatus)] }, row.original.achievementStatus)
+        cell: ({ row }) => {
+            const status = row.original.achievementStatus
+            const cell = h('div', { class: ['text-xs uppercase font-semibold', getAchievementTextClass(status, ongoing.value)] }, getAchievementLabel(status, ongoing.value))
+            return ongoing.value ? withTooltip('Status sementara. Final setelah periode berakhir.', cell) : cell
+        }
     },
     {
         accessorKey: 'activityCount',

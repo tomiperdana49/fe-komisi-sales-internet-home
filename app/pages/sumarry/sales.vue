@@ -58,7 +58,7 @@ const UAvatar = resolveComponent('UAvatar')
 
 const { setLoading } = useLoading()
 const { formatCurrency } = useFormat()
-const { getAchievementTextClass } = useAchievementColor()
+const { getAchievementTextClass, getAchievementLabel } = useAchievementColor()
 const { hintHeader } = useInvoiceColumns()
 const summaryService = new SummaryService()
 
@@ -144,9 +144,13 @@ const columns: TableColumn<SalesSummaryItem>[] = [
     {
         accessorKey: 'achievementStatus',
         header: 'Status Pencapaian',
-        cell: ({ row }) => ongoing.value
-            ? h('div', { class: 'text-xs uppercase font-semibold text-sky-600 dark:text-sky-400', title: `Status final setelah periode berakhir. Sementara: ${row.original.achievementStatus}` }, 'Berjalan')
-            : h('div', { class: getAchievementTextClass(row.original.achievementStatus) + ' text-xs uppercase' }, row.original.achievementStatus)
+        cell: ({ row }) => {
+            const status = row.original.achievementStatus
+            return h('div', {
+                class: getAchievementTextClass(status, ongoing.value) + ' text-xs uppercase',
+                title: ongoing.value ? 'Status sementara. Final setelah periode berakhir.' : undefined
+            }, getAchievementLabel(status, ongoing.value))
+        }
     },
     {
         accessorKey: 'activityCount',
