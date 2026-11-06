@@ -53,7 +53,8 @@ const PRODUCT_FIELDS: { key: keyof CommissionProductRule; label: string; fmt: (v
     { key: 'sixMonthRateFrom', label: 'rate 6 bln mulai', fmt: (v: number) => `kontrak ≥ ${v} bln` },
     { key: 'twelveMonthRateFrom', label: 'rate 12 bln mulai', fmt: (v: number) => `kontrak ≥ ${v} bln` },
     { key: 'setupRate', label: 'setup', fmt: pct },
-    { key: 'churn', label: 'hitung churn', fmt: (v: boolean) => v ? 'Ya' : 'Tidak' }
+    { key: 'churn', label: 'hitung churn', fmt: (v: boolean) => v ? 'Ya' : 'Tidak' },
+    { key: 'discontinued', label: 'tidak dijual lagi', fmt: (v?: boolean) => v ? 'Ya' : 'Tidak' }
 ]
 
 const describeProduct = (p: CommissionProductRule) => `${p.serviceIds.join(', ')} · ${p.rate1}% / ${p.rate6}% / ${p.rate12}%`

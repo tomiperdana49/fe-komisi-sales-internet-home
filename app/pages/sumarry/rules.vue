@@ -142,7 +142,7 @@
                                     Pisahkan beberapa ServiceId dengan koma. Kontrak di bawah batas rate 6 bulan memakai rate 1 bulan. Kosongkan kolom Setup untuk memakai rate setup umum. Centang <strong>Churn</strong> agar layanan produk tersebut yang berhenti kurang dari 1 tahun dihitung sebagai churn.
                                 </p>
                                 <div class="overflow-x-auto">
-                                    <table class="w-full min-w-[1230px] text-sm">
+                                    <table class="w-full min-w-[1330px] text-sm">
                                         <thead>
                                             <tr class="text-left text-xs uppercase text-gray-500 border-b border-gray-200 dark:border-gray-800">
                                                 <th class="py-2 pr-2 min-w-56">Produk</th>
@@ -155,12 +155,20 @@
                                                 <th class="py-2 pr-2 w-32 min-w-32">Rate 12 bln mulai kontrak ≥</th>
                                                 <th class="py-2 pr-2 w-28 min-w-28">Setup %</th>
                                                 <th class="py-2 pr-2 w-20 min-w-20 text-center">Churn</th>
+                                                <th class="py-2 pr-2 w-24 min-w-24 text-center">
+                                                    <TextTooltip text="Hanya keterangan untuk produk yang sudah tidak dijual. Komisi recurring dan churn pelanggan lama tetap dihitung, jadi jangan hapus produknya dari daftar.">
+                                                        <span>Tidak dijual lagi</span>
+                                                    </TextTooltip>
+                                                </th>
                                                 <th v-if="canEdit" class="py-2 w-10" />
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <tr v-for="(p, i) in form.products" :key="i" class="border-b border-gray-100 dark:border-gray-800/60 align-top">
-                                                <td class="py-2 pr-2"><UInput v-model="p.name" :disabled="!canEdit" class="w-full" /></td>
+                                                <td class="py-2 pr-2">
+                                                    <UInput v-model="p.name" :disabled="!canEdit" class="w-full" />
+                                                    <UBadge v-if="p.discontinued" color="neutral" variant="subtle" size="sm" class="mt-1">Pelanggan lama saja</UBadge>
+                                                </td>
                                                 <td class="py-2 pr-2">
                                                     <UInput
                                                         :model-value="p.serviceIds.join(', ')"
@@ -188,6 +196,7 @@
                                                     />
                                                 </td>
                                                 <td class="py-2 pr-2 text-center"><UCheckbox v-model="p.churn" :disabled="!canEdit" class="justify-center pt-2" aria-label="Hitung churn" /></td>
+                                                <td class="py-2 pr-2 text-center"><UCheckbox v-model="p.discontinued" :disabled="!canEdit" class="justify-center pt-2" aria-label="Tidak dijual lagi" /></td>
                                                 <td v-if="canEdit" class="py-2">
                                                     <UButton icon="i-lucide-x" color="neutral" variant="ghost" aria-label="Hapus produk" @click="form.products.splice(i, 1)" />
                                                 </td>

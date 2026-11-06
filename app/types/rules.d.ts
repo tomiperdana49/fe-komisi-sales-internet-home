@@ -15,6 +15,8 @@ export interface CommissionProductRule {
     setupRate: number | null;
     /** Stopped services of this product are pulled in as churn. */
     churn: boolean;
+    /** Label only: no longer sold, existing customers remain. Rates, recurring and churn work as usual. */
+    discontinued?: boolean;
 }
 
 export type ChurnCloseStatus = 'New Installation' | 'Active to NA' | 'Renewal' | 'System'
