@@ -145,7 +145,7 @@
                                     <table class="w-full min-w-[1330px] text-sm">
                                         <thead>
                                             <tr class="text-left text-xs uppercase text-gray-500 border-b border-gray-200 dark:border-gray-800">
-                                                <th class="py-2 pr-2 min-w-56">Produk</th>
+                                                <th class="sticky left-0 z-10 bg-default border-r border-gray-200 dark:border-gray-800 py-2 pr-2 min-w-56">Produk</th>
                                                 <th class="py-2 pr-2 min-w-44">ServiceId</th>
                                                 <th class="py-2 pr-2 min-w-48">Grup</th>
                                                 <th class="py-2 pr-2 w-28 min-w-28">1 bln %</th>
@@ -165,7 +165,7 @@
                                         </thead>
                                         <tbody>
                                             <tr v-for="(p, i) in form.products" :key="i" class="border-b border-gray-100 dark:border-gray-800/60 align-top">
-                                                <td class="py-2 pr-2">
+                                                <td class="sticky left-0 z-10 bg-default border-r border-gray-200 dark:border-gray-800 py-2 pr-2">
                                                     <UInput v-model="p.name" :disabled="!canEdit" class="w-full" />
                                                     <UBadge v-if="p.discontinued" color="neutral" variant="subtle" size="sm" class="mt-1">Pelanggan lama saja</UBadge>
                                                 </td>
@@ -262,7 +262,7 @@
                                     <table class="w-full min-w-[1100px] text-sm">
                                         <thead>
                                             <tr class="text-left text-xs uppercase text-gray-500 border-b border-gray-200 dark:border-gray-800">
-                                                <th class="py-2 pr-2 w-44 min-w-44">Status Existing</th>
+                                                <th class="sticky left-0 z-10 bg-default border-r border-gray-200 dark:border-gray-800 py-2 pr-2 w-44 min-w-44">Status Existing</th>
                                                 <th class="py-2 pr-2 min-w-48">Kategori Close Reason</th>
                                                 <th class="py-2 pr-2 min-w-56">Alasan (nama di NIS)</th>
                                                 <th class="py-2 pr-2 min-w-56">Keterangan</th>
@@ -273,7 +273,7 @@
                                         </thead>
                                         <tbody>
                                             <tr v-for="(r, i) in form.churnCloseReasons" :key="i" class="border-b border-gray-100 dark:border-gray-800/60 align-top">
-                                                <td class="py-2 pr-2"><USelect v-model="r.status" :items="closeStatuses" :disabled="!canEdit" class="w-full" /></td>
+                                                <td class="sticky left-0 z-10 bg-default border-r border-gray-200 dark:border-gray-800 py-2 pr-2"><USelect v-model="r.status" :items="closeStatuses" :disabled="!canEdit" class="w-full" /></td>
                                                 <td class="py-2 pr-2"><UInput v-model="r.category" :disabled="!canEdit" class="w-full" /></td>
                                                 <td class="py-2 pr-2"><UInput v-model="r.reason" :disabled="!canEdit" class="w-full" /></td>
                                                 <td class="py-2 pr-2"><UInput v-model="r.note" :disabled="!canEdit" class="w-full" /></td>
