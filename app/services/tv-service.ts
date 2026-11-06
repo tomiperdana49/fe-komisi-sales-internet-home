@@ -29,7 +29,10 @@ export interface TvSalesData {
   previous: TvPeriod
   current: TvPeriod
   baseline: TvBaselineRow[]
-  generatedAt: string
+  /** WIB "HH:mm" from the server; the TV's own timezone setting can't be trusted. */
+  generatedTime: string
+  /** Days to the end of the running period, by the server's WIB clock; 1 or less is the last day. */
+  daysLeft: number
 }
 
 export interface TvMonitoringMember {

@@ -191,9 +191,7 @@ const compactRupiah = (v: number) => Math.abs(v) >= 1_000_000
     ? `Rp ${(v / 1_000_000).toLocaleString('id-ID', { maximumFractionDigits: 1 })} jt`
     : `Rp ${Math.round(v / 1000).toLocaleString('id-ID')} rb`
 
-const updatedAt = computed(() => data.value
-    ? new Date(data.value.generatedAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(/\./g, ':')
-    : '')
+const updatedAt = computed(() => data.value?.generatedTime ?? '')
 
 const isBranch = (r: TvSalesRow, name: string) => branchLabel(r.branch).toLowerCase() === name.toLowerCase()
 const inBranch = (rows: TvSalesRow[]) => branch.value ? rows.filter(r => isBranch(r, branch.value)) : rows
@@ -201,10 +199,8 @@ const previous = computed(() => data.value?.previous)
 const current = computed(() => data.value?.current)
 
 const daysLeftLabel = computed(() => {
-    if (!current.value) return ''
-    const end = new Date(`${current.value.endDate}T23:59:59`)
-    const days = Math.ceil((end.getTime() - Date.now()) / 86_400_000)
-    return days <= 1 ? 'LAST DAY' : `${days} DAYS LEFT`
+    if (!data.value) return ''
+    return data.value.daysLeft <= 1 ? 'LAST DAY' : `${data.value.daysLeft} DAYS LEFT`
 })
 
 /** Highest value first, numbered 1, 2, 3, … (no shared ranks on a TV); ties go to the other metric, then the name. */
