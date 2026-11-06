@@ -49,6 +49,8 @@ export interface CommissionRules {
     };
     penalties: { latePerMonth: number; lateMax: number; missedTarget: number };
     targets: { permanent: number; probation: number };
+    /** Penjualan New non-NusaSelecta (sebelum churn) yang wajib ada agar target dianggap tercapai; 0 = tidak ada syarat. */
+    minNonNusaSelecta: number;
     achievement: {
         permanentBonus: number;
         permanentOnTarget: number;

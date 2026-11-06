@@ -34,11 +34,15 @@
                         <div class="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                             <div
                                 class="h-full"
-                                :class="data.activityCount >= data.target ? 'bg-green-500' : ongoing ? 'bg-amber-500' : 'bg-red-500'"
+                                :class="!belowTarget ? 'bg-green-500' : ongoing ? 'bg-amber-500' : 'bg-red-500'"
                                 :style="{ width: targetProgress + '%' }"
                             />
                         </div>
                         <p class="text-xs text-gray-500 dark:text-gray-400">{{ targetGapText }}</p>
+                    </div>
+                    <div v-if="data.nonNusaSelectaMin" class="flex justify-between items-center gap-3 text-sm">
+                        <span class="text-gray-500 dark:text-gray-400">Service non-NusaSelecta</span>
+                        <span class="font-semibold tabular-nums" :class="nonNusaSelectaShort > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'">{{ data.nonNusaSelectaMin.count }} / min {{ data.nonNusaSelectaMin.minimum }}</span>
                     </div>
                     <div v-if="data.manualTarget" class="flex justify-between items-center gap-3 text-sm">
                         <span class="text-gray-500 dark:text-gray-400">Target khusus</span>
@@ -177,8 +181,14 @@ const { isOngoingUntil, shortDate, monthLabel } = usePeriodOptions()
 const ongoing = computed(() => isOngoingUntil(props.data.endDate))
 
 const targetProgress = computed(() => Math.min(100, Math.max(0, (props.data.activityCount / props.data.target) * 100)))
+/** Non-NusaSelecta sales still missing for the target to count as reached. */
+const nonNusaSelectaShort = computed(() => {
+    const m = props.data.nonNusaSelectaMin
+    return m ? Math.max(0, m.minimum - m.count) : 0
+})
 const targetGapText = computed(() => {
     const gap = props.data.target - props.data.activityCount
+    if (gap <= 0 && nonNusaSelectaShort.value > 0) return `Jumlah layanan sudah cukup, tapi target belum tercapai: kurang ${nonNusaSelectaShort.value} service non-NusaSelecta.`
     if (gap <= 0) return `Target ${props.data.target} layanan tercapai.`
     return ongoing.value
         ? `Kurang ${gap} layanan lagi untuk capai target — ${daysLeftLabel.value}.`
@@ -186,7 +196,7 @@ const targetGapText = computed(() => {
 })
 // While the period runs, show where the AM stands now and the days left, as a nudge;
 // the final status still comes once the period has ended.
-const belowTarget = computed(() => props.data.target > 0 && props.data.activityCount < props.data.target)
+const belowTarget = computed(() => props.data.target > 0 && (props.data.activityCount < props.data.target || nonNusaSelectaShort.value > 0))
 const daysLeft = computed(() => {
     const [y, m, d] = props.data.endDate.slice(0, 10).split('-').map(Number)
     const today = new Date()
@@ -201,8 +211,9 @@ const ongoingBadge = computed(() => ({
 const ongoingMotivation = computed(() => {
     if (props.data.target <= 0) return 'Periode masih berjalan — terus semangat!'
     const gap = props.data.target - props.data.activityCount
-    return gap > 0
-        ? `Tinggal ${gap} layanan lagi, ${daysLeftLabel.value} — ayo kejar targetnya!`
+    if (gap > 0) return `Tinggal ${gap} layanan lagi, ${daysLeftLabel.value} — ayo kejar targetnya!`
+    return nonNusaSelectaShort.value > 0
+        ? `Tinggal ${nonNusaSelectaShort.value} service non-NusaSelecta lagi, ${daysLeftLabel.value} — ayo kejar targetnya!`
         : 'Target sudah tercapai — terus tambah layanan untuk bonus!'
 })
 // Admin-set target (Target AM page): shown with its range so the AM knows when it reverts to the default.

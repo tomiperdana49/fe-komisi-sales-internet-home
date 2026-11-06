@@ -86,6 +86,8 @@ export interface SalesCommissionData {
     manualTarget: { target: number; startPeriod: string; endPeriod: string } | null;
     /** NusaSelecta New units sold (before churn); they count toward New Achievement only in groups. */
     nusaSelectaNewUnits?: { basicPrime: number; ultra: number; promo?: number };
+    /** Non-NusaSelecta New sales against the target's minimum; null when no minimum applies to this person. */
+    nonNusaSelectaMin?: { count: number; minimum: number } | null;
     achievementStatus: string;
     motivation: string;
     bonusBulanan: number;
@@ -178,8 +180,9 @@ export interface ConsistencyProgress {
     blockStart: string;
     blockEnd: string;
     /** activityCount is null for months still to come. */
-    months: { period: string; activityCount: number | null }[];
+    months: { period: string; activityCount: number | null; belowNonNusaSelecta?: boolean }[];
     minPerMonth: number;
+    minNonNusaSelecta?: number;
     minTestimonials: number;
     tiers: { at: number; amount: number }[];
     testimonials: number;

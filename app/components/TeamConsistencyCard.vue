@@ -31,7 +31,7 @@ const endsNow = (p: ConsistencyProgress) => p.status === 'running' && p.blockEnd
 const testimonialMet = (p: ConsistencyProgress) => p.testimonials >= p.minTestimonials
 
 /** On track for at least the first tier right now: every month so far at the minimum, total reached, testimonials in. */
-const onTrack = (p: ConsistencyProgress) => p.status === 'running' && shortfall(p, props.period) === 0 && testimonialMet(p)
+const onTrack = (p: ConsistencyProgress) => p.status === 'running' && shortfall(p, props.period) === 0 && testimonialMet(p) && !p.months.some(m => m.belowNonNusaSelecta)
 
 const tierAmount = (p: ConsistencyProgress) => {
     const total = blockTotal(p)
@@ -76,7 +76,7 @@ const columns: TableColumn<TeamConsistencyRow>[] = [
                     'inline-flex min-w-9 justify-center rounded px-1.5 py-0.5 text-xs font-medium',
                     m.activityCount === null
                         ? 'bg-gray-100 text-gray-400 dark:bg-gray-800'
-                        : m.activityCount >= p.minPerMonth
+                        : m.activityCount >= p.minPerMonth && !m.belowNonNusaSelecta
                             ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
                             : m.period >= props.period
                                 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'

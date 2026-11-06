@@ -91,6 +91,10 @@ export const diffRules = (before: CommissionRules, after: CommissionRules): Rule
         if (a !== b) changes.push({ section: s.section, label: s.label, from: s.fmt(a), to: s.fmt(b) })
     }
 
+    if (before.minNonNusaSelecta !== after.minNonNusaSelecta) {
+        changes.push({ section: 'Target & Status', label: 'Minimal service non-NusaSelecta', from: num(before.minNonNusaSelecta), to: num(after.minNonNusaSelecta) })
+    }
+
     const list = <T>(label: string, section: string, a: T[], b: T[], fmt: (t: T) => string) => {
         if (JSON.stringify(a) !== JSON.stringify(b)) {
             changes.push({ section, label, from: a.map(fmt).join(', '), to: b.map(fmt).join(', ') })

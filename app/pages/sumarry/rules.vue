@@ -287,6 +287,7 @@
                                         <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Target Default (layanan baru / bulan)</h4>
                                         <RuleNumber v-model="form.targets.permanent" label="Permanent" hint="Target layanan baru per bulan untuk semua AM Permanent. Juga membentuk Target Dasar tim Sales Manager." :step="1" :disabled="!canEdit" />
                                         <RuleNumber v-model="form.targets.probation" label="Probation" :step="1" :disabled="!canEdit" />
+                                        <RuleNumber v-model="form.minNonNusaSelecta" label="Minimal service non-NusaSelecta" hint="AM Permanent yang penjualan New Broadband FO Home, Home Lite, dan nusafiber-nya (sebelum churn) kurang dari ini dianggap tidak capai target walaupun jumlahnya cukup. Bulan itu juga gagal Bonus Konsistensi, untuk semua AM. 0 = tidak ada syarat." :step="1" :max="null" :disabled="!canEdit" />
                                     </section>
                                     <section class="space-y-3">
                                         <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Batas Status Pencapaian</h4>

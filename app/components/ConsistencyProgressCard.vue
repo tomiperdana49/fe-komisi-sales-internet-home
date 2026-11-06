@@ -70,13 +70,13 @@ const { periodLabel: label, shiftPeriod: shift, blockTotal, blockDates: datesOf 
 const total = computed(() => blockTotal(props.progress))
 const nextTier = computed(() => props.progress.tiers.find(t => total.value < t.at) ?? null)
 const testimonialMet = computed(() => props.progress.testimonials >= props.progress.minTestimonials)
-const missedMonth = computed(() => props.progress.months.find(m => m.period < props.period && (m.activityCount ?? 0) < props.progress.minPerMonth))
+const missedMonth = computed(() => props.progress.months.find(m => m.period < props.period && ((m.activityCount ?? 0) < props.progress.minPerMonth || m.belowNonNusaSelecta)))
 
 const blockDates = computed(() => datesOf(props.progress))
 
 const monthIcon = (m: ConsistencyProgress['months'][number]) => {
     if (m.activityCount === null) return { name: 'i-lucide-clock', class: 'text-gray-400' }
-    if (m.activityCount >= props.progress.minPerMonth) return { name: 'i-lucide-circle-check', class: 'text-green-500' }
+    if (m.activityCount >= props.progress.minPerMonth && !m.belowNonNusaSelecta) return { name: 'i-lucide-circle-check', class: 'text-green-500' }
     if (m.period >= props.period) return { name: 'i-lucide-hourglass', class: 'text-orange-500' }
     return { name: 'i-lucide-circle-x', class: 'text-red-500' }
 }
@@ -94,13 +94,13 @@ const message = computed(() => {
     const p = props.progress
     switch (p.status) {
         case 'failed':
-            return `${label(missedMonth.value!.period)} di bawah ${p.minPerMonth}, jadi blok ini tidak dapat bonus. Hitungan mulai lagi di blok ${label(shift(p.blockEnd, 1))} – ${label(shift(p.blockEnd, p.months.length))}.`
+            return `${label(missedMonth.value!.period)} ${(missedMonth.value!.activityCount ?? 0) < p.minPerMonth ? `di bawah ${p.minPerMonth}` : 'kurang service non-NusaSelecta'}, jadi blok ini tidak dapat bonus. Hitungan mulai lagi di blok ${label(shift(p.blockEnd, 1))} – ${label(shift(p.blockEnd, p.months.length))}.`
         case 'manual':
             return 'Bonus Konsistensi periode ini sudah diberikan manual oleh admin. Blok berikutnya mulai bulan depan.'
         case 'notStarted':
             return `Blok pertama dimulai ${label(p.blockStart)}.`
         default:
-            return `Syarat bonus: setiap bulan minimal ${p.minPerMonth}, total blok minimal ${p.tiers[0]?.at ?? 0}${p.minTestimonials > 0 ? `, dan minimal ${p.minTestimonials} testimoni pelanggan` : ''}. Angka bulan berjalan masih bisa berubah sampai periodenya ditutup.`
+            return `Syarat bonus: setiap bulan minimal ${p.minPerMonth}${p.minNonNusaSelecta ? ` dengan minimal ${p.minNonNusaSelecta} service non-NusaSelecta` : ''}, total blok minimal ${p.tiers[0]?.at ?? 0}${p.minTestimonials > 0 ? `, dan minimal ${p.minTestimonials} testimoni pelanggan` : ''}. Angka bulan berjalan masih bisa berubah sampai periodenya ditutup.`
     }
 })
 </script>

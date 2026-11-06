@@ -147,7 +147,7 @@ const GLOSSARY = {
         text: (r: Rules) => {
             if (!r) return 'Ditentukan dari Pencapaian New, dengan batas berbeda untuk Permanent dan Probation/Contract. Selama periode berjalan statusnya masih sementara.'
             const a = r.achievement
-            return `Ditentukan dari Pencapaian New. Permanent: ≥${a.permanentBonus} Capai Bonus, ≥${a.permanentOnTarget} Capai Standard; di bawah itu Belum Capai selama periode berjalan, lalu Tidak Capai setelah periode berakhir (SP1 bila di bawah ${a.permanentSp1Below}). Batas Capai bergeser bila AM punya target khusus. Probation/Contract: ≥${a.probationExcellent} Excellent, ≥${a.probationVeryGood} Very Good, ≥${a.probationAverage} Average, selebihnya Below Average.`
+            return `Ditentukan dari Pencapaian New. Permanent: ≥${a.permanentBonus} Capai Bonus, ≥${a.permanentOnTarget} Capai Standard; di bawah itu Belum Capai selama periode berjalan, lalu Tidak Capai setelah periode berakhir (SP1 bila di bawah ${a.permanentSp1Below}). Batas Capai bergeser bila AM punya target khusus. Probation/Contract: ≥${a.probationExcellent} Excellent, ≥${a.probationVeryGood} Very Good, ≥${a.probationAverage} Average, selebihnya Below Average.${r.minNonNusaSelecta > 0 ? ` AM Permanent juga wajib punya minimal ${r.minNonNusaSelecta} penjualan New non-NusaSelecta (Broadband FO Home, Home Lite, nusafiber; dihitung sebelum churn), bila kurang dianggap tidak capai target walaupun Pencapaian New-nya cukup.` : ''}`
         }
     },
     bonusBulanan: {
@@ -170,7 +170,7 @@ const GLOSSARY = {
         text: (r: Rules) => {
             const c = r?.consistency
             return c?.enabled
-                ? `Dinilai per blok ${c.months} bulan (blok pertama mulai ${c.startPeriod.slice(4)}/${c.startPeriod.slice(0, 4)}, atau bulan pertama sales bila masuk sesudahnya; setelah bonus manual, blok mulai lagi bulan berikutnya). Bila setiap bulan dalam blok Pencapaian New-nya minimal ${c.minPerMonth}${c.minTestimonials > 0 ? ` dan ada minimal ${c.minTestimonials} testimoni pelanggan bertanggal di dalam blok` : ''}, bonus dibayar di bulan terakhir blok: ${c.tiers.map(t => `total ≥${t.at} = ${rp(t.amount)}`).join(', ')}. Satu bulan tidak capai membuat blok itu tidak dapat bonus; hitungan mulai lagi di blok berikutnya. Bonus yang diberikan manual oleh admin menggantikan bonus otomatis di bulan itu.`
+                ? `Dinilai per blok ${c.months} bulan (blok pertama mulai ${c.startPeriod.slice(4)}/${c.startPeriod.slice(0, 4)}, atau bulan pertama sales bila masuk sesudahnya; setelah bonus manual, blok mulai lagi bulan berikutnya). Bila setiap bulan dalam blok Pencapaian New-nya minimal ${c.minPerMonth}${c.minTestimonials > 0 ? ` dan ada minimal ${c.minTestimonials} testimoni pelanggan bertanggal di dalam blok` : ''}, bonus dibayar di bulan terakhir blok: ${c.tiers.map(t => `total ≥${t.at} = ${rp(t.amount)}`).join(', ')}. Satu bulan tidak capai${r!.minNonNusaSelecta > 0 ? `, termasuk yang penjualan New non-NusaSelecta-nya di bawah ${r!.minNonNusaSelecta},` : ''} membuat blok itu tidak dapat bonus; hitungan mulai lagi di blok berikutnya. Bonus yang diberikan manual oleh admin menggantikan bonus otomatis di bulan itu.`
                 : 'Bonus yang diberikan manual oleh admin untuk periode ini, nominalnya ditentukan admin. Tidak otomatis berulang ke bulan berikutnya.'
         }
     },
