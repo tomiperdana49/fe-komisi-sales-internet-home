@@ -3,11 +3,14 @@
         <div class="mb-3 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
             <div>
                 <h3 class="text-base font-semibold text-gray-900 dark:text-white">Testimoni Pelanggan ({{ rows.length }})</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Semua testimoni pelanggan yang sudah dicatat, terbaru di atas.</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                    Testimoni diinput oleh Sales Manager setelah dicek dan direview, terbaru di atas.
+                    <template v-if="!canManage">Kirim testimoni pelanggan ke Sales Manager Anda untuk diinput.</template>
+                </p>
             </div>
             <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 <UInput v-model="search" icon="i-lucide-search" placeholder="Cari nama atau ID customer..." class="w-full sm:w-72" />
-                <UButton icon="i-lucide-plus" color="primary" @click="openModal(null)">Tambah Testimoni</UButton>
+                <UButton v-if="canManage" icon="i-lucide-plus" color="primary" @click="openModal(null)">Tambah Testimoni</UButton>
             </div>
         </div>
         <UTable sticky :data="filteredRows" :columns="columns" :empty="search.trim() ? 'Tidak ada testimoni yang cocok.' : 'Belum ada testimoni.'" class="flex-1 max-h-[600px]" />
@@ -60,6 +63,9 @@ const deleteTarget = ref<TestimonialItem | null>(null)
 const editTarget = ref<TestimonialItem | null>(null)
 const deletingIds = ref(new Set<number>())
 
+// The Sales Manager (anyone above the Account Manager) reviews and enters testimonials; the Account Manager only sees them.
+const canManage = computed(() => isSuperAdmin.value || (!!state.user && state.user.employee_id !== props.employeeId))
+
 const filteredRows = computed(() => rows.value.filter(r => matchesTestimonial(r, search.value)))
 
 const openModal = (row: TestimonialItem | null) => {
@@ -69,7 +75,7 @@ const openModal = (row: TestimonialItem | null) => {
 
 const columns = testimonialColumns({
     showSales: false,
-    canChange: r => isSuperAdmin.value || (r.createdBy === state.user?.employee_id && !r.periodClosed),
+    canChange: r => isSuperAdmin.value || (canManage.value && !r.periodClosed),
     isDeleting: r => deletingIds.value.has(r.id),
     onEdit: openModal,
     onDelete: (r) => {

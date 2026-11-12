@@ -8,8 +8,8 @@
                 <div>
                     <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Testimoni Pelanggan</h2>
                     <p class="text-sm text-gray-500 dark:text-gray-400">
-                        Testimoni yang dicatat Account Manager dengan tanggal testimoni di periode {{ selectedMonthLabel }} {{ year }}.
-                        Testimoni ditambahkan dari dashboard masing-masing Account Manager.
+                        Testimoni pelanggan Account Manager dengan tanggal testimoni di periode {{ selectedMonthLabel }} {{ year }}.
+                        Testimoni dicek dan diinput Sales Manager dari dashboard masing-masing Account Manager.
                     </p>
                 </div>
 
