@@ -47,7 +47,7 @@
             </div>
         </UContainer>
 
-        <ApproveChurnModal v-model:open="isApproveModalOpen" :churn="approvingChurn" @success="onApproved" />
+        <ApproveChurnModal v-model:open="isApproveModalOpen" :churn="approvingChurn" :period="selectedPeriod" @success="onApproved" />
     </div>
 </template>
 
@@ -101,6 +101,8 @@ watch([statusFilter, globalFilter], () => { pagination.value.pageIndex = 0 })
 const { monthLabel } = usePeriodOptions()
 
 const selectedMonthLabel = computed(() => monthLabel(selectedMonth.value))
+const selectedPeriod = computed(() => `${year.value}${String(selectedMonth.value).padStart(2, '0')}`)
+const periodLabel = (p: string) => `${monthLabel(Number(p.slice(4, 6)))} ${p.slice(0, 4)}`
 
 // Waiving needs a reason, so switching on opens the reason form; switching off reinstates the cut right away.
 const { isSuperAdmin } = useAdminAccess()
@@ -108,11 +110,13 @@ const { isSelectedClosed } = usePeriodClosings()
 const isApproveModalOpen = ref(false)
 const approvingChurn = ref<ChurnSummaryItem | null>(null)
 const authState = useAuth().state
-const onApproved = (note: string) => {
+const onApproved = (note: string, duePeriod: string | null) => {
     const row = approvingChurn.value
     if (!row) return
     row.is_approved = true
     row.approval_note = note
+    row.waiver_due_period = duePeriod
+    row.termination_outstanding = null
     row.approved_by = authState.user?.employee_id ?? null
     row.approved_by_name = authState.user?.name ?? null
     row.approved_at = new Date().toISOString()
@@ -123,6 +127,8 @@ const revokeApproval = async (row: ChurnSummaryItem) => {
         if (response && response.success) {
             row.is_approved = false
             row.approval_note = null
+            row.waiver_due_period = null
+            row.termination_outstanding = null
             row.approved_by = null
             row.approved_by_name = null
             row.approved_at = null
@@ -266,11 +272,32 @@ const columns: TableColumn<ChurnSummaryItem>[] = [
         header: 'Alasan Dibebaskan',
         cell: ({ row }) => {
             const r = row.original
-            if (!r.is_approved) return h('span', { class: 'text-xs text-gray-400 italic' }, '-')
+            const outstanding = r.termination_outstanding === null ? '' : Number(r.termination_outstanding) > 0
+                ? ` · sisa ${formatCurrency(Number(r.termination_outstanding))}`
+                : ' · sudah lunas'
+            // A conditional waiver: still waived until its deadline, or lapsed and cutting in its due period.
+            const condition = r.waiver_due_period
+                ? h('span', {
+                    class: r.is_approved
+                        ? 'mt-1 text-[10px] font-medium text-amber-600 dark:text-amber-400'
+                        : 'mt-1 text-[10px] font-medium text-red-600 dark:text-red-400'
+                }, r.is_approved
+                    ? `Bersyarat: terminasi lunas s.d. ${periodLabel(r.waiver_due_period)}${outstanding}`
+                    : `Terminasi belum lunas s.d. ${periodLabel(r.waiver_due_period)}${outstanding} — dipotong di periode ini`)
+                : null
+            if (!r.is_approved) {
+                return condition
+                    ? h('div', { class: 'flex flex-col min-w-[180px] max-w-[300px]' }, [
+                        r.approval_note ? h('span', { class: 'text-xs text-gray-500 line-through whitespace-normal' }, r.approval_note) : null,
+                        condition
+                    ])
+                    : h('span', { class: 'text-xs text-gray-400 italic' }, '-')
+            }
             return h('div', { class: 'flex flex-col min-w-[180px] max-w-[300px]' }, [
                 r.approval_note
                     ? h('span', { class: 'text-xs text-gray-700 dark:text-gray-200 whitespace-normal' }, r.approval_note)
                     : h('span', { class: 'text-xs text-gray-400 italic' }, 'Alasan belum dicatat'),
+                condition,
                 r.approved_by
                     ? h('span', { class: 'text-[10px] text-gray-400 mt-0.5' }, [
                         r.approved_by_name ?? r.approved_by,

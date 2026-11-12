@@ -88,6 +88,8 @@ export interface ChurnApprovalInput {
     isApproved: boolean;
     /** Required when isApproved: why the churn is waived. */
     note?: string;
+    /** Conditional waiver: the termination invoice must be paid by this period (YYYYMM), else the churn is deducted in it. */
+    duePeriod?: string | null;
 }
 
 export interface ChurnSummaryItem {
@@ -113,6 +115,12 @@ export interface ChurnSummaryItem {
     approved_by: string | null;
     approved_by_name: string | null;
     approved_at: string | null;
+    /** Conditional waiver's payment deadline (YYYYMM); null when unconditional or not waived. */
+    waiver_due_period: string | null;
+    /** Termination fee still unpaid at the last check; null when unknown. */
+    termination_outstanding: number | string | null;
+    /** Set when the churn counts in a later period (churn:carry, or a lapsed conditional waiver). */
+    deduct_date?: string | null;
     employee_name: string | null;
     employee_eid: string | null;
     employee_photo: string | null;
