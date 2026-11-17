@@ -58,7 +58,7 @@
                     </div>
 
                     <div class="mt-4 md:mt-6">
-                        <PersonalSalesDetail :data="periodData" :churn-data="churnData" />
+                        <PersonalSalesDetail :data="periodData" :churn-data="churnData" :items="invoiceItems" />
                     </div>
                 </template>
             </UPageCard>
@@ -122,6 +122,7 @@
 </template>
 
 <script setup lang="ts">
+import { simulateCommission, useCommissionSimulation } from '~/composables/useCommissionSimulation'
 import { CommissionService } from '~/services/commission-service'
 import { EmployeeService } from '~/services/employee-service'
 import { InvoiceService } from '~/services/invoice-service'
@@ -168,7 +169,16 @@ const tabItems = computed(() => {
 const grandTotal = computed(() => {
     const d = periodData.value
     if (!d) return 0
+    if (simulated.value) return simulated.value.total
     return d.total.commission + d.bonusBulanan + d.bonusKelebihanService + d.consistencyBonus
+})
+
+const { state: simulation, active: simulationActive } = useCommissionSimulation()
+// Simulasi Komisi (menu user): replaces the figures shown on this page only — never the commission itself.
+const simulated = computed(() => {
+    const d = periodData.value
+    if (!d || !simulationActive.value) return null
+    return simulateCommission(d, invoiceItems.value, simulation.value)
 })
 
 // total.commission is already net of churn, so add the deduction back to show the gross figure it came from.
@@ -176,7 +186,7 @@ const totalParts = computed(() => {
     const d = periodData.value
     if (!d) return []
     const parts = [
-        { label: 'Komisi Penjualan', value: d.total.commission + d.deduction.commission, sign: '' },
+        { label: 'Komisi Penjualan', value: simulated.value ? simulated.value.salesBeforeChurn : d.total.commission + d.deduction.commission, sign: '' },
         { label: 'Potongan Churn', value: d.deduction.commission, sign: '−' },
         { label: 'Bonus Bulanan', value: d.bonusBulanan, sign: '+' },
         { label: 'Bonus Kelebihan Service', value: d.bonusKelebihanService, sign: '+' },

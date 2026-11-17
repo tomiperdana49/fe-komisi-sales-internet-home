@@ -63,6 +63,8 @@ export interface CommissionLineItem {
     baseCommission: number;
     commissionPercentage: number;
     commission: number;
+    /** Commission before the missed-target performance penalty — for Simulasi Komisi only. */
+    grossCommission?: number;
 }
 
 export interface SalesCommissionQueryParams {

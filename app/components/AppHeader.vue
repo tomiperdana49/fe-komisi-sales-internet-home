@@ -85,6 +85,7 @@
     </UHeader>
 
     <FeedbackModal v-model:open="isOpen" />
+    <CommissionSimulationModal v-if="simulationAllowed" v-model:open="simulationOpen" />
 
     <UDashboardToolbar 
         v-show="toolbar"
@@ -112,6 +113,8 @@
 
     const { triggerFeedback, isCapturing, isOpen } = useFeedback()
     const { hidden: amountsHidden, toggle: toggleAmounts } = useHideAmounts()
+    const simulationOpen = ref(false)
+    const { allowed: simulationAllowed, active: simulationActive } = useCommissionSimulation()
 
     const handleLogout = async () => {
         await authService.logout()
@@ -130,6 +133,12 @@
         label: 'Akses Admin',
         icon: 'i-lucide-shield-check',
         onSelect: () => navigateTo('/sumarry/admin-access')
+        }] : []),
+        // Viewer-side what-if for comparing with the team sheet; never changes commission. Listed accounts only.
+        ...(simulationAllowed.value ? [{
+        label: simulationActive.value ? 'Simulasi Komisi (aktif)' : 'Simulasi Komisi',
+        icon: 'i-lucide-calculator',
+        onSelect: () => { simulationOpen.value = true }
         }] : []),
         {
         label: 'Sign Out',

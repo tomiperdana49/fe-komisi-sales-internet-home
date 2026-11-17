@@ -167,12 +167,15 @@
 </template>
 
 <script setup lang="ts">
-import type { ChurnRow, SalesCommissionData } from '~/types/sales'
+import type { ChurnRow, CommissionLineItem, SalesCommissionData } from '~/types/sales'
 import type { GlossaryKey } from '~/composables/useGlossary'
+import { simulateCommission, useCommissionSimulation } from '~/composables/useCommissionSimulation'
 
 const props = defineProps<{
     data: SalesCommissionData
     churnData: ChurnRow[]
+    /** The period's invoices (Rincian Transaksi) — only Simulasi Komisi reads them. */
+    items?: CommissionLineItem[]
 }>()
 
 const { formatCurrency } = useFormat()
@@ -300,6 +303,10 @@ interface FinancialBox {
 const plainBox = 'border-gray-200 dark:border-gray-800'
 const negativeBox = 'border-red-100 dark:border-red-900/40 bg-red-50/40 dark:bg-red-950/10'
 
+// Simulasi Komisi (menu user): display-only what-if to compare with the team sheet.
+const { state: simulation, active: simulationActive } = useCommissionSimulation()
+const simulated = computed(() => simulationActive.value ? simulateCommission(props.data, props.items ?? [], simulation.value) : null)
+
 const financialBoxes = computed<FinancialBox[]>(() => {
     const data = props.data
     const b = data.breakdown
@@ -310,9 +317,9 @@ const financialBoxes = computed<FinancialBox[]>(() => {
             class: 'border-primary-200 dark:border-primary-800 bg-primary-50/40 dark:bg-primary-950/10 lg:row-span-3',
             rows: [
                 // b.new is net of churn; show New before churn and the deduction as its own line.
-                { label: 'New', hint: 'new', value: b.new.commission + data.deduction.commission },
+                { label: 'New', hint: 'new', value: simulated.value ? simulated.value.newSim : b.new.commission + data.deduction.commission },
                 { label: 'Prorate', hint: 'prorate', value: b.prorate.commission },
-                { label: 'Recurring', hint: 'recurring', value: b.recurring.commission },
+                { label: 'Recurring', hint: 'recurring', value: simulated.value ? simulated.value.oldSim : b.recurring.commission },
                 { label: 'Upgrade', hint: 'upgrade', value: b.upgrade.commission },
                 { label: 'Alat', hint: 'alat', value: b.alat.commission },
                 { label: 'Setup', hint: 'setup', value: b.setup.commission },
@@ -322,7 +329,7 @@ const financialBoxes = computed<FinancialBox[]>(() => {
                 { label: 'Bonus Konsistensi', hint: 'consistencyBonus', value: data.consistencyBonus },
                 { label: 'Potongan Churn', hint: 'churn', value: data.deduction.commission, negative: true }
             ],
-            total: data.total.commission + data.bonusBulanan + data.bonusKelebihanService + data.consistencyBonus,
+            total: simulated.value ? simulated.value.total : data.total.commission + data.bonusBulanan + data.bonusKelebihanService + data.consistencyBonus,
             totalLabel: 'Total Diterima'
         },
         {
