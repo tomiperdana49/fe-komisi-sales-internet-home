@@ -2,7 +2,7 @@
     <UModal
         v-model:open="open"
         title="Simulasi Komisi"
-        description="Hanya simulasi tampilan di browser ini, untuk dicocokkan dengan sheet. Tidak mengubah komisi, dan tidak tersimpan ke database."
+        description="Berlaku untuk tampilan semua sales, untuk dicocokkan dengan sheet. Hanya mengubah angka yang tampil — komisi resmi dan database tidak berubah. Reset = kembali ke angka resmi."
     >
         <template #body>
             <div class="space-y-4">
@@ -28,10 +28,10 @@
 
         <template #footer="{ close }">
             <div class="flex justify-between gap-3 w-full">
-                <UButton type="button" color="neutral" variant="ghost" icon="i-lucide-rotate-ccw" @click="onReset(close)">Reset</UButton>
+                <UButton type="button" color="neutral" variant="ghost" icon="i-lucide-rotate-ccw" :loading="saving" @click="onReset(close)">Reset</UButton>
                 <div class="flex gap-3">
                     <UButton type="button" color="neutral" variant="ghost" @click="close">Batal</UButton>
-                    <UButton type="button" color="primary" :disabled="invalid" @click="onSave(close)">Terapkan</UButton>
+                    <UButton type="button" color="primary" :disabled="invalid" :loading="saving" @click="onSave(close)">Terapkan</UButton>
                 </div>
             </div>
         </template>
@@ -56,13 +56,17 @@ const parse = (v: string | number): number | null | undefined => {
 }
 const invalid = computed(() => parse(form.newPct) === undefined || parse(form.oldPct) === undefined)
 
+const saving = ref(false)
+// A failed request is already toasted by the service (handleServiceError); the modal just stays open.
+const run = async (action: () => Promise<{ ok: boolean }>, close: () => void) => {
+    saving.value = true
+    const res = await action()
+    saving.value = false
+    if (res.ok) close()
+}
 const onSave = (close: () => void) => {
     if (invalid.value) return
-    save({ newPct: parse(form.newPct) ?? null, oldPct: parse(form.oldPct) ?? null })
-    close()
+    run(() => save({ newPct: parse(form.newPct) ?? null, oldPct: parse(form.oldPct) ?? null }), close)
 }
-const onReset = (close: () => void) => {
-    reset()
-    close()
-}
+const onReset = (close: () => void) => run(reset, close)
 </script>

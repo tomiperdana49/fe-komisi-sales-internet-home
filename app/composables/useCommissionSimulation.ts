@@ -1,7 +1,4 @@
-const STORAGE_KEY = 'commissionSimulation'
-
-/** Only these accounts get the Simulasi Komisi menu; for anyone else it stays off, whatever their browser has stored. */
-const SIMULATION_EMAILS = ['tomi@nusa.id']
+import { CommissionSimulationService } from '~/services/commission-simulation-service'
 
 export type CommissionSimulation = {
     /** % applied to the New commission before the performance penalty (e.g. 30 = the team sheet's "× 30%"). */
@@ -10,42 +7,50 @@ export type CommissionSimulation = {
     oldPct: number | null
 }
 
-const empty = (): CommissionSimulation => ({ newPct: null, oldPct: null })
-const toPct = (v: unknown): number | null => {
-    const n = typeof v === 'number' ? v : typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN
-    return Number.isFinite(n) && n >= 0 && n <= 100 ? n : null
-}
+const service = new CommissionSimulationService()
 
-// Simulasi Komisi: a viewer-side what-if, so an AM can line the dashboard up against the
-// team sheet. Only changes what this browser shows on the AM page — never the commission
-// itself, the BE or the database. Remembered per browser; works for the visit when storage
-// is unavailable.
+// Simulasi Komisi: one shared what-if, set by the designated account (BE decides who: canEdit)
+// and applied to the figures every AM page SHOWS, so sales can line them up with the team
+// sheet. Never changes the commission itself; the setting lives in a small file on the BE,
+// not in the database. Empty = every page shows the real figures.
 export const useCommissionSimulation = () => {
-    const state = useState<CommissionSimulation>('commissionSimulation', empty)
-    const loaded = useState('commissionSimulationLoaded', () => false)
-
-    if (import.meta.client && !loaded.value) {
-        loaded.value = true
-        try {
-            const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null')
-            if (saved) state.value = { newPct: toPct(saved.newPct), oldPct: toPct(saved.oldPct) }
-        } catch { /* keep it empty */ }
-    }
-
+    const state = useState<CommissionSimulation>('commissionSimulation', () => ({ newPct: null, oldPct: null }))
+    const canEdit = useState('commissionSimulationCanEdit', () => false)
+    const loadedFor = useState<string | null>('commissionSimulationLoadedFor', () => null)
     const { state: authState } = useAuth()
-    const allowed = computed(() => SIMULATION_EMAILS.includes((authState.user?.email ?? '').trim().toLowerCase()))
-    const active = computed(() => allowed.value && (state.value.newPct !== null || state.value.oldPct !== null))
 
-    const save = (value: CommissionSimulation) => {
-        state.value = { newPct: toPct(value.newPct), oldPct: toPct(value.oldPct) }
+    const load = async () => {
+        const token = authState.token
+        if (!token) return
+        loadedFor.value = token
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(state.value))
-        } catch { /* still applies for this visit */ }
+            const res = await service.get()
+            if (res?.success && res.data) {
+                state.value = { newPct: res.data.newPct ?? null, oldPct: res.data.oldPct ?? null }
+                canEdit.value = Boolean(res.data.canEdit)
+            }
+        } catch { /* no setting = real figures */ }
     }
 
-    const reset = () => save(empty())
+    // Once per login session (a new token = a new user may be signed in).
+    if (import.meta.client && authState.token && loadedFor.value !== authState.token) load()
 
-    return { state, allowed, active, save, reset }
+    const active = computed(() => state.value.newPct !== null || state.value.oldPct !== null)
+
+    const save = async (value: CommissionSimulation): Promise<{ ok: boolean; message?: string }> => {
+        try {
+            const res = await service.save(value)
+            if (!res?.success) return { ok: false, message: res?.message }
+            state.value = { newPct: res.data.newPct ?? null, oldPct: res.data.oldPct ?? null }
+            return { ok: true }
+        } catch (error: any) {
+            return { ok: false, message: error?.message }
+        }
+    }
+
+    const reset = () => save({ newPct: null, oldPct: null })
+
+    return { state, allowed: canEdit, active, save, reset, load }
 }
 
 type SimulationData = {
