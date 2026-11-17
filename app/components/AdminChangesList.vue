@@ -45,7 +45,7 @@ const KIND = {
     adjusted: { label: 'Diubah Admin', color: 'warning' }
 } as const
 
-const TYPE_LABEL: Record<string, string> = { new: 'New', recurring: 'Recurring', prorate: 'Prorate', upgrade: 'Upgrade', alat: 'Alat', setup: 'Setup' }
+const TYPE_LABEL: Record<string, string> = { new: 'New', recurring: 'Recurring', prorate: 'Prorate', upgrade: 'Upgrade', alat: 'Alat', setup: 'Setup', event: 'Event' }
 
 const rows = computed<ChangeRow[]>(() => [
     ...props.items

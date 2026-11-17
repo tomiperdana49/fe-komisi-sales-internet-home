@@ -207,6 +207,7 @@
                                         <RuleNumber v-model="form.rates.setup" label="Setup (default)" hint="Dipakai bila produk tidak punya rate setup sendiri" :disabled="!canEdit" />
                                         <RuleNumber v-model="form.rates.alatWithSetup" label="Alat — bersama setup" :disabled="!canEdit" />
                                         <RuleNumber v-model="form.rates.alatStandalone" label="Alat — terpisah" :disabled="!canEdit" />
+                                        <RuleNumber v-model="form.rates.event" label="Event / BOD" hint="Dari total subscription yang ditagih" :disabled="!canEdit" />
                                         <RuleNumber v-model="form.rates.recurringOnTarget" label="Recurring — capai target / Probation" :disabled="!canEdit" />
                                         <RuleNumber v-model="form.rates.recurringMissedTarget" label="Recurring — Permanent tidak capai target" :disabled="!canEdit" />
                                         <RuleNumber v-model="form.rates.digitalBusinessInternal" label="Digital Business recurring — Internal" :disabled="!canEdit" />

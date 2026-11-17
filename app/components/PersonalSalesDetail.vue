@@ -257,7 +257,9 @@ const categoryCards = computed(() => {
         { label: 'Prorate', hint: 'prorate', count: b.prorate.count, color: categoryColor.purple! },
         { label: 'Upgrade', hint: 'upgrade', count: b.upgrade.count, color: categoryColor.indigo! },
         { label: 'Alat', hint: 'alat', count: b.alat.count, color: categoryColor.pink! },
-        { label: 'Setup', hint: 'setup', count: b.setup.count, color: categoryColor.teal! }
+        { label: 'Setup', hint: 'setup', count: b.setup.count, color: categoryColor.teal! },
+        // Only when there is one: most months have no event.
+        ...(b.event?.count ? [{ label: 'Event', hint: 'event' as const, count: b.event.count, color: categoryColor.orange! }] : [])
     ] satisfies { label: string; hint: GlossaryKey; count: number; color: unknown }[]
 })
 
@@ -314,6 +316,7 @@ const financialBoxes = computed<FinancialBox[]>(() => {
                 { label: 'Upgrade', hint: 'upgrade', value: b.upgrade.commission },
                 { label: 'Alat', hint: 'alat', value: b.alat.commission },
                 { label: 'Setup', hint: 'setup', value: b.setup.commission },
+                ...(b.event?.count ? [{ label: 'Event', hint: 'event' as const, value: b.event.commission }] : []),
                 { label: 'Bonus Bulanan', hint: 'bonusBulanan', value: data.bonusBulanan },
                 { label: 'Bonus Kelebihan Service', hint: 'bonusKelebihanService', value: data.bonusKelebihanService },
                 { label: 'Bonus Konsistensi', hint: 'consistencyBonus', value: data.consistencyBonus },

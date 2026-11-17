@@ -64,7 +64,7 @@ const summaryService = new SummaryService()
 
 const { monthLabel, isPeriodOngoing, periodEndDate, shortDate } = usePeriodOptions()
 const ongoing = computed(() => isPeriodOngoing(year.value, selectedMonth.value))
-const glossaryTerms: GlossaryKey[] = ['activity', 'new', 'recurring', 'alat', 'setup', 'subscription', 'mrc', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
+const glossaryTerms: GlossaryKey[] = ['activity', 'new', 'recurring', 'alat', 'setup', 'event', 'subscription', 'mrc', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
 
 const summaryData = ref<SalesSummaryItem[]>([])
 const { year, month: selectedMonth } = useSelectedPeriod()
@@ -119,7 +119,7 @@ const stats = computed(() => {
 })
 
 type MoneyKey = 'newMrc' | 'newSubscription' | 'newCommission' | 'recurringSubscription' | 'recurringCommission' | 'otherSubscription'
-    | 'otherCommission' | 'bonusBulanan' | 'bonusKelebihanService' | 'consistencyBonus' | 'totalCommission'
+    | 'otherCommission' | 'eventCommission' | 'eventSubscription' | 'bonusBulanan' | 'bonusKelebihanService' | 'consistencyBonus' | 'totalCommission'
 
 const moneyColumn = (key: MoneyKey, label: string, opts: { hint?: GlossaryKey; cellClass?: string } = {}): TableColumn<SalesSummaryItem> => ({
     accessorKey: key,
@@ -166,6 +166,8 @@ const columns: TableColumn<SalesSummaryItem>[] = [
     moneyColumn('recurringSubscription', 'Subscription Recurring'),
     moneyColumn('otherCommission', 'Komisi Alat & Setup'),
     moneyColumn('otherSubscription', 'Subscription Alat & Setup'),
+    moneyColumn('eventCommission', 'Komisi Event', { hint: 'event' }),
+    moneyColumn('eventSubscription', 'Subscription Event'),
     moneyColumn('bonusBulanan', 'Bonus Bulanan', { hint: 'bonusBulanan', cellClass: 'font-medium text-violet-600 dark:text-violet-400' }),
     moneyColumn('bonusKelebihanService', 'Bonus Kelebihan Service', { hint: 'bonusKelebihanService', cellClass: 'font-medium text-violet-600 dark:text-violet-400' }),
     moneyColumn('consistencyBonus', 'Bonus Konsistensi', { hint: 'consistencyBonus', cellClass: 'font-medium text-violet-600 dark:text-violet-400' })

@@ -402,7 +402,7 @@ const UButton = resolveComponent('UButton')
 const { viewableMonths, yearItems, isOngoingUntil, shortDate } = usePeriodOptions()
 const { hintHeader, invoiceColumns, churnColumns, matchesSearch } = useInvoiceColumns()
 const { withTooltip } = useTextTooltip()
-const glossaryTerms: GlossaryKey[] = ['period', 'periodClosed', 'teamSize', 'baseTarget', 'finalTarget', 'teamAchievement', 'overrideNew', 'overrideRecurring', 'personalSales', 'cro', 'memberTotal', 'achievementStatus', 'churn', 'churnWaived', 'new', 'activationDate', 'recurring', 'prorate', 'upgrade', 'alat', 'setup', 'subscription', 'baseCommission', 'mrc', 'contractMonths', 'lateMonth', 'managerCommission', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
+const glossaryTerms: GlossaryKey[] = ['period', 'periodClosed', 'teamSize', 'baseTarget', 'finalTarget', 'teamAchievement', 'overrideNew', 'overrideRecurring', 'personalSales', 'cro', 'memberTotal', 'achievementStatus', 'churn', 'churnWaived', 'new', 'activationDate', 'recurring', 'prorate', 'upgrade', 'alat', 'setup', 'event', 'subscription', 'baseCommission', 'mrc', 'contractMonths', 'lateMonth', 'managerCommission', 'bonusBulanan', 'bonusKelebihanService', 'consistencyBonus']
 
 const employee = ref<Employee>()
 const { year, month: selectedMonth } = useSelectedPeriod()
@@ -423,8 +423,8 @@ const personalTotal = computed(() => {
 
 // Where Penjualan Pribadi comes from: the manager's own invoices per type and
 // commission rate, then churn and bonuses (sums to personalTotal).
-const PERSONAL_TYPE_LABEL: Record<string, string> = { new: 'New', prorate: 'Prorate', upgrade: 'Upgrade', recurring: 'Recurring', alat: 'Alat', setup: 'Setup' }
-const PERSONAL_TYPE_ORDER = ['new', 'prorate', 'upgrade', 'recurring', 'setup', 'alat']
+const PERSONAL_TYPE_LABEL: Record<string, string> = { new: 'New', prorate: 'Prorate', upgrade: 'Upgrade', recurring: 'Recurring', alat: 'Alat', setup: 'Setup', event: 'Event' }
+const PERSONAL_TYPE_ORDER = ['new', 'prorate', 'upgrade', 'recurring', 'setup', 'alat', 'event']
 // KOMISI.md 6.C: team Upgrade commission feeds the Overriding New from October 2026.
 const upgradeInOverride = computed(() => (periodData.value?.period ?? '') >= '202610')
 
@@ -663,7 +663,8 @@ const invoiceTabItems = computed(() => {
         tab('Prorate', 'prorate', byType('prorate')),
         tab('Upgrade', 'upgrade', byType('upgrade')),
         tab('Alat', 'alat', byType('alat')),
-        tab('Setup', 'setup', byType('setup'))
+        tab('Setup', 'setup', byType('setup')),
+        ...(byType('event') ? [tab('Event', 'event', byType('event'))] : [])
     ]
 })
 
@@ -680,7 +681,7 @@ const members = computed(() => [...(periodData.value?.members ?? [])]
     .sort((a, b) => b.activityCount - a.activityCount || b.totalCommission - a.totalCommission))
 
 type MoneyField = 'newSubscription' | 'newMrc' | 'newCommission' | 'recurringSubscription' | 'recurringCommission' | 'otherSubscription'
-    | 'otherCommission' | 'bonusBulanan' | 'bonusKelebihanService' | 'consistencyBonus' | 'totalCommission' | 'managerNewCommission' | 'managerRecurringCommission'
+    | 'otherCommission' | 'eventCommission' | 'eventSubscription' | 'bonusBulanan' | 'bonusKelebihanService' | 'consistencyBonus' | 'totalCommission' | 'managerNewCommission' | 'managerRecurringCommission'
 
 const moneyColumn = (key: MoneyField, label: string, opts: { hint?: GlossaryKey; strong?: boolean } = {}): TableColumn<ManagerTeamMember> => ({
     accessorKey: key,
@@ -743,6 +744,8 @@ const columns = computed<TableColumn<ManagerTeamMember>[]>(() => [
     moneyColumn('recurringSubscription', 'Subscription Recurring'),
     moneyColumn('otherCommission', 'Komisi Alat & Setup'),
     moneyColumn('otherSubscription', 'Subscription Alat & Setup'),
+    moneyColumn('eventCommission', 'Komisi Event', { hint: 'event' }),
+    moneyColumn('eventSubscription', 'Subscription Event'),
     moneyColumn('bonusBulanan', 'Bonus Bulanan', { hint: 'bonusBulanan' }),
     moneyColumn('bonusKelebihanService', 'Bonus Kelebihan Service', { hint: 'bonusKelebihanService' }),
     moneyColumn('consistencyBonus', 'Bonus Konsistensi', { hint: 'consistencyBonus' })

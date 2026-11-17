@@ -160,7 +160,7 @@ const saving = ref(false)
 const loading = ref(false)
 const history = ref<SnapshotAdjustmentItem[]>([])
 
-const typeOptions = ['new', 'upgrade', 'prorate', 'recurring']
+const typeOptions = ['new', 'upgrade', 'prorate', 'recurring', 'event']
 const referralTypeOptions = ['', 'OTC', 'Cashback', 'Monthly']
 const businessOperationOptions = ['', 'Internal', 'Resell']
 

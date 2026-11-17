@@ -11,6 +11,7 @@ const SCALARS: { section: string; path: [keyof SdrCommissionRules, string]; labe
     { section: 'Rate & Potongan', path: ['rates', 'setup'], label: 'Setup (default)', fmt: pct },
     { section: 'Rate & Potongan', path: ['rates', 'alatWithSetup'], label: 'Alat — bersama setup', fmt: pct },
     { section: 'Rate & Potongan', path: ['rates', 'alatStandalone'], label: 'Alat — terpisah', fmt: pct },
+    { section: 'Rate & Potongan', path: ['rates', 'event'], label: 'Event / BOD', fmt: pct },
     { section: 'Rate & Potongan', path: ['rates', 'recurringOnTarget'], label: 'Recurring — capai target / Probation', fmt: pct },
     { section: 'Rate & Potongan', path: ['rates', 'recurringMissedTarget'], label: 'Recurring — tidak capai target', fmt: pct },
     { section: 'Rate & Potongan', path: ['rates', 'digitalBusinessInternal'], label: 'Digital Business — Internal', fmt: pct },

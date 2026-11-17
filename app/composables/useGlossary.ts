@@ -61,6 +61,10 @@ const GLOSSARY = {
             ? `Penjualan perangkat. Komisi ${pct(r.rates.alatWithSetup)} bila dibeli bersama setup, ${pct(r.rates.alatStandalone)} bila dibeli terpisah.`
             : 'Penjualan perangkat. Rate-nya berbeda bila dibeli bersama setup atau terpisah.'
     },
+    event: {
+        term: 'Event',
+        text: (r: Rules) => `Invoice event dan Bandwidth on Demand (BOD). Komisi flat ${r ? pct(r.rates.event) : '15%'} dari total subscription yang ditagih, tanpa potongan referral, telat bayar, maupun target. Tidak menambah pencapaian New.`
+    },
     setup: {
         term: 'Setup',
         text: (r: Rules) => {

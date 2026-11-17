@@ -14,6 +14,8 @@ export interface CommissionBreakdown {
     recurring: CommissionStats;
     alat: CommissionStats;
     setup: CommissionStats;
+    /** Event / Bandwidth on Demand invoices (KOMISI.md 2.E). */
+    event: CommissionStats;
 }
 
 export interface CommissionLineItem {

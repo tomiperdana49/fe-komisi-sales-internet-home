@@ -44,6 +44,8 @@ export interface CommissionRules {
         setup: number;
         alatWithSetup: number;
         alatStandalone: number;
+        /** Event / Bandwidth on Demand: % of the whole billed subscription. */
+        event: number;
         recurringOnTarget: number;
         recurringMissedTarget: number;
         digitalBusinessInternal: number;

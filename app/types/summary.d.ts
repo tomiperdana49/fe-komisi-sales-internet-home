@@ -23,6 +23,8 @@ export interface SalesSummaryItem {
     recurringCommission: number;
     otherSubscription: number;
     otherCommission: number;
+    eventSubscription: number;
+    eventCommission: number;
     bonusBulanan: number;
     bonusKelebihanService: number;
     consistencyBonus: number;
