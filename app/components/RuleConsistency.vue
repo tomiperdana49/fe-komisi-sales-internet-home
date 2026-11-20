@@ -2,14 +2,14 @@
     <section class="space-y-3 pt-4 border-t border-gray-200 dark:border-gray-800">
         <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Bonus Konsistensi Otomatis</h4>
         <p class="text-sm text-gray-500 dark:text-gray-400">
-            Konsistensi dinilai per blok {{ value.months }} bulan, mulai {{ startLabel }} ({{ blockExample }}, dst.). {{ role }} yang baru masuk setelah itu memulai blok dari bulan pertamanya (atau bulan berikutnya bila bulan pertama belum mencapai minimum), dan setelah bonus manual blok berikutnya mulai sebulan sesudahnya.
+            Konsistensi dihitung per blok {{ value.months }} bulan berturut-turut, mulai {{ startLabel }} (bila semua bulan capai: {{ blockExample }}, dst.). {{ role }} yang baru masuk setelah itu memulai blok dari bulan pertamanya (atau bulan berikutnya bila bulan pertama belum mencapai minimum), dan setelah bonus manual blok berikutnya mulai sebulan sesudahnya.
             Bila setiap bulan dalam blok Pencapaian New-nya minimal {{ value.minPerMonth }}<template v-if="value.minTestimonials > 0"> dan ada minimal {{ value.minTestimonials }} testimoni pelanggan bertanggal di dalam blok</template>, bonus dibayar di bulan terakhir blok sesuai tier total pencapaian blok itu.
-            Satu bulan tidak capai membuat blok itu tidak dapat bonus; hitungan mulai lagi dari blok berikutnya.
+            Satu bulan tidak capai membuat blok itu gugur; blok baru langsung mulai bulan berikutnya (mis. Sep capai, Okt tidak → blok baru Nov–Jan).
             Bonus yang diberikan manual di halaman Bonus Konsistensi menggantikan bonus otomatis di bulan itu.
         </p>
         <UCheckbox v-model="value.enabled" label="Hitung Bonus Konsistensi otomatis" :disabled="disabled" />
         <RuleNumber v-model="value.months" label="Jumlah bulan per blok" :step="1" :max="12" :disabled="disabled" />
-        <UFormField label="Bulan mulai blok pertama" description="Blok berikutnya menyusul tanpa jeda, dapat bonus atau tidak.">
+        <UFormField label="Bulan mulai blok pertama" description="Blok berikutnya mulai sebulan setelah blok selesai, atau sebulan setelah bulan yang tidak capai.">
             <UInput v-model="startMonth" type="month" class="w-48" :disabled="disabled" />
         </UFormField>
         <RuleNumber v-model="value.minPerMonth" label="Pencapaian New minimal per bulan (≥)" :step="1" :max="null" :disabled="disabled" />

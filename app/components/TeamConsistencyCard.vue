@@ -3,7 +3,7 @@
         <div class="mb-3">
             <h3 class="text-base font-semibold text-gray-900 dark:text-white">Bonus Konsistensi Tim</h3>
             <p class="text-sm text-gray-500 dark:text-gray-400">
-                Posisi tiap Account Manager di blok Bonus Konsistensinya. Yang bloknya dinilai di {{ periodLabel(period) }} ada di atas — ingatkan yang masih kurang pencapaian atau belum mencatat testimoni.
+                Posisi tiap Account Manager di blok Bonus Konsistensinya. Yang bloknya berakhir di {{ periodLabel(period) }} (bonus ditentukan dari total semua bulan di blok) ada di atas — ingatkan yang masih kurang pencapaian atau belum mencatat testimoni.
             </p>
         </div>
 
@@ -28,6 +28,7 @@ const { formatCurrency } = useFormat()
 const { periodLabel, shiftPeriod, blockTotal, shortfall } = useConsistencyProgress()
 
 const endsNow = (p: ConsistencyProgress) => p.status === 'running' && p.blockEnd === props.period
+const monthOfBlock = (p: ConsistencyProgress) => Math.max(1, p.months.filter(m => m.period <= props.period).length)
 const testimonialMet = (p: ConsistencyProgress) => p.testimonials >= p.minTestimonials
 
 /** On track for at least the first tier right now: every month so far at the minimum, total reached, testimonials in. */
@@ -48,9 +49,9 @@ const sortedRows = computed(() => [...props.rows].sort((a, b) =>
 const stats = computed(() => {
     const dueNow = props.rows.filter(r => endsNow(r.progress))
     return [
-        { label: `Dinilai ${periodLabel(props.period)}`, value: dueNow.length, note: 'Blok berakhir periode ini' },
-        { label: 'Sudah memenuhi syarat', value: dueNow.filter(r => onTrack(r.progress)).length, note: 'Sementara, dari yang dinilai' },
-        { label: 'Belum ada testimoni', value: dueNow.filter(r => !testimonialMet(r.progress)).length, note: 'Dari yang dinilai' }
+        { label: `Blok berakhir ${periodLabel(props.period)}`, value: dueNow.length, note: 'Bonus ditentukan periode ini' },
+        { label: 'Sudah memenuhi syarat', value: dueNow.filter(r => onTrack(r.progress)).length, note: 'Sementara, dari blok yang berakhir' },
+        { label: 'Belum ada testimoni', value: dueNow.filter(r => !testimonialMet(r.progress)).length, note: 'Dari blok yang berakhir' }
     ]
 })
 
@@ -70,7 +71,9 @@ const columns: TableColumn<TeamConsistencyRow>[] = [
         header: 'Pencapaian per bulan',
         cell: ({ row }) => {
             const p = row.original.progress
-            return h('div', { class: 'flex gap-1.5' }, p.months.map(m => h('span', {
+            return h('div', { class: 'flex gap-1.5' }, p.months.map(m => h('div', { class: 'flex flex-col items-center gap-0.5' }, [
+                h('span', { class: 'text-[10px] leading-none text-gray-500 dark:text-gray-400' }, periodLabel(m.period).split(' ')[0]),
+                h('span', {
                 title: periodLabel(m.period),
                 class: [
                     'inline-flex min-w-9 justify-center rounded px-1.5 py-0.5 text-xs font-medium',
@@ -82,7 +85,7 @@ const columns: TableColumn<TeamConsistencyRow>[] = [
                                 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'
                                 : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
                 ]
-            }, m.activityCount === null ? '–' : String(m.activityCount))))
+            }, m.activityCount === null ? '–' : String(m.activityCount))])))
         }
     },
     {
@@ -117,7 +120,7 @@ const columns: TableColumn<TeamConsistencyRow>[] = [
             ]
             const color = onTrack(p) ? 'success' : endsNow(p) ? 'warning' : 'info'
             return h('div', { class: 'flex flex-col gap-0.5' }, [
-                h(UBadge, { color, variant: 'subtle', label: endsNow(p) ? `Dinilai ${periodLabel(p.blockEnd)}` : `Berjalan, dinilai ${periodLabel(p.blockEnd)}`, class: 'self-start' }),
+                h(UBadge, { color, variant: 'subtle', label: `Bulan ke-${monthOfBlock(p)} dari ${p.months.length} · berakhir ${periodLabel(p.blockEnd)}`, class: 'self-start' }),
                 h('span', { class: 'text-xs text-gray-500 dark:text-gray-400' }, notes.join(', '))
             ])
         }

@@ -4,7 +4,7 @@
             <div>
                 <h3 class="text-base font-semibold text-gray-900 dark:text-white">Bonus Konsistensi</h3>
                 <p class="text-sm text-gray-500 dark:text-gray-400">
-                    Blok {{ label(progress.blockStart) }} – {{ label(progress.blockEnd) }}, dinilai di periode {{ label(progress.blockEnd) }}.
+                    Blok {{ label(progress.blockStart) }} – {{ label(progress.blockEnd) }}, bonus ditentukan di {{ label(progress.blockEnd) }} dari total ketiga bulannya.
                 </p>
             </div>
             <UBadge :color="badge.color" variant="subtle" :label="badge.label" class="self-start" />
