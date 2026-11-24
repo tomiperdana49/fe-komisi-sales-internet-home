@@ -4,7 +4,8 @@
             <div>
                 <h3 class="text-base font-semibold text-gray-900 dark:text-white">Testimoni Pelanggan ({{ rows.length }})</h3>
                 <p class="text-sm text-gray-500 dark:text-gray-400">
-                    Testimoni diinput oleh Sales Manager setelah dicek dan direview, terbaru di atas.
+                    <template v-if="isOwnSdr">Testimoni pelanggan yang Anda input sendiri, terbaru di atas.</template>
+                    <template v-else>Testimoni diinput oleh Sales Manager setelah dicek dan direview, terbaru di atas.</template>
                     <template v-if="!canManage">Kirim testimoni pelanggan ke Sales Manager Anda untuk diinput.</template>
                 </p>
             </div>
@@ -64,7 +65,9 @@ const editTarget = ref<TestimonialItem | null>(null)
 const deletingIds = ref(new Set<number>())
 
 // The Sales Manager (anyone above the Account Manager) reviews and enters testimonials; the Account Manager only sees them.
-const canManage = computed(() => isSuperAdmin.value || (!!state.user && state.user.employee_id !== props.employeeId))
+// An SDR enters their own.
+const isOwnSdr = computed(() => !!state.user && state.user.employee_id === props.employeeId && state.user.job_position === 'Sales Development Representative')
+const canManage = computed(() => isSuperAdmin.value || isOwnSdr.value || (!!state.user && state.user.employee_id !== props.employeeId))
 
 const filteredRows = computed(() => rows.value.filter(r => matchesTestimonial(r, search.value)))
 
