@@ -108,14 +108,18 @@ const formatMonths = (months: string | null) => months ? months.split(',').map(m
 
 const selectedMonthLabel = computed(() => monthLabel(selectedMonth.value))
 
+// The automatic bonus counts as given too: it's added to the sales' total like a manual one.
+const autoServiceCount = (r: ConsistencyBonusItem) => r.autoMonths.reduce((a, m) => a + m.activityCount, 0)
+const isAutoOnly = (r: ConsistencyBonusItem) => r.amount <= 0 && r.autoAmount > 0
+
 const stats = computed(() => {
-    const granted = branchData.value.filter(r => r.amount > 0)
-    const auto = branchData.value.filter(r => r.autoAmount > 0)
+    const granted = branchData.value.filter(r => r.amount > 0 || r.autoAmount > 0)
+    const auto = branchData.value.filter(isAutoOnly)
     return [
         { label: 'Jumlah AM & SDR', value: branchData.value.length, key: 'all' },
-        { label: 'Sudah Diberi Bonus', value: granted.length, key: 'granted', class: 'text-violet-600 dark:text-violet-400' },
+        { label: 'Sudah Diberi Bonus', value: granted.length, key: 'granted', class: 'text-violet-600 dark:text-violet-400', note: auto.length ? `Termasuk ${auto.length} otomatis` : undefined },
         { label: 'Total Bonus', value: formatCurrency(branchData.value.reduce((a, r) => a + r.amount + r.autoAmount, 0)), class: 'text-violet-600 dark:text-violet-400', note: auto.length ? `Termasuk ${auto.length} bonus otomatis` : undefined },
-        { label: 'Total Service Dicapai', value: granted.reduce((a, r) => a + (r.serviceCount ?? 0), 0), note: 'Dari sales yang diberi bonus' }
+        { label: 'Total Service Dicapai', value: granted.reduce((a, r) => a + (r.amount > 0 ? (r.serviceCount ?? 0) : autoServiceCount(r)), 0), note: 'Dari sales yang diberi bonus' }
     ]
 })
 
@@ -223,13 +227,14 @@ const columns: TableColumn<ConsistencyBonusItem>[] = [
     {
         accessorKey: 'serviceCount',
         header: () => h('div', { class: 'text-center' }, 'Jumlah Service'),
-        cell: ({ row }) => h('div', { class: 'text-center font-medium' }, row.original.serviceCount ?? '-')
+        cell: ({ row }) => h('div', { class: 'text-center font-medium' }, row.original.serviceCount ?? (isAutoOnly(row.original) ? autoServiceCount(row.original) : '-'))
     },
     {
         accessorKey: 'months',
         header: 'Bulan Pencapaian',
         cell: ({ row }) => {
             const label = formatMonths(row.original.months)
+                ?? (isAutoOnly(row.original) ? row.original.autoMonths.map(m => monthShortLabel(Number(m.period.slice(4)))).join(', ') : null)
             return label
                 ? h('span', { class: 'text-xs text-gray-600 dark:text-gray-300' }, label)
                 : h('span', { class: 'text-xs text-gray-400 italic' }, '-')
@@ -245,7 +250,9 @@ const columns: TableColumn<ConsistencyBonusItem>[] = [
     {
         accessorKey: 'grantedByName',
         header: 'Diberikan Oleh',
-        cell: ({ row }) => row.original.grantedByName
+        cell: ({ row }) => isAutoOnly(row.original)
+            ? h('span', { class: 'text-xs text-gray-600 dark:text-gray-300' }, 'Otomatis (sistem)')
+            : row.original.grantedByName
             ? h('div', { class: 'flex flex-col' }, [
                 h('span', { class: 'text-xs font-medium' }, row.original.grantedByName),
                 h('span', { class: 'text-[10px] text-gray-400' }, row.original.createdAt ? new Date(row.original.createdAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '')
@@ -263,6 +270,8 @@ const columns: TableColumn<ConsistencyBonusItem>[] = [
                     loading: revokingIds.value.has(row.original.employeeId),
                     onClick: () => askRevoke(row.original)
                 }, () => 'Cabut')
+                : isAutoOnly(row.original)
+                ? h(UBadge, { color: 'primary', variant: 'subtle' }, () => 'Otomatis')
                 : h(UButton, {
                     color: 'primary',
                     onClick: () => openGrantModal(row.original)
