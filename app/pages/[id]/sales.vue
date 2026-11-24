@@ -94,6 +94,12 @@
                             <span class="inline-block size-3 rounded-sm bg-yellow-100 dark:bg-yellow-900/40 border border-yellow-300 dark:border-yellow-700" />
                             Baris kuning = invoice ini menghasilkan komisi Rp 0.
                         </p>
+                        <div v-if="pullNotes[item.key]" class="text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-md px-3 py-2 mb-2">
+                            <p class="font-semibold mb-1">NB: customer yang ditarik ke tab ini</p>
+                            <ul class="list-disc pl-4 space-y-0.5">
+                                <li v-for="line in pullNotes[item.key]" :key="line">{{ line }}</li>
+                            </ul>
+                        </div>
                         <UTable
                             sticky
                             :data="getTabData(item.key)"
@@ -150,6 +156,25 @@ const { formatCurrency, formatDate } = useFormat()
 
 // Customers in this period's transactions, so the testimonial form can fill the name in from the ID.
 const knownCustomers = computed(() => new Map(invoiceItems.value.filter(i => i.customerName).map(i => [i.customerId, i.customerName as string])))
+
+// "NB" shown above the New/Upgrade/Prorate and Alat/Setup tables: which customers the import job pulls in.
+const newCustomerNote = [
+    'Invoice customer baru sudah lunas dan sudah di-batch NIS, dan layanannya sudah aktivasi.',
+    'Masuk di periode tanggal bayar, atau tanggal aktivasi bila aktivasinya lebih akhir.',
+    'Khusus NusaSelecta: belum di-batch NIS tetap masuk bila receipt menyebut kode invoice dan service yang sama, dengan selisih (kurang/lebih) maksimal 2%.',
+    'Belum masuk: belum bayar, kurang bayar, receipt deposit tanpa kode invoice, atau layanan belum aktivasi.'
+]
+const stockNote = [
+    'Invoice alat/setup sudah lunas dan sudah di-batch NIS.',
+    'Masuk di periode tanggal bayar.'
+]
+const pullNotes: Record<string, string[]> = {
+    new: newCustomerNote,
+    upgrade: newCustomerNote,
+    prorate: newCustomerNote,
+    alat: stockNote,
+    setup: stockNote
+}
 
 const tabItems = computed(() => {
     const byType = (key: string) => getTabData(key).length
