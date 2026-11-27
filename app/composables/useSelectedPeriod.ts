@@ -2,10 +2,12 @@ import { FIRST_PERIOD, currentPeriod } from '~/composables/usePeriodOptions'
 
 // One month/year selection shared by every summary and commission page, so
 // switching tabs or opening someone's detail keeps the period you picked.
-// Lives for the browser session; a full page reload starts at the running period.
+// Lives for the browser session; a full page reload starts at the calendar month
+// (27 Nov opens November, not the already-running December period, which stays selectable).
 export const useSelectedPeriod = () => {
-    const year = useState('selected-period-year', () => currentPeriod().year)
-    const month = useState('selected-period-month', () => currentPeriod().month)
+    const today = new Date()
+    const year = useState('selected-period-year', () => today.getFullYear())
+    const month = useState('selected-period-month', () => today.getMonth() + 1)
 
     // Keep the selection inside the viewable range (FIRST_PERIOD .. running period): switching years
     // can leave a month that hasn't happened yet, or one before the dashboard went live.
